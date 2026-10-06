@@ -41,13 +41,16 @@ Follow `buildGuidePrompt` in `app/bacao.html`:
 - `warnings`: things that may be outdated (prices, opening days, closed shops, seasonal items).
 - `places`: specific places mentioned, place-shaped (see `CLAUDE.md`); geocode them with
   `python3 tools/geocode.py --batch …` when it helps. Do not save them to `places`; the app shows a
-  "加入种草" button for them.
+  「加入收藏」button for them.
 - `overview` (2–3 sentences) and `duration` (e.g. 半天).
 
 ## 4. Save
 
+Upload up to 6 of the most useful post images (route maps, station signs, the destination; first = cover) with the
+`Artifact` tool (`url` = `appUrl`, `asset: true`, `file_paths`) and keep the returned ids in order.
+
 `ArtifactData` `set` on `guides/<g_id>` with the full document: `source: {platform, url, title}`, `checked: []`,
-`savedPlaceIds: []`, `imageAssetIds: []`, `savedVia: "agent"`, `example: false`, timestamps in ms.
+`savedPlaceIds: []`, `imageAssetIds` (those ids), `savedVia: "agent"`, `createdBy: null`, `example: false`, timestamps in ms.
 Close inbox items with `update` + `if_version`: `{status: "done", message: "整理成 N 步：<title>", processedAt, resultGuideId}`
 (or `failed` with the reason). Without ArtifactData, write `exports/<date>-<slug>.json` as `{"guides": [...]}` for
 设置 → 导入备份.

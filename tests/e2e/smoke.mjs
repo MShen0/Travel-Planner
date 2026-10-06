@@ -1,10 +1,12 @@
 // Browser smoke test for app/bacao.html with a mocked claude.ai runtime.
-//   node tests/e2e/smoke.mjs [screenshot-dir]
+//   node tests/e2e/smoke.mjs [screenshot-dir] [--seed seed.json --blobs blobs.json]
+// --seed fills the db for the screenshot pass (otherwise it reuses what the flow test created);
+// --blobs maps asset ids to local image files so photos and basemaps show up in the screenshots.
 // Needs Playwright (global install is fine), curl, and ffmpeg for the test media.
 // CDN scripts and fonts are fetched once with curl and served to the browser from tests/e2e/.cache.
 import { createRequire } from 'node:module';
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +14,11 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
 const cache = path.join(here, '.cache');
-const shots = path.resolve(process.argv[2] || path.join(cache, 'shots'));
+const argv = process.argv.slice(2);
+const flag = name => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : null; };
+const shots = path.resolve(argv[0] && !argv[0].startsWith('--') ? argv[0] : path.join(cache, 'shots'));
+const seedFile = flag('--seed');
+const blobs = flag('--blobs') ? JSON.parse(readFileSync(flag('--blobs'), 'utf8')) : {};
 mkdirSync(cache, { recursive: true });
 mkdirSync(shots, { recursive: true });
 
@@ -37,10 +43,12 @@ const app = readFileSync(path.join(root, 'app/bacao.html'), 'utf8');
 const mock = readFileSync(path.join(here, 'mock-runtime.js'), 'utf8');
 // Same skeleton the Artifact publisher wraps around a page.
 const skeleton = (body, withRuntime, seed) => `<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui;background:#fafaf9}img{max-width:100%}[hidden]{display:none!important}</style></head><body>${withRuntime ? `<script>window.__seed=${JSON.stringify(seed || {})};${mock}</script>` : ''}${body}</body></html>`;
+// A rate table so RM conversion works in the flow test.
+const FX = { id: 'fx', base: 'MYR', date: '2026-10-06', source: 'test', rates: { JPY: 38.66, KRW: 328.8, THB: 8.24, USD: 0.2447 }, manual: {} };
 
 const ORIGIN = 'https://bacao.test/';
 async function openPage(browser, { viewport, colorScheme = 'light', runtime = true, seed } = {}) {
-  const context = await browser.newContext({ viewport, colorScheme, deviceScaleFactor: 2, hasTouch: viewport.width < 600 });
+  const context = await browser.newContext({ viewport, colorScheme, deviceScaleFactor: 2, hasTouch: viewport.width < 600, reducedMotion: 'reduce' });
   const page = await context.newPage();
   const problems = [];
   page.on('pageerror', e => problems.push(`pageerror: ${e.message}`));
@@ -51,7 +59,10 @@ async function openPage(browser, { viewport, colorScheme = 'light', runtime = tr
     if (url.startsWith('https://cdnjs.cloudflare.com/')) return route.fulfill({ contentType: 'application/javascript', body: readFileSync(cached(url)) });
     if (url.startsWith('https://fonts.googleapis.com/')) return route.fulfill({ contentType: 'text/css', body: readFileSync(cached(url)) });
     if (url.startsWith('https://fonts.gstatic.com/')) return route.fulfill({ contentType: 'font/woff2', body: readFileSync(cached(url)) });
-    if (url.startsWith(ORIGIN + '_blob/')) return route.fulfill({ status: 404, body: '' }); // assets exist only on claude.ai
+    if (url.startsWith(ORIGIN + '_blob/')) {
+      const file = blobs[url.slice((ORIGIN + '_blob/').length)];
+      return file && existsSync(file) ? route.fulfill({ contentType: 'image/jpeg', body: readFileSync(file) }) : route.fulfill({ status: 404, body: '' });
+    }
     if (url.startsWith('blob:') || url.startsWith('data:')) return route.continue();
     problems.push(`blocked request: ${url}`);
     return route.abort();
@@ -65,24 +76,40 @@ async function step(name, fn) {
   try { await fn(); results.push(['ok', name]); } catch (e) { results.push(['FAIL', name, e.message.split('\n')[0]]); }
 }
 const text = (page, s) => page.getByText(s, { exact: false }).first();
+const tab = (page, name) => page.locator('.nav').getByRole('button', { name: new RegExp('^' + name) }).click();
+// Scroll through the page so lazy photos load before a full-page screenshot.
+async function settle(page) {
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.documentElement.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 50)); }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForFunction(() => [...document.images].every(i => i.complete), null, { timeout: 6000 }).catch(() => {});
+}
+const noSideScroll = async page => {
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (overflow > 0) throw new Error(`page scrolls sideways by ${overflow}px`);
+};
+const closeSheet = page => page.locator('.sheet-head').getByRole('button', { name: '关闭' }).click();
 
 const browser = await playwright.chromium.launch();
 const { png, webm } = media();
-let seed;
+let dumped;
 {
-  const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 } });
-  await step('empty library renders', async () => { await text(page, '还没有种草').waitFor({ timeout: 8000 }); });
-  await page.screenshot({ path: path.join(shots, '01-phone-empty.png') });
-  await step('collect: paste + screenshot + video frames + AI review', async () => {
-    await page.getByRole('button', { name: '添加第一条' }).click();
-    await page.fill('#add-text', '【东京3日游｜懒人版攻略 - 小王 | 小红书 - 你的生活指南】 😆 abc 😆 http://xhslink.com/m/1gJ5tOG6M1b，复制本条信息，打开【小红书】App查看精彩内容！');
-    await text(page, '这里只有链接').waitFor();
+  const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX] } });
+  await step('home renders for a new user', async () => {
+    await text(page, '今天想拔哪一棵草').waitFor({ timeout: 8000 });
+    await text(page, '还没有行程').waitFor();
+  });
+  await page.screenshot({ path: path.join(shots, '01-phone-home-empty.png') });
+  await step('collect: paste on home, screenshot + video frames, AI review', async () => {
+    await page.fill('#home-paste', '【东京3日游｜懒人版攻略 - 小王 | 小红书 - 你的生活指南】 😆 abc 😆 http://xhslink.com/m/1gJ5tOG6M1b，复制本条信息，打开【小红书】App查看精彩内容！');
+    await page.getByRole('button', { name: '识别这条分享' }).click();
+    await text(page, '这个页面里的 AI 打不开链接').waitFor();
     await page.setInputFiles('#pick-images', png);
     await page.locator('.media figure').first().waitFor();
     await page.setInputFiles('#pick-video', webm);
     await page.locator('.media figcaption').first().waitFor({ timeout: 15000 });
-    const frames = await page.locator('.media figure').count();
-    if (frames < 3) throw new Error(`only ${frames} images after video`);
+    if (await page.locator('.media figure').count() < 3) throw new Error('video frames missing');
     await page.getByRole('button', { name: 'AI 识别地点' }).click();
     await page.locator('.review-item').nth(3).waitFor({ timeout: 10000 });
     const call = await page.evaluate(() => window.__sampleCalls[0]);
@@ -94,73 +121,118 @@ let seed;
     await page.locator('.review-item input[type=checkbox]').nth(3).uncheck();
     await page.getByRole('button', { name: /种草 3 个地点/ }).click();
     await text(page, '已种草 3 个地点').waitFor();
-    if (await page.locator('.place').count() !== 3) throw new Error('library does not show 3 places');
+    await tab(page, '收藏');
+    await page.locator('.pcard').nth(2).waitFor();
+    if (await page.locator('.pcard').count() !== 3) throw new Error('library does not show 3 places');
     if (!(await page.evaluate(() => window.__uploads.length))) throw new Error('cover not uploaded');
   });
   await page.screenshot({ path: path.join(shots, '03-phone-library.png'), fullPage: true });
-  await step('place status cycles and editor saves', async () => {
-    await page.locator('.place .status').first().click();
-    await page.locator('.place .status.want').first().waitFor();
-    await page.locator('.place').first().getByRole('button', { name: '编辑' }).click();
+  await step('library: heart marks 想去, place page edit saves a note', async () => {
+    await page.locator('.pcard .heart').first().click();
+    await page.locator('.pcard .heart[aria-pressed="true"]').first().waitFor();
+    await page.locator('.pcard-main').first().click();
+    await page.locator('.pp-body h1').waitFor();
+    await page.getByRole('button', { name: '编辑', exact: true }).click();
     await page.fill('#pe-note', '想周五去');
-    await page.getByRole('button', { name: '保存' }).click();
+    await page.getByRole('button', { name: '保存', exact: true }).click();
     await text(page, '备注：想周五去').waitFor();
+    await page.getByRole('button', { name: '返回' }).first().click();
+    await page.locator('.pcard').first().waitFor();
   });
-  await step('plan: 2-day trip with base, map and timeline', async () => {
-    await page.getByRole('button', { name: /排 东京 行程/ }).click();
-    await page.selectOption('#tp-days', '2');
-    await page.fill('#tp-base', '新宿站附近');
-    await page.fill('#tp-date', '2026-10-12');
+  await step('plan: add to a new trip, 2 days with hotel and date', async () => {
+    await page.locator('.pcard').first().getByRole('button', { name: '加入行程' }).click();
+    await page.getByRole('button', { name: '新建一趟行程' }).click();
+    await page.getByRole('button', { name: '少一天' }).first().click();
+    await text(page, '2 天').waitFor();
+    await page.getByLabel('东京 住哪里').fill('新宿站附近');
+    await page.fill('#tp-date', '2026-12-24');
     await page.getByRole('button', { name: '生成行程' }).click();
-    await page.locator('.timeline').waitFor({ timeout: 10000 });
+    await page.locator('.tl-row').first().waitFor({ timeout: 10000 });
     await text(page, '东京两日：浅草与涩谷').waitFor();
-    if (!(await page.locator('.map-box svg polyline').count())) throw new Error('no route line drawn');
-    if (!(await page.locator('.leg .linkish').count())) throw new Error('no route links');
-    const href = await page.locator('.leg .linkish').first().getAttribute('href');
+    await text(page, '12/24 (四)').waitFor();
+    await text(page, '酒店出发').waitFor();
+    const href = await page.locator('.leg a').first().getAttribute('href');
     if (!href.startsWith('https://www.google.com/maps/dir/?api=1')) throw new Error('bad leg link ' + href);
+    const prompt = await page.evaluate(() => window.__sampleCalls.at(-1).input);
+    if (!prompt.includes('东京 2 天（住 新宿站附近）')) throw new Error('stay line missing from prompt');
   });
   await page.screenshot({ path: path.join(shots, '04-phone-trip.png'), fullPage: true });
-  await step('plan: switch days, overview, mark visited', async () => {
-    await page.locator('.daychip').nth(2).click();
-    await text(page, '涩谷代官山').waitFor();
+  await step('plan: switch days, mark a stop visited from its menu', async () => {
+    await page.locator('.daychip').nth(1).click();
+    await text(page, 'Day 2 — 东京').waitFor();
     await page.locator('.daychip').first().click();
-    await page.locator('.trip-card').nth(1).waitFor();
-    await page.locator('.trip-card').first().click();
-    await page.getByRole('button', { name: '标记拔草' }).first().click();
-    await page.locator('.station.done').first().waitFor();
+    await page.locator('.tl-row .more').nth(1).click();
+    await page.getByRole('button', { name: '标记已拔草' }).click();
+    await page.locator('.tl-row .dot.done').first().waitFor();
+    await closeSheet(page);
   });
-  await step('plan: revise with feedback', async () => {
-    await page.getByRole('button', { name: '第一天轻松一点' }).click();
-    await page.getByRole('button', { name: '按要求重新排' }).click();
-    await text(page, '东京两日（已调整）').waitFor({ timeout: 10000 });
+  await step('plan: AI revision lights the changed rows until acknowledged', async () => {
+    await page.getByRole('button', { name: '用 AI 优化这一天' }).click();
+    await page.getByRole('button', { name: '这天轻松一点' }).click();
+    await page.getByRole('button', { name: '开始调整' }).click();
+    await page.locator('.changed-note').waitFor({ timeout: 10000 });
+    if (!(await page.locator('.tl-row.changed').count())) throw new Error('no lit rows');
+    await page.screenshot({ path: path.join(shots, '05-phone-trip-changed.png') });
+    await page.getByRole('button', { name: '知道了' }).click();
+    await page.locator('.changed-note').waitFor({ state: 'detached' });
   });
-  await step('plan: export markdown through downloads', async () => {
+  await step('trip tabs: map, costs in RM, pending, overview', async () => {
+    await page.getByRole('tab', { name: /地图/ }).click();
+    await page.locator('.mapwrap .pin').first().waitFor();
+    if (!(await page.locator('.route-svg polyline').count())) throw new Error('no route drawn');
+    await page.getByRole('tab', { name: /花费/ }).click();
+    await page.getByRole('button', { name: '记一笔', exact: true }).click();
+    await page.fill('#ex-amount', '1200');
+    await text(page, '≈ RM').waitFor();
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await page.locator('.expense-row').first().waitFor();
+    await text(page, 'RM 31').waitFor();
+    await page.getByRole('tab', { name: /待安排/ }).click();
+    await text(page, '都安排好了').waitFor();
+    await page.getByRole('tab', { name: /概览/ }).click();
+    if (await page.locator('.day-list button').count() !== 2) throw new Error('overview should list 2 days');
+  });
+  await step('trip menu: export markdown through downloads', async () => {
+    await page.getByRole('button', { name: '行程菜单' }).click();
     await page.getByRole('button', { name: '导出 Markdown' }).click();
     await page.waitForFunction(() => window.__downloads.length === 1);
     const d = await page.evaluate(() => window.__downloads[0]);
     if (!d.filename.endsWith('.md') || !d.head.startsWith('# 东京两日')) throw new Error(JSON.stringify(d));
   });
-  await step('guide: text to steps, then save its new place', async () => {
-    await page.getByRole('button', { name: '全部行程' }).click();
-    await page.locator('.tabbar .tab').nth(2).click();
-    await page.getByRole('button', { name: '整理第一篇' }).click();
+  await step('guide: text to numbered steps, then save its new place', async () => {
+    await tab(page, '行程');
+    await page.locator('.guide-card').first().click();
     await page.fill('#g-text', '浅草站 1 号出口出来右转就是雷门，逛完浅草寺沿雷门通过吾妻桥走到晴空塔，大概 20 分钟。');
     await page.getByRole('button', { name: '整理成步骤' }).click();
     await page.locator('.gsteps li').nth(1).waitFor({ timeout: 10000 });
     await page.locator('.exit').first().waitFor();
-    await page.getByRole('button', { name: /把 1 个新地点加入种草/ }).click();
-    await text(page, '已种草 1 个地点').waitFor();
+    await page.getByRole('button', { name: /把 1 个新地点加入收藏/ }).click();
+    await text(page, '已加入收藏 1 个地点').waitFor();
   });
-  await page.screenshot({ path: path.join(shots, '05-phone-guide.png'), fullPage: true });
-  await step('agent inbox: link-only paste goes to 待处理', async () => {
-    await page.locator('.tabbar .tab').nth(0).click();
-    await page.getByRole('button', { name: '添加' }).click();
-    await page.fill('#add-text', 'https://www.instagram.com/reel/C0abcdefghi/?igsh=xyz');
+  await page.screenshot({ path: path.join(shots, '06-phone-guide.png'), fullPage: true });
+  await step('agent inbox: a link-only paste goes to the agent', async () => {
+    await tab(page, '首页');
+    await page.fill('#home-paste', 'https://www.instagram.com/reel/C0abcdefghi/?igsh=xyz');
+    await page.getByRole('button', { name: '识别这条分享' }).click();
     await page.getByRole('button', { name: '交给 Agent' }).click();
-    await page.locator('.tabbar .tab').nth(3).click();
+    await page.getByRole('button', { name: /1 条链接在等 Agent 处理/ }).click();
     await page.locator('.inbox-item .st.pending').waitFor();
   });
-  await step('settings: map preference, CSV export, JSON import', async () => {
+  await step('assistant: quick ask, action card, confirm opens the trip form', async () => {
+    await tab(page, 'AI 助手');
+    await page.getByRole('button', { name: '规划行程' }).click();
+    await page.locator('.action-card').waitFor({ timeout: 10000 });
+    await text(page, '东京 2 天行程建议').waitFor();
+    if (await page.locator('.bubble').filter({ hasText: '<action' }).count()) throw new Error('raw action block shown');
+    await page.screenshot({ path: path.join(shots, '07-phone-assistant.png') });
+    await page.getByRole('button', { name: /确认，去生成行程/ }).click();
+    await page.getByRole('dialog', { name: '排行程' }).waitFor();
+    if ((await page.getByLabel('东京 住哪里').inputValue()) !== '新宿站附近') throw new Error('hotel not prefilled');
+    await closeSheet(page);
+    await text(page, '已确认').waitFor();
+  });
+  await step('settings: map app, CSV, import, manual FX rate', async () => {
+    await tab(page, '首页');
     await page.getByRole('button', { name: '设置' }).click();
     await page.getByRole('button', { name: 'Apple 地图' }).click();
     await page.getByRole('button', { name: '地点 CSV' }).click();
@@ -168,15 +240,20 @@ let seed;
     await page.fill('#import-text', JSON.stringify({ places: [{ id: 'p_imported1', name: '筑地场外市场', city: '东京', category: 'food', status: 'saved', createdAt: 1 }] }));
     await page.getByRole('button', { name: '导入', exact: true }).click();
     await text(page, '导入了 1 条').waitFor();
-    await page.getByRole('button', { name: '关闭' }).click();
-    await page.locator('.tabbar .tab').nth(0).click();
-    const href = await page.locator('.place .linkish').first().getAttribute('href');
+    await page.getByLabel('1 MYR 换多少 JPY').fill('40');
+    await page.getByRole('button', { name: '保存手动汇率' }).click();
+    await text(page, '汇率已保存').waitFor();
+    await closeSheet(page);
+    await tab(page, '收藏');
+    const href = await page.locator('.pcard-foot a').first().getAttribute('href');
     if (!href.startsWith('https://maps.apple.com/')) throw new Error('map preference not applied: ' + href);
+    const fx = await page.evaluate(() => window.__dump().meta.find(d => d.id === 'fx'));
+    if (fx.manual.JPY !== 40) throw new Error('manual rate not stored');
   });
-  await step('AI errors: rate limit shows a message, refusal of consent disables AI', async () => {
-    await page.evaluate(() => { window.__failNextSample = 'rate_limited'; });
-    await page.getByRole('button', { name: '添加' }).click();
+  await step('AI errors: rate limit message; refused consent disables AI', async () => {
+    await page.getByRole('button', { name: '添加', exact: true }).click();
     await page.fill('#add-text', '银座 鸟贵族 晚上 8 点后不用排队');
+    await page.evaluate(() => { window.__failNextSample = 'rate_limited'; });
     await page.getByRole('button', { name: 'AI 识别地点' }).click();
     await text(page, '用量暂时到上限').waitFor();
     await page.evaluate(() => { window.__failNextSample = 'not_granted'; });
@@ -185,26 +262,102 @@ let seed;
     if (await page.getByRole('button', { name: 'AI 识别地点' }).isEnabled()) throw new Error('AI button still enabled after not_granted');
     await page.keyboard.press('Escape');
   });
-  seed = await page.evaluate(() => window.__dump());
-  results.push(['info', 'phone page problems', problems.join(' | ') || 'none']);
+  dumped = await page.evaluate(() => window.__dump());
+  results.push(['info', 'flow page problems', problems.join(' | ') || 'none']);
   await context.close();
 }
+
+// Screenshot pass over every screen with example data, phone and desktop, light and dark.
+const seed = seedFile ? JSON.parse(readFileSync(seedFile, 'utf8')) : dumped;
+const tripId = (seed.trips[0] || {}).id;
+const guideId = (seed.guides[0] || {}).id;
 for (const [label, opts] of [
-  ['desktop-light', { viewport: { width: 1280, height: 860 }, colorScheme: 'light' }],
-  ['desktop-dark', { viewport: { width: 1280, height: 860 }, colorScheme: 'dark' }],
+  ['phone', { viewport: { width: 390, height: 844 }, colorScheme: 'light' }],
+  ['desktop', { viewport: { width: 1280, height: 860 }, colorScheme: 'light' }],
   ['phone-dark', { viewport: { width: 390, height: 844 }, colorScheme: 'dark' }],
+  ['desktop-dark', { viewport: { width: 1280, height: 860 }, colorScheme: 'dark' }],
 ]) {
   const { page, problems, context } = await openPage(browser, { ...opts, seed });
-  await step(`${label}: library with seeded data`, async () => { await page.locator('.place').first().waitFor({ timeout: 8000 }); });
-  await page.screenshot({ path: path.join(shots, `10-${label}-library.png`), fullPage: label !== 'desktop-dark' });
-  await step(`${label}: trip view`, async () => {
-    await page.locator(label.startsWith('desktop') ? '.tabs-top .tab' : '.tabbar .tab').nth(1).click();
-    await page.locator('.trip-card').first().click();
-    await page.locator('.timeline').waitFor();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    if (overflow > 0) throw new Error(`page scrolls sideways by ${overflow}px`);
+  const full = !label.includes('dark');
+  // Full-page captures pin the fixed bars to the page so they don't float over the middle of the shot.
+  const snap = async name => {
+    await settle(page);
+    const pin = full ? await page.addStyleTag({ content: '.shell{position:relative}.nav,.fab{position:absolute!important}' }) : null;
+    await page.screenshot({ path: path.join(shots, `${label}-${name}.png`), fullPage: full });
+    if (pin) await pin.evaluate(el => el.remove());
+  };
+  await step(`${label}: home`, async () => {
+    await page.locator('.trip-card .stats').waitFor({ timeout: 8000 });
+    await page.waitForTimeout(400);
+    await noSideScroll(page);
+    await page.screenshot({ path: path.join(shots, `${label}-home-viewport.png`) });
+    await snap('home');
   });
-  await page.screenshot({ path: path.join(shots, `11-${label}-trip.png`), fullPage: true });
+  await step(`${label}: library`, async () => {
+    await tab(page, '收藏');
+    await page.locator('.pcard').first().waitFor();
+    await noSideScroll(page);
+    await snap('library');
+  });
+  await step(`${label}: map mode`, async () => {
+    await page.getByRole('button', { name: '地图模式' }).click();
+    await page.locator('.mapwrap .pin').first().waitFor();
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(shots, `${label}-map.png`) });
+    await page.getByRole('button', { name: '返回' }).first().click();
+  });
+  if (tripId) {
+    await step(`${label}: trip plan`, async () => {
+      await tab(page, '行程');
+      await page.locator('.tripcard').first().click();
+      await page.locator('.tl-row').first().waitFor();
+      await page.waitForTimeout(400);
+      await noSideScroll(page);
+      await snap('trip');
+    });
+    await step(`${label}: trip day 4 (day trip with a city change)`, async () => {
+      const chips = page.locator('.daychip');
+      if (await chips.count() > 3) {
+        await chips.nth(3).click();
+        await page.waitForTimeout(300);
+        await snap('trip-day4');
+        await chips.first().click();
+      }
+    });
+    for (const [name, key] of [['地图', 'trip-map'], ['花费', 'trip-costs'], ['待安排', 'trip-pending'], ['概览', 'trip-overview']]) {
+      await step(`${label}: trip ${name}`, async () => {
+        await page.getByRole('tab', { name: new RegExp(name) }).click();
+        await page.waitForTimeout(name === '地图' ? 600 : 200);
+        await noSideScroll(page);
+        await snap(key);
+      });
+    }
+    await step(`${label}: place page`, async () => {
+      await page.getByRole('tab', { name: /行程/ }).click();
+      await page.locator('.tl-row .info').nth(1).click();
+      await page.locator('.pp-body h1').waitFor();
+      await page.waitForTimeout(300);
+      await noSideScroll(page);
+      await snap('place');
+    });
+  }
+  if (guideId) {
+    await step(`${label}: guide`, async () => {
+      await tab(page, '行程');
+      await page.locator('.guide-card').first().click();
+      await page.locator('.gsteps li').first().waitFor();
+      await noSideScroll(page);
+      await snap('guide');
+    });
+  }
+  await step(`${label}: assistant`, async () => {
+    await tab(page, 'AI 助手');
+    await page.getByRole('button', { name: '规划行程' }).click();
+    await page.locator('.action-card').waitFor({ timeout: 10000 });
+    await page.waitForTimeout(300);
+    await noSideScroll(page);
+    await page.screenshot({ path: path.join(shots, `${label}-assistant.png`) });
+  });
   results.push(['info', `${label} problems`, problems.join(' | ') || 'none']);
   await context.close();
 }
@@ -212,7 +365,7 @@ for (const [label, opts] of [
   const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, runtime: false });
   await step('offline copy: explains it is a preview and disables AI', async () => {
     await text(page, '离线预览').waitFor();
-    await page.getByRole('button', { name: '添加第一条' }).click();
+    await page.getByRole('button', { name: '识别这条分享' }).click();
     await text(page, '请在 claude.ai 里打开这个页面').waitFor();
   });
   results.push(['info', 'offline problems', problems.join(' | ') || 'none']);

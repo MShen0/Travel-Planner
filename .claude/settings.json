@@ -16,7 +16,11 @@
       "Bash(python3 tools/fetch_post.py:*)",
       "Bash(python3 tools/video_digest.py:*)",
       "Bash(python3 tools/geocode.py:*)",
-      "Bash(python3 tools/trip_helper.py:*)"
+      "Bash(python3 tools/trip_helper.py:*)",
+      "Bash(python3 tools/place_photo.py:*)",
+      "Bash(python3 tools/fx_rates.py:*)",
+      "Bash(python3 tools/provenance.py:*)",
+      "Bash(node tools/city_map.mjs:*)"
     ]
   }
 }

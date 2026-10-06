@@ -34,6 +34,9 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from provenance import embed_origin  # noqa: E402
+
 DESKTOP_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
@@ -513,7 +516,7 @@ def read_web(url: str, result: dict, timeout: int) -> None:
     result["text"] = (meta.get("description", "") + "\n\n" + body_text).strip()
 
 
-def download_images(urls: list[str], out_dir: str, limit: int, referer: str | None, timeout: int) -> list[str]:
+def download_images(urls: list[str], out_dir: str, limit: int, referer: str | None, timeout: int, source: str | None = None) -> list[str]:
     os.makedirs(out_dir, exist_ok=True)
     paths = []
     for i, u in enumerate(urls[:limit], 1):
@@ -524,6 +527,7 @@ def download_images(urls: list[str], out_dir: str, limit: int, referer: str | No
         path = os.path.join(out_dir, f"{i:02d}{ext}")
         with open(path, "wb") as f:
             f.write(body)
+        embed_origin(path, f"Post image {i} from {source or u}, downloaded by tools/fetch_post.py; belongs to the post's author")
         paths.append(path)
     return paths
 
@@ -568,7 +572,7 @@ def fetch_post(share: str, download_dir: str | None = None, max_images: int = 9,
         result["method"] = result["method"] or "share_text"
     if download_dir and result["images"]:
         referer = "https://www.xiaohongshu.com/" if platform == "xiaohongshu" else None
-        result["local_images"] = download_images(result["images"], download_dir, max_images, referer, timeout)
+        result["local_images"] = download_images(result["images"], download_dir, max_images, referer, timeout, result.get("url"))
     result["ok"] = bool(result.get("text") or result.get("title") or result["images"])
     return result
 

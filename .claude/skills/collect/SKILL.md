@@ -13,7 +13,7 @@ them into the app's database. Read `CLAUDE.md` for the data contract; the app UR
 - Share texts or links in the user's message: process each one.
 - No argument: `ArtifactData` → `query`, collection `inbox`, where `status == "pending"`. Items with `mode: "guide"`
   belong to the `/guide` flow; do them too if the user asked for everything, otherwise leave them. Keep each item's
-  `version` for step 7.
+  `version` for step 8.
 - Nothing to do: say so in one line and stop.
 
 Also `list` the `places` collection once (page with `query.cursor` if `next_cursor` comes back). You need the existing
@@ -74,22 +74,53 @@ It replaces an estimate only with an OpenStreetMap match within 30 km, and sets 
 find keep your estimate as `"area"`, or `null` coordinates if you had no idea. OSM is thin for small shops in mainland
 China; that is expected.
 
-## 6. Write
+## 6. Photos
+
+Every place card in the app is photo-led, so give each new place a cover:
+
+1. **From the post** (preferred): look at the downloaded images (`local_images`) and pick, per place, an image that
+   clearly shows it (the storefront, the dish, the view). Skip collages, text-only cards and selfies.
+   Credit: `{"text": "图：<平台> · <帖子标题>", "author": "<post author>", "source": "<post url>"}`.
+2. **Otherwise from Wikimedia Commons**: put the remaining places in a JSON list (`id`, `name`, `nameLocal`, `city`;
+   add `"wiki": "ja:浅草寺"` when you know the article) and run
+
+   ```bash
+   python3 tools/place_photo.py --batch .cache/posts/<slug>/photo-in.json --out .cache/posts/<slug>/photos --pause 2
+   ```
+
+   Use each result's `credit` as `coverCredit` as is. Small shops usually have no Commons photo: leave them without
+   one (the app draws a category tile), never take an image from elsewhere.
+
+Upload the chosen files with the `Artifact` tool: `action: "publish"`, `url` = `appUrl`, `asset: true`,
+`file_paths` = up to 25 images. Use each returned id as `coverAssetId`. The tools stamp each file's origin into it.
+
+## 7. Write
 
 One `ArtifactData` `batch` per ≤ 50 documents, each `{op: "set", collection: "places", doc_id, data}` with the full
-place document from `CLAUDE.md`: `status: "saved"`, `savedVia: "agent"`, `example: false`, `coverAssetId: null`,
-`createdAt` and `updatedAt` = now in ms, `source` = `{platform, url, title, author: "", evidence}`.
+place document from `CLAUDE.md`: `status: "saved"`, `savedVia: "agent"`, `createdBy: null`, `example: false`,
+`coverAssetId` + `coverCredit` from step 6 (or null), `price` only when the post states one, `createdAt` and
+`updatedAt` = now in ms, `source` = `{platform, url, title, author: "", evidence, stats}` (`stats` from `fetch_post`).
+
+City basemap: when a city now has 3+ places with coordinates and no document in `maps` covers them (or the new places
+fall outside its `bounds`), render one:
+
+```bash
+node tools/city_map.mjs --places .cache/posts/<slug>/all-<city>.json --city <city> --out .cache/maps/<city>
+```
+
+(`all-<city>.json` = every saved place of that city with coordinates). Upload `light.jpg` and `dark.jpg` as assets and
+`set` `maps/m_<city-slug>` with the fields from `map.json` (see `CLAUDE.md`). Skip this step if Playwright is missing.
 
 If `ArtifactData` is unavailable, write `exports/<yyyy-mm-dd>-<slug>.json` as `{"places": [...]}` and tell the user to
 import it in the app (设置 → 导入备份).
 
-## 7. Close inbox items
+## 8. Close inbox items
 
 For each processed inbox item: `update` with its `if_version`:
 `{status: "done" | "failed", message, processedAt, resultPlaceIds}`. The message is one Chinese sentence the user will
 read in the app, e.g. `加入 5 个地点：浅草寺、晴空塔…；2 个已收藏过`.
 
-## 8. Report
+## 9. Report
 
 Tell the user, in Chinese, per post: which places were added (name · area · category), which were duplicates, anything
 uncertain (estimated location, unclear branch). End with the app link (`appUrl`).

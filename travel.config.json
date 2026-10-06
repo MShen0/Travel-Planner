@@ -2,5 +2,6 @@
   "appUrl": "https://claude.ai/artifact/SzMZpqMzGwh9dwb2nKyVYA",
   "language": "zh-Hans",
   "postDir": ".cache/posts",
-  "videoDir": ".cache/video"
+  "videoDir": ".cache/video",
+  "homeCurrency": "MYR"
 }

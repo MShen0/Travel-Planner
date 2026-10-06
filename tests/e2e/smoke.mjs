@@ -98,7 +98,7 @@ let dumped;
   const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX] } });
   await step('home renders for a new user', async () => {
     await text(page, '今天想拔哪一棵草').waitFor({ timeout: 8000 });
-    await text(page, '还没有行程').waitFor();
+    await text(page, '三步把灵感变成行程').waitFor();
   });
   await page.screenshot({ path: path.join(shots, '01-phone-home-empty.png') });
   await step('collect: paste on home, screenshot + video frames, AI review', async () => {

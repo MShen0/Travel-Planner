@@ -1,6 +1,6 @@
 ---
 name: plan-trip
-description: 排行程 — plan a day-by-day itinerary for one city or several (东京 → 京都 → 大阪) from the places saved in the 拔草计划 app, with real geocoding, route ordering, transport and fares between stops, costs converted to RM, and write it into the app's 行程 tab. Use when the user asks to plan a trip, 排行程, 安排 N 天, or runs /plan-trip.
+description: 排行程 — plan a day-by-day itinerary for one city or several (首尔 → 釜山, 东京 → 京都 → 大阪) from the places saved in the 旅用 app, with real geocoding, route ordering, transport and fares between stops, costs converted to RM, and write it into the app's 行程 tab. Use when the user asks to plan a trip, 排行程, 安排 N 天, or runs /plan-trip.
 ---
 
 # Plan a trip from saved places
@@ -18,7 +18,7 @@ elderly parents, sunsets). Ask only for what is missing and matters; otherwise d
 ## 2. Collect the places
 
 `ArtifactData` `list` on `places` (follow `next_cursor`). Keep places in those cities (same spelling; also treat obvious
-variants such as 東京/东京/Tokyo as the same city). Leave out `status: "visited"` unless asked; places with
+variants such as 東京/东京/Tokyo or 서울/首尔/Seoul as the same city). Leave out `status: "visited"` unless asked; places with
 `status: "want"` are must-includes.
 
 ## 3. Coordinates
@@ -49,10 +49,10 @@ For every stop, `travel` = how to get there from the previous stop (first stop: 
 the local currency (0 when walking, null when unknown). Use real lines you are confident about; otherwise give the
 most likely option and append （出发前用地图确认）. Give each stop `kind: "visit"` and `spend` = rough per-person
 ticket or meal cost (0 free, null unknown). On the day you change city, the first stop is a transfer: `kind:
-"transfer"`, `placeId: null`, `name: "东京 → 京都"`, `category: "transport"`, `travel` = the inter-city train/bus/flight
-with its fare, `what` = luggage or check-in advice. You may add a few nearby meal suggestions as stops with
+"transfer"`, `placeId: null`, `name: "首尔 → 釜山"`, `category: "transport"`, `travel` = the inter-city train/bus/flight
+with its fare, `nameLocal` = the arrival station or airport with its `lat`/`lng`, `what` = luggage or check-in advice. You may add a few nearby meal suggestions as stops with
 `placeId: null`, `"suggested": true`. Places that do not fit go to `unplaced` with a reason. Add 3–6 practical `tips`
-(transit cards or passes worth buying, reservations, cash, weather). Set `plan.currency` (JPY, KRW, THB…) and
+(transit cards or passes worth buying, reservations, cash, weather). Set `plan.currency` (KRW, THB, JPY, EUR…) and
 `plan.bases` (one per city with a hotel, with coordinates).
 
 ## 6. Save

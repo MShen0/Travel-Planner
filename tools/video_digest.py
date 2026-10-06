@@ -141,7 +141,7 @@ def contact_sheet(frames: list[dict], out_path: str) -> str | None:
 
 
 def download(source: str, out_dir: str, cookies: str | None, cookies_from_browser: str | None,
-             warnings: list[str]) -> tuple[str | None, dict]:
+             warnings: list[str], max_res: int = 720) -> tuple[str | None, dict]:
     """(video_path, post_info). Accepts a file path, a URL or a whole share text."""
     if os.path.isfile(source):
         return source, {"title": os.path.basename(source)}
@@ -153,7 +153,8 @@ def download(source: str, out_dir: str, cookies: str | None, cookies_from_browse
     info: dict = {"url": url, "platform": fetch_post.detect_platform(url)}
     exe = shutil.which("yt-dlp")
     if exe:
-        cmd = [exe, "--no-playlist", "--no-warnings", "-f", "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b",
+        # -S res: caps the shorter side, so vertical Reels / TikToks get 720x1280 instead of 360x640.
+        cmd = [exe, "--no-playlist", "--no-warnings", "-f", "bv*+ba/b", "-S", f"res:{max_res}",
                "--merge-output-format", "mp4", "-o", os.path.join(out_dir, "video.%(ext)s"),
                "--write-subs", "--write-auto-subs", "--sub-format", "vtt/srt/best",
                "--sub-langs", "zh-Hans,zh-CN,zh,zh-Hant,zh-TW,en,en-orig,ja,ko,.*-orig",
@@ -230,7 +231,7 @@ def digest(source: str, out_dir: str, n_frames: int = 12, max_h: int = 720, whis
            lang: str | None = None, cookies: str | None = None, cookies_from_browser: str | None = None) -> dict:
     warnings: list[str] = []
     os.makedirs(out_dir, exist_ok=True)
-    video, info = download(source, out_dir, cookies, cookies_from_browser, warnings)
+    video, info = download(source, out_dir, cookies, cookies_from_browser, warnings, max_h)
     result: dict = {"source": source.strip()[:500], "title": info.get("title"), "description": info.get("description"),
                     "video_path": video, "duration_s": None, "frames": [], "contact_sheet": None,
                     "transcript": {"source": None, "language": None, "segments": []}, "warnings": warnings}

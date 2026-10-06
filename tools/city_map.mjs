@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Render a static basemap for a city's saved places, in the app's own colours, for the 地图 views.
 //
-//   node tools/city_map.mjs --places places.json --city 东京 --out .cache/maps/tokyo
+//   node tools/city_map.mjs --places places.json --city 首尔 --out .cache/maps/seoul
 //
 // places.json: [{name, city, lat, lng, ...}]. Writes <out>/light.jpg, <out>/dark.jpg and <out>/map.json:
 //   {city, bounds: {west, east, north, south}, width, height, light, dark, attribution, createdAt}
@@ -126,7 +126,7 @@ async function render(bounds, size, palette, file) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   if (!args.places || !args.out) {
-    console.error('usage: node tools/city_map.mjs --places places.json [--city 东京] --out DIR [--pad 0.12] [--max 1400]');
+    console.error('usage: node tools/city_map.mjs --places places.json [--city 首尔] --out DIR [--pad 0.12] [--max 1400]');
     process.exit(2);
   }
   const all = JSON.parse(readFileSync(args.places, 'utf8'));

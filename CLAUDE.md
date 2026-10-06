@@ -1,7 +1,7 @@
-# 拔草计划 (Travel Planner)
+# 旅用 (Travel Planner)
 
-Save places from social-media posts (小红书, Instagram, TikTok, 抖音, YouTube, B站, blogs), plan day-by-day trips
-(one city or several) from them, settle costs in RM with travel companions, and turn "how to get there" guides into
+Save places from social-media posts (小红书, Instagram, TikTok, 抖音, YouTube, B站, blogs) in any country, plan day-by-day
+trips (one city or several) from them, settle costs in RM with travel companions, and turn "how to get there" guides into
 step-by-step directions.
 
 Two halves share one database:
@@ -22,8 +22,8 @@ Two halves share one database:
 | `python3 tools/video_digest.py "<url or file>" --out DIR [--whisper small]` | Video → evenly spaced frames, `sheet.jpg` contact sheet, subtitles or Whisper transcript. |
 | `python3 tools/geocode.py --batch in.json --out out.json` | Free geocoding (OSM Nominatim → Photon), cached in `.cache/geocode.json`, 1 request/s. |
 | `python3 tools/trip_helper.py places.json --days N [--base lat,lng]` | Same day-grouping as the app (size-capped k-means + nearest-neighbour/2-opt order). |
-| `python3 tools/place_photo.py --batch places.json --out DIR` | Freely licensed photo per place from Wikipedia/Wikimedia Commons, with author/licence credit (fallback when the post has no usable image). Add `"wiki": "ja:浅草寺"` to pin an article. |
-| `node tools/city_map.mjs --places places.json --city 东京 --out DIR` | Recoloured light + dark basemap of a city's saved places (OpenFreeMap tiles, MapLibre in headless Chromium) and `map.json` with exact bounds. |
+| `python3 tools/place_photo.py --batch places.json --out DIR` | Freely licensed photo per place from Wikipedia/Wikimedia Commons, with author/licence credit (fallback when the post has no usable image). Add `"wiki": "ko:경복궁"` to pin an article. |
+| `node tools/city_map.mjs --places places.json --city 首尔 --out DIR` | Recoloured light + dark basemap of a city's saved places (OpenFreeMap tiles, MapLibre in headless Chromium) and `map.json` with exact bounds. |
 | `python3 tools/fx_rates.py --base MYR --out .cache/fx.json` | Free daily exchange rates (open.er-api.com, ECB fallback) for the RM conversion. |
 | `python3 tools/provenance.py image.jpg [--set "origin"]` | Read or stamp an image's origin (JPEG comment / PNG text). The tools above stamp what they write. |
 
@@ -33,21 +33,22 @@ ffmpeg must be on PATH for video. `city_map.mjs` needs Playwright with Chromium 
 ## Database contract (artifact `db`)
 
 Collections: `places`, `trips`, `guides`, `inbox`, `expenses`, `maps`, `meta`. Document id = `<prefix>_<unique>` using
-only `A-Z a-z 0-9 _ -` (`p_` place, `t_` trip, `g_` guide, `i_` inbox, `x_` expense, `m_` map; `meta/fx` is fixed).
+only `A-Z a-z 0-9 _ -` (`p_` place, `t_` trip, `g_` guide, `i_` inbox, `x_` expense, `m_` map; `meta/fx` and `meta/app`
+are fixed).
 Store the id inside the document too. Times are epoch milliseconds. Coordinates are WGS84 numbers or `null`.
-Money is a number in a stated ISO currency (`JPY`, `MYR`, …). Write `"savedVia": "agent"` and `"createdBy": null`
+Money is a number in a stated ISO currency (`KRW`, `THB`, `EUR`, `MYR`, …). Write `"savedVia": "agent"` and `"createdBy": null`
 on everything the agent creates (the app writes the viewer's user id, which it shows as an avatar).
 
 **places/{id}**
 ```json
-{"id":"p_…","name":"一兰拉面","nameLocal":"一蘭 渋谷店","city":"东京","country":"日本","area":"涩谷",
- "category":"food","mustTry":["拉面"],"tags":[],"tips":"别去本店排队","priceLevel":2,
- "price":{"amount":980,"max":null,"currency":"JPY","per":"一碗"},"durationMin":45,
- "bestTime":"","hours":"","chain":false,"lat":35.6611,"lng":139.701,"coordConfidence":"exact",
+{"id":"p_…","name":"广藏市场","nameLocal":"광장시장","city":"首尔","country":"韩国","area":"钟路",
+ "category":"food","mustTry":["绿豆煎饼"],"tags":[],"tips":"小吃摊多收现金","priceLevel":1,
+ "price":{"amount":5000,"max":null,"currency":"KRW","per":"一份"},"durationMin":90,
+ "bestTime":"傍晚","hours":"","chain":false,"lat":37.5701,"lng":126.9996,"coordConfidence":"exact",
  "status":"saved","note":"","source":{"platform":"xiaohongshu","url":"https://…","title":"…","author":"","evidence":"原帖里提到它的一句话",
    "stats":{"likes":219,"collects":293,"comments":3}},
  "coverAssetId":"<asset id>","coverCredit":{"text":"照片：作者 · CC BY-SA 4.0 · Wikimedia Commons","author":"…","license":"CC BY-SA 4.0",
-   "licenseUrl":"https://…","source":"https://commons.wikimedia.org/wiki/File:…"},
+   "licenseUrl":"https://…","source":"https://commons.wikimedia.org/wiki/File:…"},"photoIds":["<asset id>"],
  "savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
 ```
 - `category`: `food | cafe | sight | shopping | stay | experience | nightlife | other`
@@ -56,33 +57,36 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 - `chain: true` = a chain with no branch named in the post: leave `lat`/`lng` null; planners pick a branch on the
   day's route (the geocoder skips these).
 - `city` must reuse the exact spelling already in the database (list places first). Default language 简体中文
-  (`travel.config.json` → `language`), e.g. 东京, 大阪, 首尔, 曼谷, 吉隆坡, 成都.
+  (`travel.config.json` → `language`), e.g. 首尔, 曼谷, 巴黎, 东京, 吉隆坡, 成都.
 - `platform`: `xiaohongshu | instagram | tiktok | douyin | youtube | bilibili | web | manual | ai`.
 - Photo: `coverAssetId` is an id from the app's asset store (upload with the `Artifact` tool: `url` = `appUrl`,
   `asset: true`, `file_path(s)`; the result gives each id). Prefer an image from the post that shows the place
   (`coverCredit.text` = `图：小红书 · <post title>`, `source` = the post URL); otherwise `tools/place_photo.py`
   (copy its `credit`). Never use an image without a known source. `coverCredit` is shown under the photo.
+  `photoIds` = every photo of the place, cover first (the detail page shows them as a gallery).
 
 **trips/{id}** — one city or several (`stays` in visiting order).
 ```json
-{"id":"t_…","title":"东京镰仓 4 日","city":"东京","cities":["东京","镰仓"],"country":"日本","days":4,"startDate":"2026-12-24",
- "stays":[{"city":"东京","days":3,"base":{"name":"新宿站附近"}},{"city":"镰仓","days":1,"base":null}],
- "base":{"name":"新宿站附近","lat":35.6896,"lng":139.7006},"prefs":{"pace":"normal","transport":"transit","notes":"","suggest":true},
- "budget":6000,"placeIds":["p_…"],"skipped":[],"changed":[],
- "plan":{"title":"…","summary":"…","currency":"JPY","tips":["…"],
-   "bases":[{"city":"东京","name":"新宿站附近","lat":35.6896,"lng":139.7006}],"base":{ /* = bases[0] */ },
-   "days":[{"day":1,"date":"2026-12-24","city":"东京","theme":"浅草与上野","area":"台东区","note":"",
-     "stops":[{"time":"09:00","kind":"visit","placeId":"p_…","name":"浅草寺","nameLocal":"浅草寺","city":"东京","country":"日本",
-       "lat":35.7148,"lng":139.7967,"category":"sight","stayMin":60,"what":"…","tip":"…","spend":0,"suggested":false,
-       "travel":{"mode":"metro","minutes":25,"detail":"大江户线 新宿→藏前 …","cost":"","fare":220}}]}],
+{"id":"t_…","title":"首尔釜山 5 日","city":"首尔","cities":["首尔","釜山"],"country":"韩国","days":5,"startDate":"2026-11-19",
+ "stays":[{"city":"首尔","days":3,"base":{"name":"明洞"}},{"city":"釜山","days":2,"base":{"name":"海云台"}}],
+ "base":{"name":"明洞","lat":37.5636,"lng":126.985},"prefs":{"pace":"normal","transport":"transit","notes":"","suggest":true},
+ "budget":5000,"placeIds":["p_…"],"skipped":[],"changed":[],
+ "plan":{"title":"…","summary":"…","currency":"KRW","tips":["…"],
+   "bases":[{"city":"首尔","name":"明洞","lat":37.5636,"lng":126.985},{"city":"釜山","name":"海云台","lat":35.1631,"lng":129.1635}],
+   "base":{ /* = bases[0] */ },
+   "days":[{"day":1,"date":"2026-11-19","city":"首尔","theme":"宫殿和韩屋","area":"钟路","note":"",
+     "stops":[{"time":"09:30","kind":"visit","placeId":"p_…","name":"景福宫","nameLocal":"경복궁","city":"首尔","country":"韩国",
+       "lat":37.5796,"lng":126.977,"category":"sight","stayMin":120,"what":"…","tip":"…","spend":3000,"suggested":false,
+       "travel":{"mode":"metro","minutes":25,"detail":"4 号线 明洞→忠武路，换 3 号线到 景福宫站","cost":"","fare":1550}}]}],
    "unplaced":[{"placeId":"p_…","reason":"…"}]},
  "savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
 ```
 - `pace`: `relaxed | normal | packed`; `transport`: `transit | walk | taxi | drive`. `budget` is in RM (or null).
 - A stay with `base: null` after the first city is a day trip from the previous city's hotel.
 - `days[].city` follows `stays` (sum of `stays[].days` = `days`). The first stop of the day you change city is
-  `"kind": "transfer"`, `placeId: null`, `name: "东京 → 镰仓"`, `category: "transport"`, its `travel` = the inter-city
-  journey. Every other stop is `"kind": "visit"`.
+  `"kind": "transfer"`, `placeId: null`, `name: "首尔 → 釜山"`, `category: "transport"`, `nameLocal` = the arrival
+  station or airport with its `lat`/`lng` (the next leg starts there), its `travel` = the inter-city journey. Every other
+  stop is `"kind": "visit"`.
 - `travel` = how to reach this stop from the previous one (first stop: from that day's base; `null` if none).
   `mode`: `walk | metro | train | tram | bus | taxi | drive | ferry | bike | flight`. `fare` = per-person fare in
   `plan.currency` (0 for walking, null if unknown); `spend` = rough per-person ticket/meal cost (0 free, null unknown).
@@ -93,27 +97,32 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 
 **expenses/{id}** — spending records for a trip (the app converts to RM with `meta/fx`).
 ```json
-{"id":"x_…","tripId":"t_…","amount":2360,"currency":"JPY","category":"food","note":"一兰拉面 两人","day":1,"date":"2026-12-25",
- "createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
+{"id":"x_…","tripId":"t_…","amount":28000,"currency":"KRW","category":"food","note":"广藏市场 晚餐","day":0,"date":"2026-11-19",
+ "paidBy":null,"split":null,"createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
 ```
 - `category`: `food | transport | tickets | shopping | stay | other`; `day` = 0-based day index or null.
+- `paidBy` = user id of whoever paid (null: the record's creator); `split` = user ids sharing it equally (null: every
+  trip member). The 花费 tab settles who owes whom in RM.
 
 **maps/{id}** — a rendered city basemap (from `tools/city_map.mjs`; upload `light.jpg` and `dark.jpg` as assets).
 ```json
-{"id":"m_tokyo","city":"东京","assetId":"<light asset id>","darkAssetId":"<dark asset id>",
- "bounds":{"west":139.67,"east":139.91,"north":35.74,"south":35.61},"width":2800,"height":2000,
+{"id":"m_seoul","city":"首尔","assetId":"<light asset id>","darkAssetId":"<dark asset id>",
+ "bounds":{"west":126.90,"east":127.06,"north":37.60,"south":37.50},"width":2800,"height":2000,
  "attribution":"© OpenStreetMap contributors · OpenFreeMap · OpenMapTiles","createdAt":0}
 ```
 - Copy `bounds`, `width`, `height` exactly from `map.json`: the app places pins with Web Mercator on that image.
 
-**meta/fx** — exchange rates, base MYR: `{"id":"fx","base":"MYR","date":"2026-10-06","source":"…","rates":{"JPY":38.66,…},"manual":{}}`
+**meta/fx** — exchange rates, base MYR: `{"id":"fx","base":"MYR","date":"2026-10-06","source":"…","rates":{"KRW":323.5,…},"manual":{}}`
 (`rates[C]` = units of C per 1 MYR; `manual` holds rates the user typed in the app — never overwrite it).
+
+**meta/app** — `{"id":"app","heroAssetId":"<asset id>","heroCredit":{"text":"…"},"updatedAt":0}`: the home-screen photo
+shown before the user has saved any place with a photo. Pick a photo that is not tied to one country.
 
 **guides/{id}**
 ```json
-{"id":"g_…","title":"从浅草站到晴空塔","city":"东京","country":"日本","overview":"…","duration":"半天",
- "checklist":["…"],"steps":[{"title":"…","detail":"…","from":"浅草站","to":"雷门","mode":"walk","minutes":2,
-   "exit":"1","cost":"","placeName":"雷门","lat":null,"lng":null,"inferred":false}],
+{"id":"g_…","title":"仁川机场到明洞","city":"首尔","country":"韩国","overview":"…","duration":"约 1 小时 15 分",
+ "checklist":["…"],"steps":[{"title":"…","detail":"…","from":"首尔站","to":"明洞站","mode":"metro","minutes":5,
+   "exit":"6","cost":"","placeName":"明洞站","lat":37.5609,"lng":126.9863,"inferred":false}],
  "places":[ /* place-shaped objects, not yet saved; the app offers "加入收藏" */ ],
  "warnings":["…"],"source":{"platform":"xiaohongshu","url":"…","title":"…"},
  "checked":[],"savedPlaceIds":[],"imageAssetIds":[],"savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}

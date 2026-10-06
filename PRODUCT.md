@@ -15,7 +15,7 @@ page (shared from claude.ai), add places and edit the plan.
 
 ## Product Purpose
 
-拔草计划 turns social-media "种草" (places you got tempted by) into "拔草" (actually going): paste a post or
+旅用 turns social-media "种草" (places you got tempted by) into "拔草" (actually going), in any country: paste a post or
 screenshots and the places are saved with what to eat and what to watch out for; pick cities and days and get a
 day-by-day route with transport for every leg; follow how-to guides step by step; keep track of what the trip costs
 in RM. Success is a trip the group can follow from their phones without re-researching anything.
@@ -31,7 +31,9 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 - Two halves share one database: the claude.ai artifact (`app/bacao.html`, Claude via the `sample` capability) and the
   Claude Code agent (`/collect`, `/guide`, `/plan-trip`) that can open links, read post images, watch videos and
   geocode.
-- Trips are either one city or several cities in one trip (e.g. 东京 → 京都 → 大阪 with a Shinkansen day).
+- Trips go anywhere (Korea, Taiwan, Thailand, Japan, Europe, China…) and are either one city or several cities in one
+  trip (e.g. 首尔 → 釜山 with a KTX day). Nothing in the interface may assume one country: the default imagery, examples
+  and placeholders stay country-neutral or mix countries.
 - Navigation and live transit are handed off to Google Maps, Apple Maps, 高德 or Naver.
 
 ## Capabilities and Constraints
@@ -49,7 +51,8 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 
 ## Brand Commitments
 
-- Name 拔草计划; the voice plays on 种草 / 拔草 ("今天想拔哪一棵草？").
+- Name 旅用 (renamed from 拔草计划 in 2026-10 at the user's request); the voice still plays on 种草 / 拔草
+  ("今天想拔哪一棵草？").
 - Binding visual reference from the user (2026-10): a warm off-white phone app with deep forest-green accents, white
   rounded cards, photo-led place cards, pastel category tags, a home screen with a photo hero, a 收藏 list, a map mode
   with photo pins, trip days with photo timelines, an AI 旅行助手 chat, place detail pages and a progress ring.
@@ -57,8 +60,8 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 
 ## Evidence on Hand
 
-- Example data in the live app: 19 places, one 3-day Tokyo trip and one Tokyo one-day guide, built from two public
-  小红书 posts and marked as examples.
+- Example data in the live app (marked as examples, removable in 设置): 28 places in 首尔, 釜山, 台北, 曼谷 and 巴黎 with
+  Wikimedia Commons photos, a 5-day 首尔 → 釜山 trip with expenses, a 3-day 台北 trip and an airport-to-hotel guide.
 - No ratings, review counts or hotel prices from Google or booking sites are available; never show invented ratings or
   prices. Social proof that does exist: the source post's like and save counts.
 

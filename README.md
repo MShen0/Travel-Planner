@@ -1,14 +1,14 @@
-# 拔草计划 · 种草的店，排成能走的路线
+# 旅用 · 种草的店，排成能走的路线
 
-在小红书、Instagram Reels、抖音、TikTok 上看到想去的店和景点，把分享链接（或截图）丢进来，AI 帮你记下店名、
-必吃、避坑提示，配上照片；选好城市和天数（一个城市或 东京 → 京都 → 大阪 这样连着走），自动排出每天顺路的行程，
+在小红书、Instagram Reels、抖音、TikTok 上看到想去的店和景点，不管在哪个国家，把分享链接（或截图）丢进来，AI 帮你记下
+店名、必吃、避坑提示，配上照片；选好城市和天数（一个城市或 首尔 → 釜山 这样连着走），自动排出每天顺路的行程，
 每一段都告诉你坐什么车、多久、多少钱，并能一键打开地图导航。花费自动换算成马币 RM，旅伴可以一起收藏、一起编辑。
 看到"教你怎么走"的攻略或 vlog，也能整理成一步一步照着走的指引。
 
 **App 地址（只有你和你分享的人能打开）：https://claude.ai/artifact/SzMZpqMzGwh9dwb2nKyVYA**
 
-里面放了一份用真实小红书攻略做的示例：「东京镰仓圣诞 4 日」（12/24–12/27，第 4 天去镰仓当天往返）、
-19 个带照片的地点、4 笔花费和 1 篇东京一日游攻略。看完效果可以在 设置 → 清除示例 一键删掉。
+里面放了几个国家的示例：「首尔釜山 5 日」（前 3 天首尔，第 4 天坐 KTX 去釜山，带 5 笔花费）、「台北 3 日」，
+首尔、釜山、台北、曼谷、巴黎共 28 个带照片的地点，和 1 篇「仁川机场到明洞」攻略。看完效果可以在 设置 → 清除示例 一键删掉。
 
 ---
 
@@ -71,7 +71,7 @@ Agent 就是在 Claude Code 里运行的 Claude，配上这个仓库里的工具
 | 小红书 | ✅ 全文、话题、所有图片、视频 | ✅ |
 | TikTok / YouTube | ✅ 标题和简介；视频下载常被拦 | ✅（可加 `--cookies-from-browser chrome`） |
 | B站 / 抖音 | ⚠️ 海外服务器常被限制，分享文字里的标题会保留 | ✅ |
-| Instagram | ❌ 要求登录 → 改用截图或复制文案 | ✅ 加 `--cookies-from-browser chrome` |
+| Instagram | ⚠️ 公开的 Reel 通常能读到文案和视频（会截帧看画面里的店名）；要求登录时 → 改用截图或复制文案 | ✅ 加 `--cookies-from-browser chrome` |
 
 ## 费用
 
@@ -91,7 +91,7 @@ Agent 就是在 Claude Code 里运行的 Claude，配上这个仓库里的工具
 
 ```mermaid
 flowchart LR
-  A["小红书 / IG / 抖音 / TikTok<br/>分享文字、截图、视频"] -->|粘贴、加截图| B["拔草计划 App<br/>(claude.ai artifact)"]
+  A["小红书 / IG / 抖音 / TikTok<br/>分享文字、截图、视频"] -->|粘贴、加截图| B["旅用 App<br/>(claude.ai artifact)"]
   A -->|"交给 Agent / 直接给链接"| C["Claude Code Agent<br/>/collect /guide /plan-trip"]
   C -->|"fetch_post · video_digest · geocode<br/>place_photo · city_map · fx_rates"| D["原帖全文、图片、视频截帧、语音转文字、<br/>坐标、照片、城市底图、汇率"]
   C -->|ArtifactData / 上传文件| E[("App 数据库和文件<br/>places · trips · guides · expenses<br/>maps · meta · inbox")]

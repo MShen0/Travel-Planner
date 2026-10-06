@@ -1,6 +1,6 @@
 ---
 name: guide
-description: 跟着攻略走 — watch or read a "how to get there / how to do it" post or video (小红书, 抖音, TikTok, YouTube, B站, Instagram, blogs) and write step-by-step directions into the 拔草计划 app's 攻略 tab. Use when the user shares a guide or vlog and asks how to follow it, 怎么走, 教我怎么去, or runs /guide.
+description: 跟着攻略走 — watch or read a "how to get there / how to do it" post or video (小红书, 抖音, TikTok, YouTube, B站, Instagram, blogs) and write step-by-step directions into the 旅用 app's 攻略 tab. Use when the user shares a guide or vlog and asks how to follow it, 怎么走, 教我怎么去, or runs /guide.
 ---
 
 # Turn a guide into steps the user can follow

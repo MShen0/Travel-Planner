@@ -1,9 +1,9 @@
 ---
 name: collect
-description: 收藏 / 种草 — save the places in a social-media post (小红书 Xiaohongshu, Instagram, TikTok, 抖音 Douyin, YouTube, B站, blogs) into the 拔草计划 app. Use when the user pastes a share text or link, says 收藏 / 种草 / save this place, or runs /collect with no argument to process the links waiting in the app's 待处理 inbox.
+description: 收藏 / 种草 — save the places in a social-media post (小红书 Xiaohongshu, Instagram, TikTok, 抖音 Douyin, YouTube, B站, blogs) into the 旅用 app. Use when the user pastes a share text or link, says 收藏 / 种草 / save this place, or runs /collect with no argument to process the links waiting in the app's 待处理 inbox.
 ---
 
-# Collect places into 拔草计划
+# Collect places into 旅用
 
 The app cannot open links; you can. Fetch the post, read its text, images and video, pull out the places, and write
 them into the app's database. Read `CLAUDE.md` for the data contract; the app URL is `appUrl` in `travel.config.json`.
@@ -30,7 +30,9 @@ when the platform refuses the page. Read `title`, `text`, `tags`, `local_images`
 
 - `ok: false`, or only a title: the platform refused. Tell the user what failed (the warning says why) and ask for the
   caption or screenshots. For an inbox item, set it `failed` with that message.
-- Instagram usually refuses cloud servers. On the user's own computer retry with `--cookies-from-browser chrome`.
+- Instagram: public Reels usually come through (caption + video via yt-dlp); the place names are often only in the
+  on-screen captions, so run `video_digest.py` and read the frames. When Instagram asks for a login, on the user's own
+  computer retry with `--cookies-from-browser chrome`; otherwise ask for screenshots.
 
 ## 3. Look at everything
 
@@ -51,7 +53,7 @@ when the platform refuses the page. Read `title`, `text`, `tags`, `local_images`
 Use the same rules as the app (`buildExtractPrompt` in `app/bacao.html`):
 
 1. Only specific, named places you can go to: restaurants, snacks, cafés, bars, sights, shops, markets, hotels,
-   activities. Skip generic words (日本, 便利店, 商场). For chains, only the branch the post names; when the post
+   activities. Skip generic words (country names, 便利店, 商场). For chains, only the branch the post names; when the post
    names no branch ("一兰拉面，分店都一样"), save the chain once with `chain: true` and `lat`/`lng` null.
 2. `name` as the post calls it; `nameLocal` = the official local-language name for map search (Japanese in Japan,
    Korean in Korea, Thai or English in Thailand, Chinese in China / HK / TW); empty string if unsure.
@@ -80,9 +82,11 @@ Every place card in the app is photo-led, so give each new place a cover:
 
 1. **From the post** (preferred): look at the downloaded images (`local_images`) and pick, per place, an image that
    clearly shows it (the storefront, the dish, the view). Skip collages, text-only cards and selfies.
-   Credit: `{"text": "图：<平台> · <帖子标题>", "author": "<post author>", "source": "<post url>"}`.
+   Credit: `{"text": "图：<平台> · <帖子标题>", "author": "<post author>", "source": "<post url>"}`. For a video, cut the
+   frame from the highest-resolution stream (`yt-dlp -F` lists them) at the middle of that place's clip; crop away
+   promo overlays (discount codes). Store every useful shot in `photoIds` (cover first).
 2. **Otherwise from Wikimedia Commons**: put the remaining places in a JSON list (`id`, `name`, `nameLocal`, `city`;
-   add `"wiki": "ja:浅草寺"` when you know the article) and run
+   add `"wiki": "ko:경복궁"` when you know the article) and run
 
    ```bash
    python3 tools/place_photo.py --batch .cache/posts/<slug>/photo-in.json --out .cache/posts/<slug>/photos --pause 2

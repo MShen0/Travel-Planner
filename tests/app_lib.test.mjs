@@ -15,7 +15,8 @@ const NAMES = ['CATEGORIES', 'MODES', 'extractUrls', 'detectPlatform', 'pickUrl'
   'buildRevisePrompt', 'buildGuidePrompt', 'normalizePlan', 'normalizeGuide', 'tripToMarkdown', 'tripToText', 'placesToCSV',
   'parseBackup', 'frameTimes', 'normTime', 'addDays', 'weekday', 'fmtMin', 'fmtDayChip', 'fmtCnDate', 'stayHint', 'greeting',
   'currencyOf', 'fmtMoney', 'toHome', 'normPrice', 'tripCities', 'allocateDays', 'tripStays', 'baseForDay', 'tripPlaces', 'progressOf',
-  'planCosts', 'expenseTotals', 'diffPlan', 'assistantContext', 'buildAssistantTurns', 'parseAssistantReply', 'travelLine'];
+  'planCosts', 'expenseTotals', 'diffPlan', 'assistantContext', 'buildAssistantTurns', 'parseAssistantReply', 'travelLine',
+  'tripMembers', 'settleUp'];
 const lib = vm.runInNewContext(`${page.slice(start, end)}\n;({${NAMES.join(',')}})`, { URL });
 // Values built inside the vm realm carry its own Array/Object prototypes; compare them as plain data.
 const plain = v => JSON.parse(JSON.stringify(v));
@@ -61,6 +62,8 @@ test('normalizeExtraction cleans Claude output and drops duplicates', () => {
   assert.equal(doc.chain, true);
   assert.equal(doc.createdBy, 'u_1');
   assert.equal(doc.coverCredit.text, '图');
+  assert.deepEqual(plain(lib.makePlaceDoc({ name: 'x' }, { coverAssetId: 'a1' }).photoIds), ['a1'], 'the cover starts the photo list');
+  assert.deepEqual(plain(lib.makePlaceDoc({ name: 'x' }, { coverAssetId: 'a1', photoIds: ['a1', 'a2'] }).photoIds), ['a1', 'a2']);
   assert.deepEqual(plain(lib.normalizeExtraction('garbage').places), []);
 });
 
@@ -213,6 +216,11 @@ test('trips: cities, day split, bases, scope, progress', () => {
   assert.deepEqual(plain(lib.tripStays({ city: '东京', days: 2 }).map(s => [s.city, s.days])), [['东京', 2]]);
   assert.equal(lib.baseForDay(trip, 0).name, '新宿站');
   assert.equal(lib.baseForDay(trip, 2).name, '新宿站', 'a day trip starts from the previous city\'s hotel');
+  const korea = { days: 4, stays: [{ city: '首尔', days: 2 }, { city: '釜山', days: 2 }],
+    plan: { bases: [{ city: '首尔', name: '明洞' }, { city: '釜山', name: '海云台' }], days: [{ city: '首尔' }, { city: '首尔' }, { city: '釜山' }, { city: '釜山' }] } };
+  assert.equal(lib.baseForDay(korea, 1).name, '明洞');
+  assert.equal(lib.baseForDay(korea, 2).name, '明洞', 'the travel day starts at the hotel you check out of');
+  assert.equal(lib.baseForDay(korea, 3).name, '海云台');
   const places = [...TOKYO, ...KAMAKURA, { id: 'p_far', name: '札幌', city: '札幌' }];
   const scope = lib.tripPlaces(trip, places);
   assert.ok(scope.some(p => p.id === 'p_k1'));
@@ -255,6 +263,32 @@ test('money: currencies, formatting, RM conversion, costs and diffs', () => {
   const after = { days: [{ stops: [{ placeId: 'p_0', time: '09:00' }, { name: '人形烧', time: '10:00' }, { placeId: 'p_3', time: '12:00' }] }, { stops: [{ name: '筑地', time: '08:00' }] }] };
   assert.deepEqual(plain(lib.diffPlan(before, after)), { 0: [1, 2] });
   assert.equal(lib.travelLine({ mode: 'metro', minutes: 25, detail: '银座线', fare: 210 }, 'JPY'), '地铁 · 25 分钟 · 银座线 · ¥210');
+});
+
+test('companions: members and who owes whom in RM', () => {
+  const trip = { id: 't_1', createdBy: 'u_a', placeIds: ['p_1', 'p_2'] };
+  const places = [{ id: 'p_1', createdBy: 'u_b' }, { id: 'p_2', createdBy: null }, { id: 'p_3', createdBy: 'u_x' }];
+  const expenses = [
+    { tripId: 't_1', amount: 300, currency: 'MYR', createdBy: 'u_a' },
+    { tripId: 't_1', amount: 3866, currency: 'JPY', createdBy: 'u_a', paidBy: 'u_b' },
+    { tripId: 't_1', amount: 90, currency: 'MYR', createdBy: 'u_c', split: ['u_a', 'u_c'] },
+    { tripId: 't_2', amount: 999, currency: 'MYR', createdBy: 'u_z' },
+    { tripId: 't_1', amount: 50, currency: 'MYR', createdBy: null },
+  ];
+  const members = lib.tripMembers(trip, expenses, places, 'u_me');
+  assert.deepEqual(plain(members).sort(), ['u_a', 'u_b', 'u_c', 'u_me']);
+  const fx = { base: 'MYR', rates: { JPY: 38.66 } };
+  const r = lib.settleUp(expenses.filter(e => e.tripId === 't_1'), ['u_a', 'u_b', 'u_c'], fx, 'MYR');
+  const by = Object.fromEntries(r.people.map(x => [x.id, x]));
+  assert.ok(Math.abs(by.u_a.paid - 300) < 1e-6 && Math.abs(by.u_b.paid - 100) < 1e-6 && Math.abs(by.u_c.paid - 90) < 1e-6);
+  assert.ok(Math.abs(by.u_a.share - (400 / 3 + 45)) < 1e-6, 'equal shares, and only the named people share a split cost');
+  assert.ok(Math.abs(by.u_b.share - 400 / 3) < 1e-6);
+  assert.equal(r.skipped, 1, 'a cost with no payer is left out');
+  const sum = r.people.reduce((n, x) => n + x.net, 0);
+  assert.ok(Math.abs(sum) < 1e-6, 'nets balance');
+  for (const t of r.transfers) { by[t.from].net += t.amount; by[t.to].net -= t.amount; }
+  assert.ok(r.people.every(x => Math.abs(by[x.id].net) < 0.01), 'the transfers settle everyone');
+  assert.ok(r.transfers.length <= 2);
 });
 
 test('normalizeGuide coerces steps', () => {

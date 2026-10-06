@@ -6,10 +6,10 @@ FIRST VIEWPORT: full-bleed trip photo with 今天想拔哪一棵草？ in white;
 FORM: user-pinned reference mockup (canon), seed 149fd3fa. Raises: 种草→想去→已拔草 stage scale (botanical folio), pin size by priority (star atlas), AI-changed rows stay lit (gate board), dense day rows (JP high-density), numbered station order (transit diagram).
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->
-<title>拔草计划</title>
+<title>旅用</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@700;800;900&display=swap">
 <style>
 /* Layout: phone-first stack of white rounded cards on warm paper; tab bar at the thumb on phones, a left rail from 1024px. */
 :root {
@@ -46,6 +46,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   --c-transport-bg: #E4EDF2; --c-transport: #335F75;
   --r-xl: 22px; --r-lg: 18px; --r-md: 14px; --r-sm: 10px; --r-xs: 7px;
   --font: "Figtree", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "Figtree", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --nav-h: 64px;
 }
 @media (prefers-color-scheme: dark) {
@@ -85,6 +86,10 @@ a { color: var(--green-text); text-underline-offset: 3px; text-decoration-thickn
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 h1, h2, h3, h4 { margin: 0; text-wrap: balance; line-height: 1.25; }
+h1, h2, h3, .big-money, .stats b, .ring b, .brand b { font-family: var(--font-display); }
+/* CJK titles break between words where they can, never mid-name unless a line would overflow. */
+.hero h1, .trip-head h1, .pp-title h1, .g-title h1, .day-title h2, .tripcard h3, .trip-card h3, .pcard h3, .gsteps h3 { word-break: keep-all; overflow-wrap: anywhere; }
+.nb { white-space: nowrap; }
 p { margin: 0; }
 .ic { display: block; flex: none; }
 .num { font-variant-numeric: tabular-nums; }
@@ -196,11 +201,13 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .hero { position: relative; height: calc(330px + env(safe-area-inset-top, 0px)); margin-top: calc(-1 * env(safe-area-inset-top, 0px)); overflow: hidden; color: #fff; }
 .hero .photo, .hero svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(10 16 14 / .58) 0%, rgb(10 16 14 / .18) 46%, rgb(10 16 14 / .05) 70%, rgb(10 16 14 / .28) 100%); pointer-events: none; }
-.hero-text { position: absolute; z-index: 1; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 26px); padding-inline: 20px; max-width: 1040px; margin: 0 auto; }
+.hero-text { position: absolute; z-index: 1; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 68px); padding-inline: 20px; max-width: 1040px; margin: 0 auto; }
+.hero-bar { position: absolute; z-index: 2; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 14px); padding-inline: 18px 14px; display: flex; align-items: center; justify-content: space-between; max-width: 1040px; margin: 0 auto; }
 .hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 16px rgb(0 0 0 / .25); }
 .hero p { margin-top: 8px; font-size: 14.5px; line-height: 1.5; max-width: 30em; color: rgb(255 255 255 / .94); text-shadow: 0 1px 10px rgb(0 0 0 / .3); }
-.hero .hero-tools { position: absolute; z-index: 2; right: 14px; top: calc(env(safe-area-inset-top, 0px) + 14px); }
-.hero .credit { position: absolute; z-index: 1; right: 12px; bottom: 74px; font-size: 10.5px; color: rgb(255 255 255 / .9); max-width: 60%; text-align: right; text-shadow: 0 1px 4px rgb(0 0 0 / .7); }
+.credit { font-size: 11px; line-height: 1.4; color: #fff; background: rgb(12 16 14 / .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 3px 9px; border-radius: 999px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.credit a { color: #fff; text-decoration: none; }
+.hero .credit { position: absolute; z-index: 1; right: 12px; bottom: 74px; }
 .home-body { position: relative; z-index: 2; margin-top: -64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .paste-card { padding: 16px; display: grid; gap: 12px; }
 .paste-card h2 { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
@@ -210,7 +217,9 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .go:hover { background: var(--green-hover); }
 .platforms { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
 .platforms span { display: inline-flex; align-items: center; gap: 6px; }
-.pmark { width: 16px; height: 16px; border-radius: 5px; display: inline-grid; place-items: center; color: #fff; font-size: 9px; font-weight: 800; }
+.pmark { width: 16px; height: 16px; border-radius: 5px; display: inline-grid; place-items: center; flex: none; }
+.pmark svg { display: block; }
+.pmark.pm-edge { box-shadow: 0 0 0 1px rgb(255 255 255 / .3); }
 .trip-card { padding: 16px; display: grid; gap: 14px; text-align: left; border: 0; width: 100%; color: inherit; }
 .trip-card .head { display: flex; align-items: center; gap: 12px; }
 .trip-card h3 { font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
@@ -240,7 +249,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .mini .photo { aspect-ratio: 4 / 5; border-radius: var(--r-md); }
 .mini b { font-size: 14px; font-weight: 700; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini small { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
-.mini .heart-dot { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgb(255 255 255 / .92); display: grid; place-items: center; color: #9AA19D; }
+.mini .heart-dot { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgb(255 255 255 / .92); display: grid; place-items: center; color: #5F6762; }
 .mini .heart-dot.on { color: var(--heart); }
 .notice { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-card); font-size: 14px; }
 .notice.warn { background: var(--amber-tint); box-shadow: none; }
@@ -339,8 +348,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .pp-hero .photo { position: absolute; inset: 0; }
 .pp-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgb(10 16 14 / .28), transparent 26%, transparent 70%, rgb(10 16 14 / .42)); }
 .pp-hero .top { position: absolute; z-index: 2; left: 14px; right: 14px; top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; justify-content: space-between; }
-.pp-hero .credit { position: absolute; z-index: 2; left: 14px; bottom: 34px; font-size: 10.5px; color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / .6); max-width: 80%; }
-.pp-hero .credit a { color: #fff; }
+.pp-hero .credit { position: absolute; z-index: 2; left: 14px; bottom: 34px; }
 .pp-body { position: relative; z-index: 3; margin-top: -22px; background: var(--bg); border-radius: var(--r-xl) var(--r-xl) 0 0; padding: 22px 16px 24px; display: grid; gap: 16px; max-width: 760px; margin-inline: auto; }
 @media (min-width: 1024px) { .pp-hero { height: 380px; max-width: 1040px; margin: 24px auto 0; border-radius: var(--r-xl); overflow: hidden; } .pp-body { margin-top: 0; background: none; } }
 .pp-title h1 { font-size: 26px; font-weight: 800; letter-spacing: -.01em; }
@@ -406,7 +414,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .tl-leg { display: grid; grid-template-columns: 44px 18px minmax(0, 1fr); gap: 0 10px; position: relative; }
 .tl-leg .rail { position: relative; }
 .tl-leg .rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--green) 35%, var(--line)) 0 4px, transparent 4px 7px); }
-.leg { display: flex; align-items: center; gap: 8px; padding: 3px 0 3px 4px; font-size: 12.5px; color: var(--muted); min-width: 0; }
+.leg { display: grid; grid-template-columns: 16px minmax(0, 1fr) 56px; align-items: center; gap: 8px; padding: 0 0 0 4px; font-size: 12.5px; color: var(--muted); min-width: 0; }
 .leg .ic { color: var(--ink-2); }
 .leg .txt { min-width: 0; overflow-wrap: anywhere; }
 .leg b { color: var(--ink-2); font-weight: 700; }
@@ -446,7 +454,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .bubble p + p, .bubble ul, .bubble p + ul, .bubble ul + p { margin-top: 6px; }
 .bubble ul { margin-block: 4px 0; padding-left: 18px; }
 .bubble time { display: block; font-size: 11px; opacity: .75; margin-top: 4px; text-align: right; }
-.action-card { display: grid; gap: 10px; margin-top: 10px; padding: 12px; border-radius: var(--r-md); background: var(--bg); }
+.action-card { display: grid; gap: 10px; padding: 14px; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-card); }
 .action-card .ttl { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14.5px; }
 .action-card ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); }
 .composer { position: fixed; z-index: 35; left: 0; right: 0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); padding: 10px 16px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -480,11 +488,9 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .check-row { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: var(--r-sm); cursor: pointer; font-size: 14.5px; }
 .check-row:hover { background: var(--fill); }
 .check-row input { width: 20px; height: 20px; accent-color: var(--green); flex: none; }
-.review-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 12px; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); }
+.review-item { display: grid; grid-template-columns: 22px 72px minmax(0, 1fr); gap: 10px; padding: 12px; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); align-items: start; }
 .review-item.off { opacity: .55; }
 .review-item input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--green); }
-.review-item .edit { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-.review-item .edit .input { min-height: 38px; padding: 6px 10px; font-size: 14px; }
 .evidence { font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 8px; margin-top: 6px; }
 .progress { display: grid; gap: 10px; padding: 16px; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); }
 .progress .track { height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; position: relative; }
@@ -632,9 +638,111 @@ span.avatar { display: inline-block; }
 .gallery { display: flex; gap: 8px; overflow-x: auto; }
 .gallery img { height: 150px; width: auto; border-radius: var(--r-sm); }
 .inbox-item b { font-size: 15px; }
+
+/* ---------- round 2: brand, stages, companions, desktop, review ---------- */
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; letter-spacing: .04em; color: var(--ink); }
+.brand.light { color: #fff; text-shadow: 0 1px 8px rgb(0 0 0 / .35); }
+.brand-mark { display: inline-grid; place-items: center; border-radius: 30%; background: #1F5C45; box-shadow: 0 2px 8px rgb(0 0 0 / .18); flex: none; }
+.rail-brand b { font-family: var(--font-display); font-size: 14px; letter-spacing: .08em; }
+.photo.tint-food { background: var(--c-food-bg); } .photo.tint-cafe { background: var(--c-cafe-bg); } .photo.tint-sight { background: var(--c-sight-bg); }
+.photo.tint-shopping { background: var(--c-shopping-bg); } .photo.tint-stay { background: var(--c-stay-bg); } .photo.tint-experience { background: var(--c-experience-bg); }
+.photo.tint-nightlife { background: var(--c-nightlife-bg); } .photo.tint-transport { background: var(--c-transport-bg); } .photo.tint-other { background: var(--c-other-bg); }
+.inline-ic { display: inline-flex; vertical-align: -2px; margin: 0 2px; }
+/* home */
+.home-main, .home-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; min-width: 0; }
+.home-side > .section:first-child { margin-top: 12px; }
+.how { padding: 16px; display: grid; gap: 12px; }
+.how h3 { font-size: 17px; font-weight: 800; }
+.how-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.how-steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: center; }
+.how-steps .n { width: 30px; height: 30px; border-radius: 50%; background: var(--green-tint); color: var(--green-text); display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+.how-steps b { display: block; font-size: 15px; }
+.how-steps small { display: block; font-size: 13px; color: var(--muted); }
+@media (min-width: 1024px) {
+  .home-body { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .home-side { margin-top: 84px; }
+  .home-side > .section:first-child { margin-top: 0; }
+  .home-side .hscroll { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
+}
+/* stage of a place: 种草 → 想去 → 已拔草 */
+.stage { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 8px 0 7px; border-radius: var(--r-xs); background: var(--fill); color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+.stage i { width: 6px; height: 6px; border-radius: 50%; background: var(--fill-2); }
+.stage b { margin-left: 3px; font-weight: 700; }
+.stage.s1 i:first-child { background: var(--ink-2); }
+.stage.s2 { background: var(--c-shopping-bg); color: var(--c-shopping); }
+.stage.s2 i:nth-child(-n+2) { background: var(--c-shopping); }
+.stage.s3 { background: var(--green-tint); color: var(--green-text); }
+.stage.s3 i { background: var(--green-text); }
+.stage-ctl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); padding: 8px 6px; }
+.stage-ctl button { position: relative; border: 0; background: none; display: grid; justify-items: center; gap: 5px; padding: 4px; border-radius: var(--r-sm); font-size: 13px; font-weight: 700; color: var(--muted); }
+.stage-ctl button i { position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--muted); }
+.stage-ctl button + button::before { content: ""; position: absolute; top: 21px; right: calc(50% + 17px); width: calc(100% - 34px); height: 2px; background: var(--fill-2); }
+.stage-ctl button.reached i { background: var(--green); color: var(--green-ink); }
+.stage-ctl button.reached + button.reached::before { background: var(--green); }
+.stage-ctl button[aria-pressed="true"] span { color: var(--green-text); }
+.stage-ctl button[aria-pressed="true"] i { box-shadow: 0 0 0 4px var(--green-tint); }
+.actions2 { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+.quote-box { margin: 0; background: var(--surface); border-radius: var(--r-md); box-shadow: var(--shadow-card); padding: 14px 16px; display: grid; gap: 6px; }
+.quote-box figcaption { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.quote-box blockquote { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--ink); }
+.quote-box blockquote::before { content: "“"; } .quote-box blockquote::after { content: "”"; }
+.pp-hero .gallery-strip { position: absolute; inset: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.pp-hero .gallery-strip::-webkit-scrollbar { display: none; }
+.pp-hero .gallery-strip .photo { position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; }
+.pp-hero .counter { position: absolute; z-index: 2; right: 14px; bottom: 34px; font-size: 12px; font-weight: 700; color: #fff; background: rgb(12 16 14 / .55); padding: 2px 9px; border-radius: 999px; }
+/* timeline extras */
+.route-link { min-height: 44px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--green-text); text-decoration: none; border-radius: var(--r-sm); }
+.route-link:hover { background: var(--green-tint); }
+.gsteps .facts2 .route-link { min-height: 36px; padding: 0 12px; background: var(--green-tint); }
+.tl-row .ph-wrap { position: relative; width: 58px; height: 58px; }
+.tl-row .who { position: absolute; right: -6px; bottom: -6px; }
+.avatars.sm .avatar { width: 18px; height: 18px; border-width: 1.5px; }
+.avatars.sm .avatar + .avatar { margin-left: -5px; }
+.pcard-foot .src .avatars { margin-right: 2px; }
+.pstrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pstrip .photo { aspect-ratio: 4 / 3; border-radius: var(--r-sm); }
+.ov-photos { display: grid; grid-auto-flow: column; grid-auto-columns: 96px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.ov-photos::-webkit-scrollbar { display: none; }
+.ov-photos .photo { aspect-ratio: 1; border-radius: var(--r-md); }
+/* costs */
+.costs-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 16px; align-items: start; }
+@media (min-width: 1024px) { .costs-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+.settle-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+.settle .card-title + .settle-row { border-top: 0; }
+.settle-row b { display: block; font-size: 14.5px; }
+.settle-row small { font-size: 12.5px; color: var(--muted); }
+.net { font-weight: 800; font-size: 14px; }
+.net.pos { color: var(--green-text); } .net.neg { color: var(--danger); }
+.transfer-line { display: flex; align-items: center; gap: 8px; font-size: 14px; background: var(--fill); border-radius: var(--r-sm); padding: 9px 12px; }
+.chip.person { padding-left: 6px; }
+.chip.person .avatar { width: 22px; height: 22px; border: 0; }
+/* assistant */
+.ai-col { display: grid; gap: 8px; min-width: 0; max-width: min(86%, 560px); }
+.msg.ai .bubble { max-width: 100%; justify-self: start; }
+.mentions-wrap { display: grid; gap: 8px; }
+.ai-photo { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0; border-radius: var(--r-lg); overflow: hidden; background: var(--fill); box-shadow: var(--shadow-card); text-align: left; color: #fff; }
+.ai-photo .photo { position: absolute; inset: 0; }
+.ai-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgb(10 16 14 / .7)); }
+.ai-photo span { position: absolute; z-index: 1; left: 14px; right: 14px; bottom: 12px; }
+.ai-photo b { display: block; font-size: 17px; font-weight: 800; }
+.ai-photo small { font-size: 12.5px; opacity: .92; }
+.mentions { margin-top: 0; }
+/* collect review */
+.rv-photo { position: relative; width: 72px; height: 90px; border-radius: var(--r-sm); overflow: hidden; border: 0; padding: 0; background: var(--fill); }
+.rv-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rv-photo .art { width: 100%; height: 100%; }
+.rv-photo .cycle { position: absolute; left: 6px; bottom: 6px; font-size: 11px; font-weight: 700; color: #fff; background: rgb(0 0 0 / .55); padding: 1px 6px; border-radius: 6px; }
+.rv-photo[disabled] { cursor: default; opacity: 1; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.pill .ic:last-child { color: var(--muted); }
+.pill-input { width: 140px; min-height: 30px; padding: 3px 12px; border-radius: 999px; font-size: 14px; }
+.pill-select { position: relative; padding: 0; height: 28px; border-radius: 999px; }
+.pill-select select { appearance: none; -webkit-appearance: none; height: 28px; border: 0; padding: 0 24px 0 11px; border-radius: 999px; background: transparent; color: inherit; font-size: 13px; font-weight: 700; }
+.pill-select .ic { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 </style>
 
-<div id="app"><div class="boot"><span class="mark"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8.5" stroke="#9BE38C" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M12 12.5c0-4.4 2.9-7.2 7.8-7.2 0 4.6-3.1 7.2-7.8 7.2z" fill="#7DD86F"/><path d="M12 15c0-3.6-2.4-5.8-6.3-5.8 0 3.8 2.5 5.8 6.3 5.8z" fill="#A8EC98"/></svg></span><b>拔草计划</b><small>正在打开你们的种草清单…</small></div></div>
+<div id="app"><div class="boot"><span class="brand-mark" style="width:52px;height:52px"><svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5.5h8.5a3.5 3.5 0 0 1 0 7h-5a3.5 3.5 0 0 0 0 7H18"/><circle cx="6" cy="5.5" r="2.1" fill="#9BE38C" stroke="none"/><circle cx="18" cy="19.5" r="2.1" fill="#fff" stroke="none"/></svg></span><b>旅用</b><small>正在打开你们的旅行灵感…</small></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.26.4/preact.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.26.4/hooks.umd.js"></script>
@@ -904,6 +1012,7 @@ function makePlaceDoc(p, extra = {}) {
     status: extra.status || 'saved', note: '',
     source: { platform: 'manual', url: '', title: '', author: '', evidence: p.evidence || '', ...(extra.source || {}) },
     coverAssetId: extra.coverAssetId || null, coverCredit: extra.coverCredit || null,
+    photoIds: extra.photoIds || (extra.coverAssetId ? [extra.coverAssetId] : []),
     savedVia: extra.savedVia || 'app', createdBy: extra.createdBy || null, example: false,
     createdAt: now, updatedAt: now,
   };
@@ -1025,7 +1134,7 @@ function pickBasemap(maps, points, city) {
   }
   return best;
 }
-/** One label per neighbourhood, at the centre of its saved places ("新宿", "原宿" …). */
+/** One label per neighbourhood, at the centre of its saved places ("明洞", "弘大" …). */
 function areaLabels(places) {
   const by = {};
   for (const p of places) {
@@ -1076,10 +1185,15 @@ function dayCities(stays) {
   for (const s of stays) for (let i = 0; i < (s.days || 0); i++) out.push(s.city);
   return out;
 }
-/** Where each day starts: the stay's own base, or the previous one for a day trip without a hotel. */
+/**
+ * Where each day starts: the city's own base; on the day you arrive in a new city, the hotel you leave that morning;
+ * for a day trip without a hotel, the previous city's base.
+ */
 function baseForDay(trip, dayIndex) {
   const plan = trip.plan || {};
-  const city = (plan.days && plan.days[dayIndex] && plan.days[dayIndex].city) || dayCities(tripStays(trip))[dayIndex];
+  const cityOf = i => (plan.days && plan.days[i] && plan.days[i].city) || dayCities(tripStays(trip))[i];
+  const city = cityOf(dayIndex);
+  if (dayIndex > 0 && cityOf(dayIndex - 1) && !sameCity(cityOf(dayIndex - 1), city)) return baseForDay(trip, dayIndex - 1);
   const bases = Array.isArray(plan.bases) ? plan.bases : (plan.base ? [{ ...plan.base, city: tripCities(trip)[0] }] : []);
   const own = bases.find(b => b && b.name && sameCity(b.city, city));
   if (own) return own;
@@ -1134,6 +1248,49 @@ function expenseTotals(expenses, fx, home) {
     byCat[EXPENSE_LABEL[e.category] ? e.category : 'other'] += v;
   }
   return { total, byCat, missing };
+}
+/** People taking part in a trip (ids only): whoever made it, added its places, or paid or shared its costs. */
+function tripMembers(trip, expenses, places, me) {
+  const ids = new Set();
+  const add = id => { if (typeof id === 'string' && id) ids.add(id); };
+  add(trip.createdBy);
+  (trip.members || []).forEach(add);
+  for (const e of expenses || []) if (e.tripId === trip.id) { add(e.createdBy); add(e.paidBy); (e.split || []).forEach(add); }
+  const inTrip = new Set(trip.placeIds || []);
+  for (const p of places || []) if (inTrip.has(p.id)) add(p.createdBy);
+  add(me);
+  return [...ids];
+}
+/**
+ * Split costs: each expense is shared equally by its `split` people (default: every member) and paid by `paidBy`
+ * (default: whoever recorded it). Returns each person's paid / share / net in the home currency and the fewest
+ * transfers that settle everyone. Expenses without a payer or a rate are left out (counted in `skipped`).
+ */
+function settleUp(expenses, members, fx, home) {
+  const paid = {}, share = {};
+  for (const id of members) { paid[id] = 0; share[id] = 0; }
+  let skipped = 0;
+  for (const e of expenses) {
+    const v = toHome(num(e.amount), e.currency || home, fx, home);
+    const payer = e.paidBy || e.createdBy;
+    const among = (Array.isArray(e.split) && e.split.length ? e.split : members).filter(Boolean);
+    if (v == null || !payer || !among.length) { skipped++; continue; }
+    paid[payer] = (paid[payer] || 0) + v;
+    for (const id of among) share[id] = (share[id] || 0) + v / among.length;
+  }
+  const people = [...new Set([...members, ...Object.keys(paid), ...Object.keys(share)])]
+    .map(id => ({ id, paid: paid[id] || 0, share: share[id] || 0, net: (paid[id] || 0) - (share[id] || 0) }));
+  const owes = people.filter(p => p.net < -0.005).map(p => ({ id: p.id, left: -p.net })).sort((a, b) => b.left - a.left);
+  const gets = people.filter(p => p.net > 0.005).map(p => ({ id: p.id, left: p.net })).sort((a, b) => b.left - a.left);
+  const transfers = [];
+  for (let i = 0, j = 0; i < owes.length && j < gets.length;) {
+    const x = Math.min(owes[i].left, gets[j].left);
+    transfers.push({ from: owes[i].id, to: gets[j].id, amount: x });
+    owes[i].left -= x; gets[j].left -= x;
+    if (owes[i].left < 0.005) i++;
+    if (gets[j].left < 0.005) j++;
+  }
+  return { people, transfers, skipped };
 }
 /** Which stops are new or moved after an AI revision ({dayIndex: [stopIndex]}), so they stay lit until seen. */
 function diffPlan(oldPlan, newPlan) {
@@ -1203,22 +1360,22 @@ function buildExtractPrompt({ text, url, platform, cityHint, imageCount, lang, k
   const L = langName(lang);
   const cities = (knownCities || []).slice(0, 30);
   return [
-    '你是「拔草计划」的旅行收藏助手。用户从社交媒体（小红书、Instagram、抖音、TikTok 等）收藏了一条内容，可能附带截图或视频截帧。',
+    '你是「旅用」的旅行收藏助手。用户从社交媒体（小红书、Instagram、抖音、TikTok 等）收藏了一条内容，可能附带截图或视频截帧。',
     '任务：找出内容里提到的每一个具体、可以前往的地点（餐厅、小吃、咖啡甜品、酒吧、景点、商店、市场、酒店、体验活动等）。',
     '',
     '规则：',
-    '1. 只要有名字的具体地点。"日本""便利店""商场"这类泛称不要。连锁店只记帖子提到的那家分店；帖子没说哪家分店时 chain 写 true、lat/lng 写 null（排行程时再挑顺路的分店）。',
+    '1. 只要有名字的具体地点。国家名、城市名、"便利店""商场"这类泛称不要。连锁店只记帖子提到的那家分店；帖子没说哪家分店时 chain 写 true、lat/lng 写 null（排行程时再挑顺路的分店）。',
     '2. name 用帖子里的叫法；nameLocal 写当地语言的正式名称（日本写日文，韩国写韩文，泰国写泰文或英文，中国大陆/港澳台写中文），方便在地图 App 搜索；不确定就写空字符串。',
     `3. city 用${L}的常用写法${cities.length ? `；如果和这些已有城市是同一个，必须写成完全一样：${cities.join('、')}` : ''}。country 写国家名。`,
     '4. lat/lng 是你对位置的估计（WGS84，4 位小数）。确定具体位置时 coordConfidence 写 "exact"；只知道大概街区写 "area"；完全不知道时 lat 和 lng 写 null。',
     '5. mustTry（必吃/必买/必做）和 tips（排队、价格、营业时间、交通、预约、避坑）只写帖子或图片里提到的内容，简短概括，不要编造。',
     '6. category 只能是：food（正餐小吃）、cafe（咖啡甜品）、sight（景点）、shopping（购物）、stay（酒店住宿）、experience（体验活动）、nightlife（酒吧夜生活）、other。',
-    '7. price：只有帖子写了价格才填，例如 {"amount":1000,"max":1500,"currency":"JPY","per":"人均"}；没写就 null。',
+    '7. price：只有帖子写了价格才填，例如 {"amount":15000,"max":20000,"currency":"KRW","per":"人均"}；没写就 null。',
     '8. evidence：摘一句帖子里提到这个地点的原话（截图里的也算），20 字以内。',
     '',
     '只回复一个 JSON 对象：',
     '{"post":{"title":"帖子标题","summary":"一句话说明这条内容讲什么","city":"主要城市","country":"国家"},',
-    ' "places":[{"name":"","nameLocal":"","city":"","country":"","area":"区域/商圈","category":"food","mustTry":[""],"tips":"","priceLevel":2,"price":null,"durationMin":60,"bestTime":"","hours":"","chain":false,"lat":35.6586,"lng":139.7454,"coordConfidence":"area","evidence":""}]}',
+    ' "places":[{"name":"","nameLocal":"","city":"","country":"","area":"区域/商圈","category":"food","mustTry":[""],"tips":"","priceLevel":2,"price":null,"durationMin":60,"bestTime":"","hours":"","chain":false,"lat":37.5512,"lng":126.9882,"coordConfidence":"area","evidence":""}]}',
     `priceLevel 为 1-4（1 便宜，4 很贵，不知道写 null）；durationMin 为建议停留分钟数。找不到地点时 places 返回 []，并在 summary 里说明原因（例如"只有标题，没有正文和图片"）。所有文字用${L}。`,
     '',
     '--- 用户收藏的内容 ---',
@@ -1246,10 +1403,10 @@ function compactPlace(p) {
   return JSON.stringify(o);
 }
 const PLAN_SCHEMA = [
-  '{"title":"行程标题","summary":"两句话概括路线","currency":"JPY","bases":[{"city":"东京","name":"住宿","lat":0,"lng":0}],"tips":[""],',
-  ' "days":[{"day":1,"city":"东京","theme":"当天主题","area":"主要区域","note":"当天注意事项","stops":[',
-  '   {"time":"09:30","kind":"visit","placeId":"p_xxx","name":"","nameLocal":"","lat":0,"lng":0,"category":"sight","stayMin":60,"what":"做什么/吃什么","tip":"","spend":1500,"suggested":false,',
-  '    "travel":{"mode":"metro","minutes":15,"detail":"","fare":210}}]}],',
+  '{"title":"行程标题","summary":"两句话概括路线","currency":"KRW","bases":[{"city":"首尔","name":"住宿","lat":0,"lng":0}],"tips":[""],',
+  ' "days":[{"day":1,"city":"首尔","theme":"当天主题","area":"主要区域","note":"当天注意事项","stops":[',
+  '   {"time":"09:30","kind":"visit","placeId":"p_xxx","name":"","nameLocal":"","lat":0,"lng":0,"category":"sight","stayMin":60,"what":"做什么/吃什么","tip":"","spend":15000,"suggested":false,',
+  '    "travel":{"mode":"metro","minutes":15,"detail":"","fare":1550}}]}],',
   ' "unplaced":[{"placeId":"","reason":""}]}',
 ].join('\n');
 function stayLine(stays) {
@@ -1261,16 +1418,16 @@ function planRules(trip, allowSuggest, multi) {
     '1. 尽量把所有收藏地点排进去；排不进去的放进 unplaced 并写原因（太远、时间不够、定休日等）。',
     '2. 同一天的地点要顺路、不走回头路；考虑营业时间和最佳时段（早市上午去，夜景晚上去，热门店避开高峰）。知道日期时注意周几休息。',
     `3. 正餐放在饭点（午餐 11:30-13:30，晚餐 18:00-20:00），咖啡甜品放下午。节奏${PACES[trip.prefs.pace] || '适中'}：${PACE_RULE[trip.prefs.pace] || PACE_RULE.normal}（含吃饭）。`,
-    '4. 每个 stop 的 travel 写"从上一站怎么过来"：mode 只能是 walk/metro/train/tram/bus/taxi/drive/ferry/bike/flight；minutes 是预计分钟；detail 写具体走法（例如"银座线 浅草→上野广小路 3 站"或"步行约 800 米"）；拿不准具体线路就写最可能的走法，并在 detail 末尾加"（出发前用地图确认）"。每天第一站的 travel 写从当天住处出发怎么走；没有住处时写 null。',
+    '4. 每个 stop 的 travel 写"从上一站怎么过来"：mode 只能是 walk/metro/train/tram/bus/taxi/drive/ferry/bike/flight；minutes 是预计分钟；detail 写具体走法（例如"地铁 2 号线 弘大入口→市厅 5 站"或"步行约 800 米"）；拿不准具体线路就写最可能的走法，并在 detail 末尾加"（出发前用地图确认）"。每天第一站的 travel 写从当天住处出发怎么走；没有住处时写 null。',
     allowSuggest
       ? `5. 可以补充最多 ${Math.max(2, trip.days * 2)} 个顺路的推荐（比如附近吃午饭的地方），标记 "suggested": true，placeId 写 null。`
       : '5. 不要加入收藏以外的地点；吃饭和交通建议写进 tip。',
     '6. tips 写整趟旅行的实用建议 3-6 条：交通卡或通票是否划算、需要预约的、天气穿着、现金支付等。',
     '7. bases：每个有住宿的城市一条，估计坐标；没给住宿的城市不写。',
-    '8. 标了 chain 的连锁店：挑当天路线附近的一家分店，name 写上分店名（例如"一兰拉面 涩谷店"），lat/lng 写那家分店的坐标。',
+    '8. 标了 chain 的连锁店：挑当天路线附近的一家分店，name 写上分店名（例如"星巴克 明洞店"），lat/lng 写那家分店的坐标。',
     '9. 费用（每人，当地货币，数字）：travel.fare 是车费（步行写 0，不知道写 null）；spend 是门票或餐费的大概花费（免费写 0，不知道写 null）。currency 写当地货币代码（JPY、KRW、CNY、THB、TWD、HKD、SGD、MYR、USD、EUR…）。',
     multi
-      ? '10. 多城市：days 按城市顺序排，每天写 city。换城市那天第一个 stop 写 kind "transfer"、placeId null、name 写"东京 → 京都"，travel 写城市间交通（车次类型、时长、票价 fare），what 写寄存行李或入住建议；其余 stop 的 kind 写 "visit"。'
+      ? '10. 多城市：days 按城市顺序排，每天写 city。换城市那天第一个 stop 写 kind "transfer"、placeId null、name 写"首尔 → 釜山"、nameLocal 写到达的车站或机场、lat/lng 写它的坐标，travel 写城市间交通（车次类型、时长、票价 fare），what 写寄存行李或入住建议；其余 stop 的 kind 写 "visit"。'
       : '10. 所有 stop 的 kind 写 "visit"。',
   ];
 }
@@ -1396,12 +1553,12 @@ function assistantContext({ places, trips, today, focus }) {
   return lines.join('\n').slice(0, 24000);
 }
 const ASSISTANT_RULES = [
-  '你是「拔草计划」的 AI 旅行助手，帮用户和旅伴用他们收藏的地点规划旅行。',
+  '你是「旅用」的 AI 旅行助手，帮用户和旅伴用他们收藏的地点规划旅行（任何国家和城市）。',
   '回答用简体中文，口语化、简洁（一般 3-8 行），能用列表就用列表；提到收藏里的地点时用原名。营业时间、价格拿不准就提醒出发前确认。',
   '你不能直接修改数据。需要用户确认才能做的操作，在回复最后附上动作块（每个回复最多 3 个，只在真的需要时给）：',
-  '<action>{"type":"plan_trip","label":"东京 3 天行程建议","cities":["东京"],"days":3,"startDate":"","bases":{"东京":"新宿"},"pace":"normal","transport":"transit","notes":"以美食和购物为主","outline":[{"day":1,"city":"东京","area":"原宿·涩谷·表参道","theme":"时尚购物 + 网红打卡"}]}</action>',
+  '<action>{"type":"plan_trip","label":"首尔 3 天行程建议","cities":["首尔"],"days":3,"startDate":"","bases":{"首尔":"明洞"},"pace":"normal","transport":"transit","notes":"以美食和购物为主","outline":[{"day":1,"city":"首尔","area":"景福宫·北村","theme":"宫殿 + 韩屋散步"}]}</action>',
   '<action>{"type":"save_places","label":"把这 3 家店加入种草","places":[{"name":"","nameLocal":"","city":"","country":"","area":"","category":"food","tips":"","lat":null,"lng":null}]}</action>',
-  '<action>{"type":"add_to_trip","label":"加入东京行程","tripId":"t_xxx","placeIds":["p_xxx"]}</action>',
+  '<action>{"type":"add_to_trip","label":"加入首尔行程","tripId":"t_xxx","placeIds":["p_xxx"]}</action>',
   '<action>{"type":"open_trip","label":"打开行程","tripId":"t_xxx"}</action>',
   'plan_trip 的 outline 是每天的大致区域和主题（只用收藏里的地点来想），用户确认后 App 会按收藏地点生成完整行程。规划行程前如果缺城市或天数，先问清楚，不要猜。动作块里的 id 必须来自下面的数据。',
 ].join('\n');
@@ -1543,7 +1700,7 @@ function tripToMarkdown(trip, placesById) {
     out.push('');
   }
   if (p.unplaced && p.unplaced.length) out.push('## 待安排', ...p.unplaced.map(u => `- ${(placesById[u.placeId] || {}).name || u.placeId}：${u.reason}`), '');
-  out.push('— 用「拔草计划」生成');
+  out.push('— 用「旅用」生成');
   return out.join('\n');
 }
 function tripToText(trip) {
@@ -1604,6 +1761,7 @@ const ICONS = {
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   chevronRight: '<path d="m9 5 7 7-7 7"/>',
+  chevronDown: '<path d="m6 9 6 6 6-6"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
@@ -1693,34 +1851,52 @@ function CatTag({ cat }) {
 function Photo({ id, cat = 'other', alt = '', className = '', iconSize = 28 }) {
   const [ok, setOk] = useState(true);
   useEffect(() => setOk(true), [id]);
-  return html`<div class=${'photo ' + className}>${id && ok
+  return html`<div class=${'photo tint-' + (cat || 'other') + (className ? ' ' + className : '')}>${id && ok
     ? html`<img src=${'/_blob/' + id} alt=${alt} loading="lazy" decoding="async" onError=${() => setOk(false)} />`
     : html`<div class=${'art ' + cat}><${Icon} name=${cat} size=${iconSize} stroke=${1.6} /></div>`}</div>`;
 }
 /** Dusk landscape used when a trip has no photo yet. */
 function Scene() {
   return html`<svg class="scene" viewBox="0 0 390 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E5C78"/><stop offset=".55" stop-color="#E9A47B"/><stop offset="1" stop-color="#F6D3A6"/></linearGradient>
-      <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#E9EEF2"/></linearGradient></defs>
+    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27546B"/><stop offset=".58" stop-color="#E7A27A"/><stop offset="1" stop-color="#F5D2A5"/></linearGradient></defs>
     <rect width="390" height="330" fill="url(#sky)"/>
-    <circle cx="300" cy="150" r="30" fill="#FFE2B0" opacity=".9"/>
-    <path d="M40 250 L190 112 L340 250 Z" fill="#5E7E92"/>
-    <path d="M190 112 L222 142 L210 140 L200 150 L188 138 L176 148 L168 140 L158 142 Z" fill="url(#snow)"/>
-    <path d="M0 262 C60 230 110 246 170 236 C230 226 300 248 390 228 L390 330 L0 330 Z" fill="#3E5E52"/>
-    <path d="M0 290 C70 270 140 282 210 272 C280 262 330 278 390 268 L390 330 L0 330 Z" fill="#2B463D"/>
-    <g fill="#1E332C"><rect x="62" y="214" width="4" height="70"/><path d="M48 222h32l-6 7H54z"/><path d="M50 236h28l-5 6H55z"/><path d="M52 249h24l-5 6H57z"/><path d="M54 261h20l-4 6H58z"/><path d="M57 210h14l-7-10z"/></g>
+    <circle cx="292" cy="170" r="28" fill="#FFE3B3" opacity=".92"/>
+    <path d="M0 214 L58 178 L104 198 L160 152 L214 190 L262 166 L318 196 L390 170 L390 330 L0 330Z" fill="#6A8798"/>
+    <path d="M0 244 C70 226 128 238 196 228 C260 218 318 236 390 224 L390 330 L0 330Z" fill="#86AAA3"/>
+    <path d="M0 262 C80 246 150 262 222 252 C290 244 340 258 390 250 L390 330 L0 330Z" fill="#3E5E52"/>
+    <path d="M150 330 C168 300 214 286 236 266 C252 252 262 246 282 240" stroke="#E9DCC6" stroke-width="15" fill="none" stroke-linecap="round"/>
+    <path d="M150 330 C168 300 214 286 236 266 C252 252 262 246 282 240" stroke="#3E5E52" stroke-width="2" stroke-dasharray="7 8" fill="none"/>
+    <path d="M44 104 C72 96 94 90 118 82" stroke="#fff" stroke-width="1.6" stroke-dasharray="3 5" opacity=".7" fill="none"/>
+    <path d="M122 80 l22 -3 l8 -5 l3 1 l-5 6 l6 5 l-3 1 l-9 -3 l-7 4 z" fill="#fff" opacity=".9"/>
   </svg>`;
 }
 function Sprout({ size = 26 }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8.5" stroke="#9BE38C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
     <path d="M12 12.5c0-4.4 2.9-7.2 7.8-7.2 0 4.6-3.1 7.2-7.8 7.2z" fill="#7DD86F"/><path d="M12 15c0-3.6-2.4-5.8-6.3-5.8 0 3.8 2.5 5.8 6.3 5.8z" fill="#A8EC98"/></svg>`;
 }
+const PLATFORM_GLYPH = {
+  xiaohongshu: ['#FF2442', '<path d="M2.8 4.6c1.7-.7 3.5-.5 4.8.5v7.3c-1.3-.9-3.1-1-4.8-.4zM13.2 4.6c-1.7-.7-3.5-.5-4.8.5v7.3c1.3-.9 3.1-1 4.8-.4z" fill="#fff"/>'],
+  instagram: ['linear-gradient(135deg,#F9CE34,#EE2A7B 55%,#6228D7)', '<rect x="3.4" y="3.4" width="9.2" height="9.2" rx="2.7" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="8" cy="8" r="2.1" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="10.9" cy="5.1" r=".75" fill="#fff"/>'],
+  tiktok: ['#111', '<path d="M8.6 3.4v6.6a2.1 2.1 0 1 1-1.7-2.1M8.6 3.4c.3 1.5 1.4 2.5 3 2.6" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>'],
+  douyin: ['#111', '<path d="M8.6 3.4v6.6a2.1 2.1 0 1 1-1.7-2.1M8.6 3.4c.3 1.5 1.4 2.5 3 2.6" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>'],
+  youtube: ['#FF0000', '<path d="M6.3 5v6l5-3z" fill="#fff"/>'],
+  bilibili: ['#00A1D6', '<rect x="3" y="5.2" width="10" height="7.4" rx="1.8" fill="none" stroke="#fff" stroke-width="1.4"/><path d="M6 3.4l1.5 1.6M10 3.4L8.5 5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'],
+};
+/** Platform marks drawn as small glyphs in the platform's colour (generic shapes, not logos). */
 function PlatformMark({ p }) {
-  const m = { xiaohongshu: ['#FF2442', '红'], instagram: ['linear-gradient(135deg,#F9CE34,#EE2A7B 55%,#6228D7)', 'IG'], tiktok: ['#111', 'T'], youtube: ['#FF0000', ''] }[p];
+  const m = PLATFORM_GLYPH[p];
   if (!m) return null;
-  return html`<i class="pmark" style=${{ background: m[0] }} aria-hidden="true">${m[1] || html`<svg width="8" height="8" viewBox="0 0 8 8"><path d="M1.6 .8v6.4L7 4z" fill="#fff" /></svg>`}</i>`;
+  return html`<i class=${'pmark' + (p === 'tiktok' || p === 'douyin' ? ' pm-edge' : '')} style=${{ background: m[0] }} aria-hidden="true"><svg width="12" height="12" viewBox="0 0 16 16" dangerouslySetInnerHTML=${{ __html: m[1] }}></svg></i>`;
 }
-
+/** 旅用's mark: a route between two stops on forest green. */
+function BrandMark({ size = 30 }) {
+  return html`<span class="brand-mark" style=${{ width: size + 'px', height: size + 'px' }} aria-hidden="true">
+    <svg width=${Math.round(size * 0.64)} height=${Math.round(size * 0.64)} viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 5.5h8.5a3.5 3.5 0 0 1 0 7h-5a3.5 3.5 0 0 0 0 7H18" /><circle cx="6" cy="5.5" r="2.1" fill="#9BE38C" stroke="none" /><circle cx="18" cy="19.5" r="2.1" fill="#fff" stroke="none" /></svg></span>`;
+}
+function Brand({ light, size = 28 }) {
+  return html`<span class=${'brand' + (light ? ' light' : '')}><${BrandMark} size=${size} /><b>旅用</b></span>`;
+}
 /* --- per-viewer preferences (browser storage, best effort) --- */
 const PREF_KEY = 'bacao.prefs.v2';
 const DEFAULT_PREFS = { mapPref: 'auto', aiLang: 'zh-Hans', deepPlan: false, tab: 'home', city: 'all', cat: 'all', status: 'all', home: 'MYR' };
@@ -1977,11 +2153,11 @@ function Ring({ pct, size = 116 }) {
     <div class="lbl"><b>${pct}%</b><small>已安排</small></div>
   </div>`;
 }
-function Avatars({ ids, ctx, max = 4 }) {
+function Avatars({ ids, ctx, max = 4, small }) {
   const shown = [...new Set((ids || []).filter(Boolean))].slice(0, max);
   const people = useProfiles(shown, ctx);
   if (!shown.length) return null;
-  return html`<span class="avatars">${shown.map(id => {
+  return html`<span class=${'avatars' + (small ? ' sm' : '')}>${shown.map(id => {
     const p = people[id];
     return p && p.avatarUrl
       ? html`<img class="avatar" key=${id} src=${p.avatarUrl} alt=${p.name || '旅伴'} title=${p.name || '旅伴'} />`
@@ -2019,25 +2195,28 @@ function heroFor(trip, places, byId) {
 function HomeView({ ctx }) {
   const { places, trips } = ctx;
   const [paste, setPaste] = useState('');
+  const pasteRef = useRef(null);
   const trip = latestTrip(trips);
-  const hero = heroFor(trip, places, ctx.placesById);
+  const hero = heroFor(trip, places, ctx.placesById) || (ctx.appMeta && ctx.appMeta.heroAssetId ? { id: ctx.appMeta.heroAssetId, credit: ctx.appMeta.heroCredit } : null);
   const scope = trip ? tripPlaces(trip, places) : places;
   const prog = progressOf(scope, trip ? [trip] : trips);
-  const allProg = progressOf(places, trips);
-  const recent = places.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 10);
+  const recent = places.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 9);
   const pendingInbox = ctx.inbox.filter(i => i.status === 'pending').length;
   const pendingInTrip = trip ? tripPlaces(trip, places).filter(p => p.status !== 'visited' && !scheduledIds(trip).has(p.id)) : [];
+  const fresh = !places.length && !trips.length;
   let cta;
-  if (!trips.length) cta = { label: places.length ? '让 AI 帮我规划第一趟旅行' : '先添加一条种草', run: () => (places.length ? ctx.openSheet({ type: 'trip' }) : ctx.openSheet({ type: 'add' })) };
+  if (!trips.length) cta = { label: places.length ? '让 AI 帮我规划第一趟旅行' : '先添加一条种草', run: () => (places.length ? ctx.openSheet({ type: 'trip' }) : ctx.openSheet({ type: 'add', text: paste })) };
   else if (pendingInTrip.length) cta = { label: '让 AI 帮我规划这趟旅行', run: () => ctx.nav.push({ name: 'trip', id: trip.id, tab: 'pending', tabGroup: 'trips' }) };
-  else cta = { label: '让 AI 帮我优化这趟旅行', run: () => ctx.askAssistant(`帮我看看「${tripTitle(trip)}」这趟行程还有哪里可以优化？`, `用户在看行程 ${trip.id}`) };
+  else cta = { label: '让 AI 帮我优化这趟旅行', run: () => ctx.askAssistant(`帮我看看「${tripTitle(trip)}」这趟行程还有哪里可以优化？`, `用户在看行程 ${trip.id}「${tripTitle(trip)}」`) };
   const submit = e => { e.preventDefault(); ctx.openSheet({ type: 'add', text: paste }); setPaste(''); };
-  const examples = places.some(p => p.example) || trips.some(t => t.example);
+  const exampleCities = [...new Set(places.filter(p => p.example).map(p => p.city).filter(Boolean))];
+  const examples = exampleCities.length || trips.some(t => t.example);
+  const members = trip ? tripMembers(trip, ctx.expenses, places, null) : [];
 
   return html`<div>
     <section class="hero">
       ${hero ? html`<${Photo} id=${hero.id} alt=${hero.name || ''} />` : html`<${Scene} />`}
-      <div class="hero-tools"><button class="icon-btn on-photo" aria-label="设置" onClick=${() => ctx.openSheet({ type: 'settings' })}><${Icon} name="sliders" /></button></div>
+      <div class="hero-bar"><${Brand} light /><button class="icon-btn on-photo" aria-label="设置" onClick=${() => ctx.openSheet({ type: 'settings' })}><${Icon} name="sliders" /></button></div>
       <div class="hero-text">
         <h1>今天想拔哪一棵草？<${Sprout} /></h1>
         <p>${greeting(new Date().getHours())}！把你在小红书、Instagram、TikTok 看到的旅行灵感交给 AI，帮你变成行程。</p>
@@ -2045,56 +2224,57 @@ function HomeView({ ctx }) {
       ${hero && hero.credit ? html`<span class="credit">${hero.credit.text || hero.credit}</span>` : null}
     </section>
     <div class="page home-body">
-      <section class="card paste-card">
-        <h2><${Icon} name="link" size=${19} />保存旅行灵感</h2>
-        <form class="paste-row" onSubmit=${submit}>
-          <input id="home-paste" class="input" value=${paste} onInput=${e => setPaste(e.target.value)} placeholder="粘贴小红书 / IG / TikTok 链接…" aria-label="粘贴分享链接或文字" />
-          <button class="go" aria-label="识别这条分享"><${Icon} name="arrowRight" size=${22} stroke=${2.2} /></button>
-        </form>
-        <div class="platforms">
-          <span><${PlatformMark} p="xiaohongshu" />小红书</span><span><${PlatformMark} p="instagram" />Instagram</span>
-          <span><${PlatformMark} p="tiktok" />TikTok</span><span><${PlatformMark} p="youtube" />YouTube</span>
-        </div>
-      </section>
-      ${trip ? html`<button class="card trip-card" onClick=${() => ctx.nav.push({ name: 'trip', id: trip.id, tabGroup: 'trips' })}>
-          <div class="head"><${Flag} country=${trip.country} />
-            <div class="grow"><h3>${tripTitle(trip)}</h3>
-              <p class="meta">${trip.startDate ? `${fmtCnDate(trip.startDate)} — ${fmtCnDate(addDays(trip.startDate, trip.days - 1))}` : `${trip.days} 天 · 日期未定`}</p>
-              <p class="meta">${tripCities(trip).join(' · ')}</p></div>
-            <${Icon} name="chevronRight" /></div>
-          <div class="stats">
-            <div><b>${prog.saved}</b><span>已收藏</span></div><div><b>${prog.arranged}</b><span>已安排</span></div>
-            <div><b>${prog.pending}</b><span>待安排</span></div><div><b>${tripCities(trip).length}</b><span>座城市</span></div>
+      <div class="home-main">
+        <section class="card paste-card">
+          <h2><${Icon} name="link" size=${19} />保存旅行灵感</h2>
+          <form class="paste-row" onSubmit=${submit}>
+            <input id="home-paste" ref=${pasteRef} class="input" value=${paste} onInput=${e => setPaste(e.target.value)} placeholder="粘贴小红书 / IG / TikTok 链接…" aria-label="粘贴分享链接或文字" />
+            <button class="go" aria-label="识别这条分享"><${Icon} name="arrowRight" size=${22} stroke=${2.2} /></button>
+          </form>
+          <div class="platforms">
+            <span><${PlatformMark} p="xiaohongshu" />小红书</span><span><${PlatformMark} p="instagram" />Instagram</span>
+            <span><${PlatformMark} p="tiktok" />TikTok</span><span><${PlatformMark} p="youtube" />YouTube</span>
           </div>
-        </button>`
-      : html`<section class="card trip-card">
-          <div class="head"><${Flag} country="" /><div class="grow"><h3>还没有行程</h3><p class="meta">${places.length ? `已收藏 ${places.length} 个地点，分布在 ${ctx.cities.length} 座城市` : '先把想去的地方存进来'}</p></div></div>
-          <div class="stats"><div><b>${allProg.saved}</b><span>已收藏</span></div><div><b>${allProg.arranged}</b><span>已安排</span></div><div><b>${allProg.pending}</b><span>待安排</span></div><div><b>${ctx.cities.length}</b><span>座城市</span></div></div>
-        </section>`}
-      <button class="cta" onClick=${cta.run}><${Icon} name="sparkle" size=${20} />${cta.label}<${Icon} name="arrowRight" size=${18} /></button>
-      ${pendingInbox ? html`<button class="notice" style=${{ border: 0, textAlign: 'left', width: '100%' }} onClick=${() => ctx.nav.push({ name: 'inbox', tabGroup: 'home' })}>
-          <${Icon} name="inbox" /><div class="grow"><b>${pendingInbox} 条链接在等 Agent 处理</b><p class="hint">在 Claude Code 里运行 /collect，原帖的全文和图片会自动变成种草。</p></div><${Icon} name="chevronRight" /></button>` : null}
-      ${places.length ? html`<section class="section">
-        <div class="section-head"><h2>我的旅行进度</h2></div>
-        <div class="card progress-card">
-          <${Ring} pct=${allProg.pct} />
-          <div class="legend">
-            <div><i style=${{ background: 'var(--green)' }}></i><b class="num">${allProg.saved}</b>已收藏</div>
-            <div><i style=${{ background: 'var(--green-text)', opacity: .55 }}></i><b class="num">${allProg.arranged}</b>已安排</div>
-            <div><i style=${{ background: 'var(--amber)' }}></i><b class="num">${allProg.pending}</b>待安排</div>
-            <div><i style=${{ background: 'var(--heart)' }}></i><b class="num">${allProg.visited}</b>已去过</div>
-          </div>
-        </div>
-      </section>` : null}
-      ${recent.length ? html`<section class="section">
-        <div class="section-head"><h2>最近种草</h2><button class="more" onClick=${() => ctx.nav.go('library')}>全部 ${places.length}</button></div>
-        <div class="hscroll">${recent.map(p => html`<${MiniCard} key=${p.id} p=${p} ctx=${ctx} />`)}</div>
-      </section>` : null}
-      ${ctx.guides.length ? html`<section class="section">
-        <div class="section-head"><h2>跟着攻略走</h2><button class="more" onClick=${() => ctx.nav.push({ name: 'guides', tabGroup: 'trips' })}>全部 ${ctx.guides.length}</button></div>
-        <div class="stack">${ctx.guides.slice(0, 2).map(g => html`<${GuideCard} key=${g.id} g=${g} ctx=${ctx} />`)}</div>
-      </section>` : null}
-      ${examples ? html`<div class="notice" style=${{ marginTop: '18px' }}><${Icon} name="info" /><div>带<span class="tag example" style=${{ margin: '0 4px' }}>示例</span>标记的是演示数据（东京），看完效果可以在 设置 → 清除示例 一键删除。</div></div>` : null}
+        </section>
+        ${trip ? html`<button class="card trip-card" onClick=${() => ctx.nav.push({ name: 'trip', id: trip.id, tabGroup: 'trips' })}>
+            <div class="head"><${Flag} country=${trip.country} />
+              <div class="grow"><h3>${tripTitle(trip)}</h3>
+                <p class="meta">${trip.startDate ? `${fmtCnDate(trip.startDate)} — ${fmtCnDate(addDays(trip.startDate, trip.days - 1))}` : `${trip.days} 天 · 日期未定`}</p>
+                <p class="meta">${tripCities(trip).join(' · ')}</p></div>
+              ${members.length ? html`<${Avatars} ids=${members} ctx=${ctx} max=${3} />` : null}
+              <${Icon} name="chevronRight" /></div>
+            <div class="stats">
+              <div><b>${prog.saved}</b><span>已收藏</span></div><div><b>${prog.arranged}</b><span>已安排</span></div>
+              <div><b>${prog.pending}</b><span>待安排</span></div><div><b>${tripCities(trip).length}</b><span>座城市</span></div>
+            </div>
+          </button>`
+        : fresh ? html`<section class="card how">
+            <h3>三步把灵感变成行程</h3>
+            <ol class="how-steps">
+              <li><span class="n">1</span><span><b>粘贴链接或截图</b><small>小红书、IG、TikTok、YouTube 都可以</small></span></li>
+              <li><span class="n">2</span><span><b>AI 认出店和景点</b><small>配上照片，按城市存进收藏</small></span></li>
+              <li><span class="n">3</span><span><b>一键排成行程</b><small>每段交通、花费换算 ${ctx.home === 'MYR' ? 'RM' : ctx.home}，旅伴一起看</small></span></li>
+            </ol>
+          </section>`
+        : html`<section class="card trip-card">
+            <div class="head"><${Flag} country="" /><div class="grow"><h3>还没有行程</h3><p class="meta">已收藏 ${places.length} 个地点，分布在 ${ctx.cities.length} 座城市</p></div></div>
+            <div class="stats"><div><b>${prog.saved}</b><span>已收藏</span></div><div><b>${prog.arranged}</b><span>已安排</span></div><div><b>${prog.pending}</b><span>待安排</span></div><div><b>${ctx.cities.length}</b><span>座城市</span></div></div>
+          </section>`}
+        <button class="cta" onClick=${cta.run}><${Icon} name="sparkle" size=${20} />${cta.label}<${Icon} name="arrowRight" size=${18} /></button>
+        ${pendingInbox ? html`<button class="notice" style=${{ border: 0, textAlign: 'left', width: '100%' }} onClick=${() => ctx.nav.push({ name: 'inbox', tabGroup: 'home' })}>
+            <${Icon} name="inbox" /><div class="grow"><b>${pendingInbox} 条链接在等 Agent 处理</b><p class="hint">在 Claude Code 里运行 /collect，原帖的全文和图片会自动变成种草。</p></div><${Icon} name="chevronRight" /></button>` : null}
+      </div>
+      <div class="home-side">
+        ${recent.length ? html`<section class="section">
+          <div class="section-head"><h2>最近种草</h2><button class="more" onClick=${() => ctx.nav.go('library')}>全部 ${places.length}</button></div>
+          <div class="hscroll">${recent.map(p => html`<${MiniCard} key=${p.id} p=${p} ctx=${ctx} />`)}</div>
+        </section>` : null}
+        ${ctx.guides.length ? html`<section class="section">
+          <div class="section-head"><h2>跟着攻略走</h2><button class="more" onClick=${() => ctx.nav.push({ name: 'guides', tabGroup: 'trips' })}>全部 ${ctx.guides.length}</button></div>
+          <div class="stack">${ctx.guides.slice(0, 2).map(g => html`<${GuideCard} key=${g.id} g=${g} ctx=${ctx} />`)}</div>
+        </section>` : null}
+        ${examples ? html`<div class="notice"><${Icon} name="info" /><div>带<span class="tag example" style=${{ margin: '0 4px' }}>示例</span>标记的是演示数据${exampleCities.length ? `（${exampleCities.slice(0, 5).join('、')}）` : ''}，看完效果可以在 设置 → 清除示例 一键删除。</div></div>` : null}
+      </div>
     </div>
   </div>`;
 }
@@ -2130,17 +2310,23 @@ function sourceBits(p) {
   const s = p.source || {};
   const bits = [];
   if (s.platform && s.platform !== 'manual') bits.push(PLATFORMS[s.platform] || '网页');
-  if (s.stats && (s.stats.likes || s.stats.collects)) bits.push(`${s.stats.collects || s.stats.likes} 人收藏`);
+  if (s.stats && (s.stats.likes || s.stats.collects)) bits.push(`原帖 ${s.stats.collects || s.stats.likes} 人收藏`);
   return bits.join(' · ');
+}
+/** 种草 → 想去 → 已拔草 as three dots: how far along a place is. */
+function StageMark({ status }) {
+  const st = status || 'saved', n = st === 'visited' ? 3 : st === 'want' ? 2 : 1;
+  return html`<span class=${'stage s' + n} title=${'进度：' + STATUS_LABEL[st]}><i></i><i></i><i></i><b>${STATUS_LABEL[st]}</b></span>`;
 }
 function PlaceCard({ p, ctx }) {
   const desc = placeDesc(p);
+  const strip = (p.photoIds || []).filter(id => id && id !== p.coverAssetId).slice(0, 3);
   return html`<article class="card pcard">
     <div class="pcard-main" onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
       <div style=${{ position: 'relative' }}><${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
         ${p.status === 'visited' ? html`<span class="tag done done-badge"><${Icon} name="check" size=${12} stroke=${2.6} />已拔草</span>` : null}</div>
       <div class="pcard-body">
-        <div class="row wrap" style=${{ gap: '6px' }}><${CatTag} cat=${p.category} />${p.example ? html`<span class="tag example">示例</span>` : null}${p.chain ? html`<span class="tag plain">连锁</span>` : null}</div>
+        <div class="row wrap" style=${{ gap: '6px' }}><${CatTag} cat=${p.category} /><${StageMark} status=${p.status} />${p.example ? html`<span class="tag example">示例</span>` : null}${p.chain ? html`<span class="tag plain">连锁</span>` : null}</div>
         <h3>${p.name}</h3>
         ${p.nameLocal && p.nameLocal !== p.name ? html`<p class="local">${p.nameLocal}</p>` : null}
         <p class="loc"><${Icon} name="pin" size=${13} />${[p.area, p.city].filter(Boolean).join(' · ') || '位置未知'}</p>
@@ -2148,8 +2334,9 @@ function PlaceCard({ p, ctx }) {
         <${HeartButton} p=${p} ctx=${ctx} />
       </div>
     </div>
+    ${strip.length ? html`<div class="pstrip">${strip.map(id => html`<${Photo} key=${id} id=${id} cat=${p.category} alt="" iconSize=${18} />`)}</div>` : null}
     <div class="pcard-foot">
-      <span class="src">${sourceBits(p)}</span>
+      <span class="src">${p.createdBy ? html`<${Avatars} ids=${[p.createdBy]} ctx=${ctx} max=${1} small />` : null}${sourceBits(p)}</span>
       <${ExtLink} href=${placeLink(p, ctx.prefs.mapPref)}><${Icon} name="map" size=${15} />地图<//>
       <button class="btn sm green" onClick=${() => ctx.openSheet({ type: 'addToTrip', placeIds: [p.id] })}><${Icon} name="plus" size=${15} stroke=${2.2} />加入行程</button>
     </div>
@@ -2216,7 +2403,7 @@ function LibraryEmpty({ ctx, loading }) {
  * Pan/zoom map: a rendered basemap image (or a plain paper field when the city has none yet) with photo pins,
  * neighbourhood labels and an optional numbered route. Pins keep their size while the map scales.
  */
-function MapCanvas({ points, basemap, labels = [], route, base, selected, onSelect, full, height = 360, padTop = 20, padBottom = 20, numbered }) {
+function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, onSelect, full, height = 360, padTop = 20, padBottom = 20, padLeft = 16, padRight = 64, numbered }) {
   const wrap = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [t, setT] = useState(null);
@@ -2244,12 +2431,12 @@ function MapCanvas({ points, basemap, labels = [], route, base, selected, onSele
   const fitTo = useCallback((pts, animate) => {
     if (!vp.w || !vp.h) return;
     const xy = pts.filter(hasCoord).map(p => world.project(p));
-    const usableH = Math.max(80, vp.h - padTop - padBottom);
+    const usableH = Math.max(80, vp.h - padTop - padBottom), usableW = Math.max(80, vp.w - padLeft - padRight);
     let s, cx, cy;
     if (xy.length) {
       const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
       const bw = Math.max(60, Math.max(...xs) - Math.min(...xs)), bh = Math.max(60, Math.max(...ys) - Math.min(...ys));
-      s = Math.min((vp.w - 80) / bw, (usableH - 70) / bh);
+      s = Math.min((usableW - 40) / bw, (usableH - 70) / bh);
       cx = (Math.max(...xs) + Math.min(...xs)) / 2; cy = (Math.max(...ys) + Math.min(...ys)) / 2;
     } else {
       s = Math.min(vp.w / world.w, vp.h / world.h); cx = world.w / 2; cy = world.h / 2;
@@ -2257,10 +2444,11 @@ function MapCanvas({ points, basemap, labels = [], route, base, selected, onSele
     const min = Math.min(vp.w / world.w, vp.h / world.h) * 0.9;
     s = Math.max(min, Math.min(s, 4));
     setAnim(!!animate);
-    setT(clampPan({ s, tx: vp.w / 2 - cx * s, ty: padTop + usableH / 2 - cy * s }));
-  }, [vp.w, vp.h, world, padTop, padBottom]);
-  const fitKey = points.map(p => p.id).join(',') + (basemap ? basemap.id : '') + vp.w + 'x' + vp.h;
-  useEffect(() => { fitTo(points.concat(base && hasCoord(base) ? [base] : []), false); }, [fitKey]);
+    setT(clampPan({ s, tx: padLeft + usableW / 2 - cx * s, ty: padTop + usableH / 2 - cy * s }));
+  }, [vp.w, vp.h, world, padTop, padBottom, padLeft, padRight]);
+  const fitPoints = () => fit || points.concat(base && hasCoord(base) ? [base] : []);
+  const fitKey = points.map(p => p.id).join(',') + '|' + (fit ? fit.length : '') + (basemap ? basemap.id : '') + vp.w + 'x' + vp.h;
+  useEffect(() => { fitTo(fitPoints(), false); }, [fitKey]);
 
   // gestures
   const ptrs = useRef(new Map()), g = useRef(null);
@@ -2311,7 +2499,7 @@ function MapCanvas({ points, basemap, labels = [], route, base, selected, onSele
   const items = ready ? points.filter(hasCoord).map(p => { const [x, y] = toScreen(p); return { ...p, x, y }; }) : [];
   const clusters = numbered ? items.map(it => ({ x: it.x, y: it.y, items: [it] })) : clusterScreen(items, 46);
   const rank = p => (p.status === 'want' ? 0 : p.status === 'visited' ? 2 : 1);
-  const size = p => (p.status === 'want' ? 50 : p.status === 'visited' ? 36 : 44);
+  const size = p => (p.status === 'want' ? 56 : p.status === 'visited' ? 34 : 42);
   const routeXY = ready && route ? route.filter(hasCoord).map(toScreen) : [];
   const baseXY = ready && base && hasCoord(base) ? toScreen(base) : null;
   return html`<div ref=${wrap} class=${'mapwrap' + (full ? ' full' : '')} style=${full ? null : { height: height + 'px' }}
@@ -2331,7 +2519,7 @@ function MapCanvas({ points, basemap, labels = [], route, base, selected, onSele
       ${clusters.map(c => {
         const lead = c.items.slice().sort((a, b) => rank(a) - rank(b))[0];
         const isSel = c.items.some(i => i.id === selected);
-        const s = c.items.length > 1 ? 50 : size(lead);
+        const s = c.items.length > 1 ? 52 : size(lead);
         return html`<button key=${lead.id} class=${'pin' + (isSel ? ' sel' : '') + (lead.status === 'visited' && c.items.length === 1 ? ' visited' : '')}
             style=${{ left: c.x + 'px', top: c.y + 'px', '--s': s + 'px', zIndex: isSel ? 4 : 2 - rank(lead) }}
             aria-label=${c.items.length > 1 ? `${c.items.length} 个地点：${c.items.map(i => i.name).join('、')}` : lead.name}
@@ -2346,7 +2534,7 @@ function MapCanvas({ points, basemap, labels = [], route, base, selected, onSele
     <div class="map-ctrl" style=${{ right: '12px', top: (full ? padTop : 12) + 'px' }}>
       <button class="icon-btn" aria-label="放大" onClick=${() => zoomAt(1.6, vp.w / 2, vp.h / 2, true)}><${Icon} name="plus" /></button>
       <button class="icon-btn" aria-label="缩小" onClick=${() => zoomAt(1 / 1.6, vp.w / 2, vp.h / 2, true)}><${Icon} name="minus" /></button>
-      <button class="icon-btn" aria-label="显示全部地点" onClick=${() => fitTo(points.concat(base && hasCoord(base) ? [base] : []), true)}><${Icon} name="locate" /></button>
+      <button class="icon-btn" aria-label="显示全部地点" onClick=${() => fitTo(fitPoints(), true)}><${Icon} name="locate" /></button>
     </div>
     <span class="map-attrib" style=${full ? { bottom: padBottom + 6 + 'px' } : null}>${basemap ? basemap.attribution : '示意图：还没有这座城市的底图'}</span>
   </div>`;
@@ -2417,13 +2605,32 @@ function MapModeView({ ctx }) {
 }
 
 /* ---------- place detail ---------- */
+/** The three stages as one control: tap to move a place along 种草 → 想去 → 已拔草. */
+function StageControl({ p, ctx }) {
+  const cur = p.status || 'saved';
+  const at = STATUSES.findIndex(([k]) => k === cur);
+  const set = k => k !== cur && ctx.write('update', 'places', p.id, { status: k, updatedAt: Date.now() });
+  const icon = { saved: 'sprout', want: 'heartFill', visited: 'check' };
+  return html`<div class="stage-ctl" role="group" aria-label="拔草进度">
+    ${STATUSES.map(([k, v], i) => html`<button key=${k} class=${i <= at ? 'reached' : ''} aria-pressed=${k === cur} onClick=${() => set(k)}>
+      <i><${Icon} name=${icon[k]} size=${16} stroke=${2.2} /></i><span>${v}</span></button>`)}
+  </div>`;
+}
+function PlaceGallery({ p, credit }) {
+  const ids = [...new Set([p.coverAssetId, ...(p.photoIds || [])].filter(Boolean))];
+  const [i, setI] = useState(0);
+  const onScroll = e => { const el = e.currentTarget; setI(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); };
+  if (ids.length < 2) return html`<${Photo} id=${ids[0]} cat=${p.category} alt=${p.name} iconSize=${72} />`;
+  return html`<div class="gallery-strip" onScroll=${onScroll}>${ids.map(id => html`<${Photo} key=${id} id=${id} cat=${p.category} alt=${p.name} iconSize=${72} />`)}</div>
+    <span class="counter num">${i + 1}/${ids.length}</span>`;
+}
 function PlaceView({ ctx, id }) {
   const p = ctx.placesById[id];
   const people = useProfiles(p && p.createdBy ? [p.createdBy] : [], ctx);
   if (!p) return html`<div class="page"><div class="card empty"><h2>这个地点已经删除了</h2><button class="btn" onClick=${ctx.nav.back}><${Icon} name="back" />返回</button></div></div>`;
-  const inTrips = ctx.trips.map(t => ({ t, days: ((t.plan && t.plan.days) || []).filter(d => d.stops.some(s => s.placeId === p.id)).map(d => d.day) })).filter(x => x.days.length);
+  const inTrips = ctx.trips.map(t => ({ t, days: ((t.plan && t.plan.days) || []).filter(d => (d.stops || []).some(s => s.placeId === p.id)).map(d => d.day) })).filter(x => x.days.length);
   const cur = (p.price && p.price.currency) || currencyOf(p.country);
-  const priceText = p.price ? `${fmtMoney(p.price.amount, cur)}${p.price.max ? '–' + fmtMoney(p.price.max, cur).replace(/^[^\d]+/, '') : ''}${p.price.per ? ' ' + p.price.per : ''}` : p.priceLevel ? '¥'.repeat(p.priceLevel) : '';
+  const priceText = p.price ? `${fmtMoney(p.price.amount, cur)}${p.price.max ? '–' + fmtMoney(p.price.max, cur).replace(/^[^\d]+/, '') : ''}${p.price.per ? ' ' + p.price.per : ''}` : '';
   const rm = p.price ? toHome(p.price.amount, cur, ctx.fx, ctx.home) : null;
   const author = p.createdBy && people[p.createdBy] && people[p.createdBy].name;
   const facts = [
@@ -2431,10 +2638,10 @@ function PlaceView({ ctx, id }) {
     ['参考价格', priceText ? `${priceText}${rm != null && cur !== ctx.home ? ` · 约 ${fmtMoney(rm, ctx.home, true)}` : ''}` : ''],
   ].filter(f => f[1]);
   const credit = p.coverCredit;
-  const setStatus = status => ctx.write('update', 'places', p.id, { status, updatedAt: Date.now() });
+  const evidence = p.source && p.source.evidence;
   return html`<article class="place-page">
     <div class="pp-hero">
-      <${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} iconSize=${72} />
+      <${PlaceGallery} p=${p} />
       <div class="top">
         <button class="icon-btn on-photo" aria-label="返回" onClick=${ctx.nav.back}><${Icon} name="back" /></button>
         <${HeartButton} p=${p} ctx=${ctx} className="icon-btn on-photo" />
@@ -2448,28 +2655,27 @@ function PlaceView({ ctx, id }) {
         ${sourceBits(p) ? html`<p class="proof"><${Icon} name="heartFill" size=${14} />${sourceBits(p)}</p>` : null}
       </div>
       <div class="row wrap"><${CatTag} cat=${p.category} />${p.area ? html`<span class="tag plain">${p.area}</span>` : null}${p.city ? html`<span class="tag plain">${p.city}</span>` : null}
-        ${p.status === 'visited' ? html`<span class="tag done"><${Icon} name="check" size=${12} stroke=${2.6} />已拔草</span>` : p.status === 'want' ? html`<span class="tag shopping">想去</span>` : null}
         ${p.example ? html`<span class="tag example">示例</span>` : null}${p.chain ? html`<span class="tag plain">连锁 · 任选分店</span>` : null}</div>
       ${p.tips ? html`<p style=${{ fontSize: '15px', color: 'var(--ink-2)' }}>${p.tips}</p>` : null}
-      <div class="actions3">
+      <${StageControl} p=${p} ctx=${ctx} />
+      <div class="actions2">
         <${ExtLink} href=${placeLink(p, ctx.prefs.mapPref)} className="btn"><${Icon} name="map" size=${17} />地图<//>
-        <button class="btn" aria-pressed=${p.status === 'want'} onClick=${() => setStatus(p.status === 'want' ? 'saved' : 'want')} disabled=${p.status === 'visited'}><span style=${{ color: p.status === 'want' ? 'var(--heart)' : null, display: 'inline-flex' }}><${Icon} name=${p.status === 'want' ? 'heartFill' : 'heart'} size=${17} /></span>想去</button>
         <button class="btn green" onClick=${() => ctx.openSheet({ type: 'addToTrip', placeIds: [p.id] })}><${Icon} name="plus" size=${17} stroke=${2.2} />加入行程</button>
       </div>
       ${facts.length ? html`<dl class="facts">${facts.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}${facts.length % 2 ? html`<div></div>` : null}</dl>` : null}
       ${(p.mustTry || []).length ? html`<section class="stack" style=${{ gap: '8px' }}><h3 style=${{ fontSize: '15px', fontWeight: 800 }}>必吃 / 必买 / 必做</h3>
         <div class="chips wrap">${p.mustTry.map(m => html`<span class="chip outline">${m}</span>`)}</div></section>` : null}
+      ${evidence ? html`<figure class="quote-box"><figcaption><${PlatformMark} p=${p.source.platform} />原帖说</figcaption><blockquote>${evidence}</blockquote></figure>` : null}
       <section class="ai-box">
-        <h3><${Icon} name="bot" size=${17} />AI 推荐</h3>
-        <p>${p.source && p.source.evidence ? `原帖说：「${p.source.evidence}」。` : ''}${inTrips.length ? `已经排进「${tripTitle(inTrips[0].t)}」Day ${inTrips[0].days.join('、')}。` : '还没排进行程，加入行程后 AI 会挑顺路的时间段。'}</p>
-        <div><button class="btn sm soft" onClick=${() => ctx.askAssistant(`「${p.name}」（${p.city}）怎么安排最好？附近还有什么顺路的？`, `用户在看地点 ${p.id} ${p.name}`)}>问 AI 怎么安排</button></div>
+        <h3><${Icon} name="calendar" size=${17} />${inTrips.length ? '已在行程里' : '还没排进行程'}</h3>
+        <p>${inTrips.length ? `「${tripTitle(inTrips[0].t)}」Day ${inTrips[0].days.join('、')}。` : '加入行程后，AI 会挑顺路的时间段。'}</p>
+        <div><button class="btn sm soft" onClick=${() => ctx.askAssistant(`「${p.name}」（${p.city}）怎么安排最好？附近还有什么顺路的？`, `用户在看地点 ${p.id} ${p.name}`)}><${Icon} name="bot" size=${15} />问 AI 怎么安排</button></div>
       </section>
-      ${p.source && (p.source.url || p.source.title) ? html`<p class="hint">来自 ${PLATFORMS[p.source.platform] || '网页'}${p.source.title ? ' · ' : ''}${p.source.url ? html`<a href=${p.source.url} target="_blank" rel="noopener noreferrer">${p.source.title || '原帖'}</a>` : p.source.title}</p>` : null}
+      ${p.source && (p.source.url || p.source.title) && p.source.platform !== 'manual' ? html`<p class="hint">来自 ${PLATFORMS[p.source.platform] || '网页'}${p.source.title ? ' · ' : ''}${p.source.url ? html`<a href=${p.source.url} target="_blank" rel="noopener noreferrer">${p.source.title || '原帖'}</a>` : p.source.title}</p>` : null}
       ${author ? html`<p class="hint row"><${Avatars} ids=${[p.createdBy]} ctx=${ctx} />由 ${author} 添加</p>` : null}
       ${p.note ? html`<p class="hint">备注：${p.note}</p>` : null}
       <div class="row wrap" style=${{ marginTop: '4px' }}>
         <button class="btn sm" onClick=${() => ctx.openSheet({ type: 'place', id: p.id })}><${Icon} name="edit" size=${15} />编辑</button>
-        <button class="btn sm" onClick=${() => setStatus(p.status === 'visited' ? 'want' : 'visited')}><${Icon} name="check" size=${15} />${p.status === 'visited' ? '改回没去过' : '标记已拔草'}</button>
         <${ConfirmButton} className="sm" label="删除" armedLabel="确认删除" icon="trash" onConfirm=${async () => { if (await ctx.write('remove', 'places', p.id)) { ctx.toast('已删除'); ctx.nav.back(); } }} />
       </div>
     </div>
@@ -2560,6 +2766,7 @@ function TripCard({ t, ctx }) {
     <div class="body">
       <div class="row" style=${{ gap: '12px' }}><${Flag} country=${t.country} />
         <div class="grow"><h3>${tripTitle(t)}</h3><p class="meta">${tripDates(t)}</p></div>
+        <${Avatars} ids=${tripMembers(t, ctx.expenses, ctx.places, null)} ctx=${ctx} max=${3} />
         ${t.example ? html`<span class="tag example">示例</span>` : null}</div>
       <p class="meta">${tripCities(t).join(' → ')} · ${tripStopCount(t)} 站</p>
       <div class="meter" aria-hidden="true"><i style=${{ width: prog.pct + '%' }}></i></div>
@@ -2639,7 +2846,9 @@ function OverviewTab({ ctx, trip, openDay }) {
   const prog = progressOf(scope, [trip]);
   const people = [...new Set([trip.createdBy, ...scope.map(p => p.createdBy)].filter(Boolean))];
   const multi = tripCities(trip).length > 1;
+  const photos = tripPhotos(trip, ctx.placesById, ctx.places, 8);
   return html`<div class="stack" style=${{ marginTop: '16px' }}>
+    ${photos.length ? html`<div class="ov-photos">${photos.map(ph => html`<${Photo} key=${ph.id} id=${ph.id} cat=${ph.cat} alt="" />`)}</div>` : null}
     ${plan.summary ? html`<p class="lead">${plan.summary}</p>` : null}
     <div class="card progress-card">
       <${Ring} pct=${prog.pct} />
@@ -2700,7 +2909,7 @@ function PlanTab({ ctx, trip, dayIdx, setDayIdx, setTab }) {
       <div>
         <div class="day-title">
           <div class="grow"><h2>Day ${i + 1}${day.city || day.area ? ' — ' : ''}${[day.city, day.area].filter(Boolean).join(' · ')}</h2>
-            <p>${[day.theme, `${(day.stops || []).length} 站`, moveMin ? `路上约 ${fmtMin(moveMin)}` : ''].filter(Boolean).join(' · ')}</p></div>
+            <p>${[day.theme, `${(day.stops || []).length} 站`, moveMin ? `路上约 ${fmtMin(moveMin)}` : ''].filter(Boolean).map((t, k) => html`${k ? ' · ' : ''}<span class="nb">${t}</span>`)}</p></div>
           ${!wide ? html`<button class="btn sm" onClick=${() => setTab('map')}><${Icon} name="map" size=${15} />地图</button>` : null}
         </div>
         ${day.note ? html`<p class="day-note">${day.note}</p>` : null}
@@ -2724,7 +2933,15 @@ function Timeline({ ctx, trip, day, dayIndex, base, cur, changed }) {
   const hasBase = !!(base && base.name);
   const total = stops.length + (hasBase ? 1 : 0);
   const pos = k => (total === 1 ? ' only' : k === 0 ? ' first' : k === total - 1 ? ' last' : '');
-  const startPt = hasBase ? { ...base, city: day.city, country: trip.country } : null;
+  const where = s => ({ ...s, city: s.city || day.city, country: s.country || trip.country });
+  // A transfer's journey ends at its arrival station when the plan gives one, else at the next stop.
+  const arrival = j => {
+    const t = stops[j];
+    if (hasCoord(t)) return { name: t.nameLocal || String(t.name).split('→').pop().trim(), lat: t.lat, lng: t.lng, city: t.city || day.city, country: t.country || trip.country };
+    const next = stops.slice(j + 1).find(x => x.kind !== 'transfer');
+    return next ? where(next) : null;
+  };
+  const startPt = hasBase ? { ...base, city: base.city || day.city, country: trip.country } : null;
   if (hasBase) {
     const t0 = stops[0] && stops[0].travel;
     rows.push(html`<li key="base" class=${'tl-row' + pos(0)}>
@@ -2735,21 +2952,27 @@ function Timeline({ ctx, trip, day, dayIndex, base, cur, changed }) {
   }
   stops.forEach((s, j) => {
     const before = stops[j - 1];
-    const prev = j === 0 ? startPt : before.kind === 'transfer' ? null : { ...before, city: before.city || day.city, country: before.country || trip.country };
-    if (s.travel && s.kind !== 'transfer') rows.push(html`<${Leg} key=${'l' + j} ctx=${ctx} from=${prev} to=${{ ...s, city: s.city || day.city, country: s.country || trip.country }} travel=${s.travel} cur=${cur} />`);
-    rows.push(html`<${StopRow} key=${'s' + j} ctx=${ctx} trip=${trip} s=${s} j=${j} dayIndex=${dayIndex} cls=${pos(j + (hasBase ? 1 : 0))} lit=${changed.has(j)} cur=${cur} />`);
+    const prev = j === 0 ? startPt : before.kind === 'transfer' ? arrival(j - 1) : where(before);
+    const row = html`<${StopRow} key=${'s' + j} ctx=${ctx} trip=${trip} s=${s} j=${j} dayIndex=${dayIndex} cls=${pos(j + (hasBase ? 1 : 0))} lit=${changed.has(j)} cur=${cur} />`;
+    if (s.kind === 'transfer') {
+      rows.push(row);
+      if (s.travel) rows.push(html`<${Leg} key=${'l' + j} ctx=${ctx} from=${prev} to=${arrival(j)} travel=${s.travel} cur=${cur} />`);
+    } else {
+      if (s.travel) rows.push(html`<${Leg} key=${'l' + j} ctx=${ctx} from=${prev} to=${where(s)} travel=${s.travel} cur=${cur} />`);
+      rows.push(row);
+    }
   });
   if (!stops.length) return html`<p class="hint" style=${{ padding: '12px 0' }}>这一天还没有安排。可以让 AI 优化这一天，或者从「待安排」里加地点。</p>`;
   return html`<ol class="tl">${rows}</ol>`;
 }
 function Leg({ ctx, from, to, travel, cur }) {
-  const link = from ? legLink(from, to, travel.mode, ctx.prefs.mapPref) : null;
+  const link = from && to ? legLink(from, to, travel.mode, ctx.prefs.mapPref) : null;
   const fare = travel.fare ? fmtMoney(travel.fare, cur) : travel.cost;
   return html`<li class="tl-leg">
     <span></span><span class="rail"></span>
     <div class="leg"><${Icon} name=${MODE_ICON[travel.mode] || 'walk'} size=${16} />
       <span class="txt"><b>${MODES[travel.mode] || '步行'}${travel.minutes ? ' ' + fmtMin(travel.minutes) : ''}</b>${travel.detail ? ' · ' + travel.detail : ''}${fare ? ' · ' + fare : ''}</span>
-      ${link ? html`<a href=${link} target="_blank" rel="noopener noreferrer" aria-label=${`${to.name} 的路线`}>路线</a>` : null}</div>
+      ${link ? html`<a class="route-link" href=${link} target="_blank" rel="noopener noreferrer" aria-label=${`到${to.name}的路线`}>路线</a>` : html`<span></span>`}</div>
   </li>`;
 }
 function StopRow({ ctx, trip, s, j, dayIndex, cls, lit, cur }) {
@@ -2757,14 +2980,14 @@ function StopRow({ ctx, trip, s, j, dayIndex, cls, lit, cur }) {
   const done = !!p && p.status === 'visited';
   const transfer = s.kind === 'transfer';
   const openMenu = () => ctx.openSheet({ type: 'stop', tripId: trip.id, dayIndex, stopIndex: j });
-  const t = s.travel;
-  const sub = transfer && t ? [`${MODES[t.mode] || ''}${t.minutes ? ' ' + fmtMin(t.minutes) : ''}`.trim(), t.detail, t.fare ? fmtMoney(t.fare, cur) : ''].filter(Boolean).join(' · ')
+  const sub = transfer ? s.what || '换城市'
     : [stayHint(s.stayMin), s.what].filter(Boolean).join(' · ') || (s.spend ? `约 ${fmtMoney(s.spend, cur)}` : '');
   return html`<li class=${'tl-row' + cls + (lit ? ' changed' : '') + (transfer ? ' transfer' : '')}>
     <time>${s.time}</time>
     <span class="rail"><span class=${'dot' + (done ? ' done' : '') + (s.suggested ? ' sugg' : '')}>${done ? html`<${Icon} name="check" size=${11} stroke=${3} />` : j + 1}</span></span>
     ${transfer ? html`<div class="photo"><${Icon} name=${MODE_ICON[s.travel && s.travel.mode] || 'train'} size=${24} /></div>`
-      : html`<${Photo} id=${p && p.coverAssetId} cat=${s.category} alt=${s.name} iconSize=${22} />`}
+      : html`<div class="ph-wrap"><${Photo} id=${p && p.coverAssetId} cat=${s.category} alt=${s.name} iconSize=${22} />
+          ${p && p.createdBy ? html`<span class="who"><${Avatars} ids=${[p.createdBy]} ctx=${ctx} max=${1} small /></span>` : null}</div>`}
     <button class="info" onClick=${p ? () => ctx.nav.push({ name: 'place', id: p.id }) : openMenu}>
       <b><span class="nm">${s.name}</span>${transfer ? html`<span class="tag transport">换城市</span>` : html`<${CatTag} cat=${s.category} />`}${s.suggested ? html`<span class="tag ai">AI 推荐</span>` : null}</b>
       ${sub ? html`<small>${sub}</small>` : null}
@@ -2772,7 +2995,6 @@ function StopRow({ ctx, trip, s, j, dayIndex, cls, lit, cur }) {
     <button class="icon-btn more" aria-label=${`${s.name}：更多操作`} onClick=${openMenu}><${Icon} name="more" /></button>
   </li>`;
 }
-
 function stopPins(trip, dayIdx, ctx, all) {
   const plan = planOf(trip);
   const days = all ? plan.days.map((d, i) => [d, i]) : plan.days[dayIdx] ? [[plan.days[dayIdx], dayIdx]] : [];
@@ -2790,10 +3012,18 @@ function DayMap({ ctx, trip, dayIdx, all, height = 380, selected, onSelect }) {
   const plan = planOf(trip);
   const day = plan.days[dayIdx];
   const pins = stopPins(trip, dayIdx, ctx, all);
-  const base = !all && day ? baseForDay(trip, dayIdx) : null;
+  let base = !all && day ? baseForDay(trip, dayIdx) : null;
+  // The hotel shows only on its own city's map (a travel day starts in the previous city).
+  if (base && (!hasCoord(base) || (base.city && day.city && !sameCity(base.city, day.city)))) base = null;
   const basemap = pickBasemap(ctx.maps, pins, day ? day.city : tripCities(trip)[0]);
   const labels = areaLabels(pins.map(x => x.place).filter(Boolean));
-  return html`<${MapCanvas} points=${pins} basemap=${basemap} labels=${labels} route=${all ? null : pins} base=${base && hasCoord(base) ? base : null}
+  // Fit the day's stops; a hotel far from them would shrink the day into a corner, so it joins the fit only when close.
+  let fit = pins.concat(base ? [base] : []);
+  if (base && pins.length >= 2) {
+    const c = centroid(pins), spread = Math.max(...pins.map(x => haversineKm(x, c)));
+    if (haversineKm(base, c) > Math.max(2.5, spread * 2)) fit = pins;
+  }
+  return html`<${MapCanvas} points=${pins} fit=${fit.length ? fit : null} basemap=${basemap} labels=${labels} route=${all ? null : pins} base=${base}
     numbered=${!all} height=${height} selected=${selected} onSelect=${onSelect || (() => {})} />`;
 }
 function TripMapTab({ ctx, trip, dayIdx, setDayIdx }) {
@@ -2856,51 +3086,70 @@ function CostsTab({ ctx, trip }) {
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0));
   const tot = expenseTotals(list, ctx.fx, home);
   const budget = num(trip.budget);
-  const people = useProfiles(list.map(e => e.createdBy), ctx);
+  const members = tripMembers(trip, ctx.expenses, ctx.places, ctx.me);
+  const settle = members.length >= 2 ? settleUp(list, members, ctx.fx, home) : null;
+  const people = useProfiles([...members, ...list.map(e => e.paidBy || e.createdBy)], ctx);
+  const nameOf = id => (people[id] && people[id].name) || (id === ctx.me ? '我' : '旅伴');
   const maxCat = Math.max(1, ...Object.values(tot.byCat));
   const approx = list.some(e => (e.currency || home) !== home);
   const noRate = cur !== home && toHome(1, cur, ctx.fx, home) == null;
   const add = () => ctx.openSheet({ type: 'expense', tripId: trip.id });
-  return html`<div class="stack" style=${{ marginTop: '16px' }}>
-    <section class="card pad money-card">
-      <div class="row" style=${{ alignItems: 'flex-start' }}>
-        <div class="grow"><p class="hint">已记录的花费</p><p class="big-money">${fmtMoney(tot.total, home, approx)}</p>
-          ${budget ? html`<p class="hint num">预算 ${fmtMoney(budget, home)} · ${tot.total <= budget ? `还剩 ${fmtMoney(budget - tot.total, home, approx)}` : html`<b style=${{ color: 'var(--danger)' }}>超出 ${fmtMoney(tot.total - budget, home, approx)}</b>`}</p>` : null}</div>
-        <button class="btn green" onClick=${add}><${Icon} name="plus" size=${18} stroke=${2.2} />记一笔</button>
-      </div>
-      ${budget ? html`<div class="meter" aria-hidden="true" style=${{ marginTop: '12px' }}><i style=${{ width: Math.min(100, (tot.total / budget) * 100) + '%', background: tot.total > budget ? 'var(--danger)' : null }}></i></div>` : null}
-      ${tot.missing ? html`<p class="hint">${tot.missing} 笔没有汇率，没算进总数。</p>` : null}
-    </section>
-    ${tot.total > 0 ? html`<section class="card pad"><h3 class="card-title">按类别</h3>
-      <div class="cat-bars">${EXPENSE_CATS.filter(([k]) => tot.byCat[k] > 0).map(([k, v]) => html`<div key=${k}><span>${v}</span>
-        <span class="meter"><i style=${{ width: (tot.byCat[k] / maxCat) * 100 + '%' }}></i></span><span class="amt">${fmtMoney(tot.byCat[k], home, approx)}</span></div>`)}</div>
-    </section>` : null}
-    <section class="card pad">
-      <h3 class="card-title">AI 预估（每人）</h3>
-      ${est.known ? html`<div>
-        <p class="big-money" style=${{ fontSize: '24px' }}>${fmtMoney(est.total, cur)}${estHome != null && cur !== home ? html`<span class="hint" style=${{ fontSize: '15px', fontWeight: 600 }}> ≈ ${fmtMoney(estHome, home, true)}</span>` : null}</p>
-        <div>${est.days.map((d, i) => d.known ? html`<div class="cost-row" key=${i}><div><b>Day ${i + 1}</b><br /><small>交通 ${fmtMoney(d.fare, cur)} · 门票餐饮 ${fmtMoney(d.spend, cur)}</small></div>
-          <div class="amt">${fmtMoney(d.total, cur)}${conv(d.total) != null && cur !== home ? html`<br /><small>≈ ${fmtMoney(conv(d.total), home, true)}</small>` : null}</div></div>` : null)}</div>
-        <p class="hint">按帖子里的价格和 AI 的常识估的，只作参考；酒店和机票不在里面。</p></div>`
-        : html`<p class="hint">这趟行程还没有价格预估。用「用 AI 优化这一天」或「调整整个行程」重新排一次，AI 会写上车费和大概花费。</p>`}
-    </section>
-    <section>
-      <div class="section-head"><h2>记录</h2><span class="hint">${list.length} 笔</span></div>
-      ${list.length ? html`<div class="card pad" style=${{ paddingBlock: '4px' }}>${list.map(e => {
-        const v = toHome(num(e.amount), e.currency || home, ctx.fx, home);
-        const who = e.createdBy && people[e.createdBy];
-        return html`<button class="expense-row" key=${e.id} onClick=${() => ctx.openSheet({ type: 'expense', tripId: trip.id, expenseId: e.id })}>
-          <span class=${'tag ' + ({ food: 'food', transport: 'transport', tickets: 'sight', shopping: 'shopping', stay: 'stay' }[e.category] || 'other')}>${EXPENSE_LABEL[e.category] || '其他'}</span>
-          <span class="grow"><b>${e.note || EXPENSE_LABEL[e.category] || '花费'}</b><small>${[e.day != null ? `Day ${e.day + 1}` : e.date, who && who.name ? who.name : ''].filter(Boolean).join(' · ')}${e.example ? ' · 示例' : ''}</small></span>
-          <span class="amt"><b>${fmtMoney(num(e.amount), e.currency || home)}</b>${e.currency && e.currency !== home ? html`<small>${v != null ? '≈ ' + fmtMoney(v, home, true) : '无汇率'}</small>` : null}</span>
-        </button>`;
-      })}</div>` : html`<button class="card pad empty-row" onClick=${add}><${Icon} name="wallet" />还没有记录。吃饭、车票、门票随手记一笔，自动换算成 ${CURRENCIES[home] ? CURRENCIES[home].sym : home}。</button>`}
-    </section>
-    ${noRate ? html`<${Notice} warn>还没有 ${cur} 的汇率，换算不了 ${home}。在 设置 → 汇率 里手动填一个，或者让 Agent 运行 /plan-trip 自动更新。<//>`
-      : fxLine(ctx, cur) ? html`<p class="hint">${fxLine(ctx, cur)}</p>` : null}
+  return html`<div class="costs-grid">
+    <div class="stack">
+      <section class="card pad money-card">
+        <div class="row" style=${{ alignItems: 'flex-start' }}>
+          <div class="grow"><p class="hint">已记录的花费</p><p class="big-money">${fmtMoney(tot.total, home, approx)}</p>
+            ${budget ? html`<p class="hint num">预算 ${fmtMoney(budget, home)} · ${tot.total <= budget ? `还剩 ${fmtMoney(budget - tot.total, home, approx)}` : html`<b style=${{ color: 'var(--danger)' }}>超出 ${fmtMoney(tot.total - budget, home, approx)}</b>`}</p>` : null}</div>
+          <button class="btn green" onClick=${add}><${Icon} name="plus" size=${18} stroke=${2.2} />记一笔</button>
+        </div>
+        ${budget ? html`<div class="meter" aria-hidden="true" style=${{ marginTop: '12px' }}><i style=${{ width: Math.min(100, (tot.total / budget) * 100) + '%', background: tot.total > budget ? 'var(--danger)' : null }}></i></div>` : null}
+        ${tot.missing ? html`<p class="hint">${tot.missing} 笔没有汇率，没算进总数。</p>` : null}
+      </section>
+      ${tot.total > 0 ? html`<section class="card pad"><h3 class="card-title">按类别</h3>
+        <div class="cat-bars">${EXPENSE_CATS.filter(([k]) => tot.byCat[k] > 0).map(([k, v]) => html`<div key=${k}><span>${v}</span>
+          <span class="meter"><i style=${{ width: (tot.byCat[k] / maxCat) * 100 + '%' }}></i></span><span class="amt">${fmtMoney(tot.byCat[k], home, approx)}</span></div>`)}</div>
+      </section>` : null}
+      <section>
+        <div class="section-head"><h2>记录</h2><span class="hint">${list.length} 笔</span></div>
+        ${list.length ? html`<div class="card pad" style=${{ paddingBlock: '4px' }}>${list.map(e => {
+          const v = toHome(num(e.amount), e.currency || home, ctx.fx, home);
+          const payer = e.paidBy || e.createdBy;
+          return html`<button class="expense-row" key=${e.id} onClick=${() => ctx.openSheet({ type: 'expense', tripId: trip.id, expenseId: e.id })}>
+            <span class=${'tag ' + ({ food: 'food', transport: 'transport', tickets: 'sight', shopping: 'shopping', stay: 'stay' }[e.category] || 'other')}>${EXPENSE_LABEL[e.category] || '其他'}</span>
+            <span class="grow"><b>${e.note || EXPENSE_LABEL[e.category] || '花费'}</b>
+              <small class="row" style=${{ gap: '5px' }}>${payer ? html`<${Avatars} ids=${[payer]} ctx=${ctx} max=${1} small />${nameOf(payer)}付 · ` : null}${e.day != null ? `Day ${e.day + 1}` : e.date}${e.example ? ' · 示例' : ''}</small></span>
+            <span class="amt"><b>${fmtMoney(num(e.amount), e.currency || home)}</b>${e.currency && e.currency !== home ? html`<small>${v != null ? '≈ ' + fmtMoney(v, home, true) : '无汇率'}</small>` : null}</span>
+          </button>`;
+        })}</div>` : html`<button class="card pad empty-row" onClick=${add}><${Icon} name="wallet" />还没有记录。吃饭、车票、门票随手记一笔，自动换算成 ${CURRENCIES[home] ? CURRENCIES[home].sym : home}。</button>`}
+      </section>
+    </div>
+    <div class="stack">
+      ${settle ? html`<section class="card pad settle">
+        <h3 class="card-title">结算</h3>
+        ${settle.people.map(x => html`<div class="settle-row" key=${x.id}>
+          <${Avatars} ids=${[x.id]} ctx=${ctx} max=${1} />
+          <span class="grow"><b>${nameOf(x.id)}</b><small>已付 ${fmtMoney(x.paid, home, true)} · 应摊 ${fmtMoney(x.share, home, true)}</small></span>
+          <span class=${'net num ' + (x.net > 0.5 ? 'pos' : x.net < -0.5 ? 'neg' : '')}>${Math.abs(x.net) < 0.5 ? '两清' : (x.net > 0 ? '应收 ' : '应付 ') + fmtMoney(Math.abs(x.net), home, true)}</span>
+        </div>`)}
+        ${settle.transfers.length ? html`<div class="stack" style=${{ gap: '6px', marginTop: '8px' }}>${settle.transfers.map((t, i) => html`<div class="transfer-line" key=${i}>
+          <b>${nameOf(t.from)}</b><${Icon} name="arrowRight" size=${15} /><b>${nameOf(t.to)}</b><span class="grow"></span><b class="num">${fmtMoney(t.amount, home, true)}</b></div>`)}</div>`
+          : html`<p class="hint">大家已经两清了。</p>`}
+        <p class="hint" style=${{ marginTop: '8px' }}>每笔按选中的人平均分；外币按当前汇率换算。${settle.skipped ? `${settle.skipped} 笔没写谁付的，没算进来。` : ''}</p>
+      </section>` : null}
+      <section class="card pad">
+        <h3 class="card-title">AI 预估（每人）</h3>
+        ${est.known ? html`<div>
+          <p class="big-money" style=${{ fontSize: '24px' }}>${fmtMoney(est.total, cur)}${estHome != null && cur !== home ? html`<span class="hint" style=${{ fontSize: '15px', fontWeight: 600 }}> ≈ ${fmtMoney(estHome, home, true)}</span>` : null}</p>
+          <div>${est.days.map((d, i) => d.known ? html`<div class="cost-row" key=${i}><div><b>Day ${i + 1}</b><br /><small>交通 ${fmtMoney(d.fare, cur)} · 门票餐饮 ${fmtMoney(d.spend, cur)}</small></div>
+            <div class="amt">${fmtMoney(d.total, cur)}${conv(d.total) != null && cur !== home ? html`<br /><small>≈ ${fmtMoney(conv(d.total), home, true)}</small>` : null}</div></div>` : null)}</div>
+          <p class="hint">按帖子里的价格和 AI 的常识估的，只作参考；酒店和机票不在里面。</p></div>`
+          : html`<p class="hint">这趟行程还没有价格预估。用「用 AI 优化这一天」或「调整整个行程」重新排一次，AI 会写上车费和大概花费。</p>`}
+      </section>
+      ${noRate ? html`<${Notice} warn>还没有 ${cur} 的汇率，换算不了 ${home}。在 设置 → 汇率 里手动填一个，或者让 Agent 运行 /plan-trip 自动更新。<//>`
+        : fxLine(ctx, cur) ? html`<p class="hint">${fxLine(ctx, cur)}</p>` : null}
+    </div>
   </div>`;
 }
-
 function PendingTab({ ctx, trip }) {
   const list = pendingPlaces(trip, ctx.places);
   if (!list.length) {
@@ -2910,7 +3159,7 @@ function PendingTab({ ctx, trip }) {
   const skip = p => ctx.write('update', 'trips', trip.id, { skipped: [...new Set([...(trip.skipped || []), p.id])], updatedAt: Date.now() });
   const names = list.map(x => x.p.name).join('、');
   return html`<div class="stack" style=${{ marginTop: '16px' }}>
-    <p class="hint">${tripCities(trip).join('、')}收藏了但还没排进行程的地点。不想去的点 × 移出这趟（收藏还在）。</p>
+    <p class="hint">${tripCities(trip).join('、')}收藏了但还没排进行程的地点。不想去的，点右边的<span class="inline-ic"><${Icon} name="x" size=${13} stroke=${2.4} /></span>移出这趟（收藏还在）。</p>
     <div class="stack" style=${{ gap: '10px' }}>${list.map(({ p, reason }) => html`<div class="card pend-row" key=${p.id}>
       <${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
       <button class="info" onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
@@ -2959,7 +3208,7 @@ function ReviseSheet({ ctx, trip, dayIndex, preset, onClose }) {
       ${day ? html`<p class="hint">${[day.city, day.area, day.theme].filter(Boolean).join(' · ')}：${(day.stops || []).map(s => s.name).join(' → ')}</p>` : null}
       <div class="chips wrap">${quick.map(q => html`<button class="chip" onClick=${() => setFeedback(f => (f ? f + '；' : '') + q)}>${q}</button>`)}</div>
       <div class="field"><label for="rv-text">想怎么改？</label>
-        <textarea id="rv-text" class="input" rows="3" value=${feedback} onInput=${e => setFeedback(e.target.value)} placeholder="例如：太赶了，把浅草寺挪到 Day 3；中午想吃拉面"></textarea></div>
+        <textarea id="rv-text" class="input" rows="3" value=${feedback} onInput=${e => setFeedback(e.target.value)} placeholder="例如：太赶了，把博物馆挪到 Day 3；中午想吃当地小吃"></textarea></div>
       <p class="hint">AI 会重新排整份行程，改动的地方会用黄色标出来，看过后点「知道了」。</p>
       ${!ctx.ai.ok ? html`<${Notice} warn>${ctx.ai.reason}<//>` : null}
       ${job.error ? html`<${Notice} warn role="alert">${job.error}<//>` : null}`}
@@ -3067,7 +3316,7 @@ function TripFormSheet({ ctx, initial, onClose }) {
         </div>`)}</div>` : html`<p class="hint">先选一个城市。</p>`}
         ${others.length ? html`<div class="chips wrap" style=${{ marginTop: '4px' }}>${others.map(c => html`<button class="chip outline" onClick=${() => addCity(c)}><${Icon} name="plus" size=${14} />${c} <span class="n">${countIn(c)}</span></button>`)}</div>` : null}
         <form class="row" onSubmit=${e => { e.preventDefault(); addCity(newCity); }}>
-          <input class="input" list="known-cities" value=${newCity} onInput=${e => setNewCity(e.target.value)} placeholder="输入其他城市，例如 京都" aria-label="添加城市" />
+          <input class="input" list="known-cities" value=${newCity} onInput=${e => setNewCity(e.target.value)} placeholder="输入其他城市，例如 釜山、清迈、巴黎" aria-label="添加城市" />
           <button class="btn" disabled=${!newCity.trim()}>添加</button></form>
       </div>
       <div class="grid2">
@@ -3250,24 +3499,35 @@ function ExpenseSheet({ ctx, trip, expense, onClose }) {
   const tripCur = plan.currency || tripCurrency(trip, ctx.places) || ctx.home;
   const todayStr = new Date().toISOString().slice(0, 10);
   const guessDay = () => { if (!trip.startDate) return ''; const d = Math.round((parseDate(todayStr) - parseDate(trip.startDate)) / 864e5); return d >= 0 && d < trip.days ? String(d) : ''; };
+  const members = tripMembers(trip, ctx.expenses, ctx.places, ctx.me);
+  const people = useProfiles(members, ctx);
+  const nameOf = id => (people[id] && people[id].name) || (id === ctx.me ? '我' : '旅伴');
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '');
   const [currency, setCurrency] = useState(expense ? expense.currency || ctx.home : tripCur);
   const [category, setCategory] = useState(expense ? expense.category : 'food');
   const [note, setNote] = useState(expense ? expense.note || '' : '');
   const [day, setDay] = useState(expense ? (expense.day != null ? String(expense.day) : '') : guessDay());
+  const [paidBy, setPaidBy] = useState((expense && (expense.paidBy || expense.createdBy)) || ctx.me || members[0] || null);
+  const [split, setSplit] = useState(() => new Set(expense && Array.isArray(expense.split) && expense.split.length ? expense.split : members));
   const amt = num(amount);
   const inHome = amt ? toHome(amt, currency, ctx.fx, ctx.home) : null;
   const curs = [...new Set([tripCur, ctx.home, 'MYR', ...Object.keys(CURRENCIES)])].filter(Boolean);
+  const shared = members.length >= 2;
+  const toggleSplit = id => setSplit(s => { const n = new Set(s); if (n.has(id) && n.size > 1) n.delete(id); else n.add(id); return n; });
   async function save() {
     if (!(amt > 0)) return;
     const now = Date.now();
     const dayN = day === '' ? null : +day;
-    const fields = { amount: amt, currency, category, note: str(note, 80), day: dayN, date: dayN != null && trip.startDate ? addDays(trip.startDate, dayN) : (expense && expense.date) || todayStr, updatedAt: now };
+    const fields = {
+      amount: amt, currency, category, note: str(note, 80), day: dayN, date: dayN != null && trip.startDate ? addDays(trip.startDate, dayN) : (expense && expense.date) || todayStr,
+      paidBy: paidBy || null, split: shared && split.size < members.length ? [...split] : null, updatedAt: now,
+    };
     const ok = expense ? await ctx.write('update', 'expenses', expense.id, fields)
       : await (async () => { const doc = { id: uid('x'), tripId: trip.id, ...fields, createdBy: ctx.me, example: false, createdAt: now }; return ctx.write('set', 'expenses', doc.id, doc); })();
     if (ok) { ctx.toast(expense ? '已保存' : '记好了'); onClose(); }
   }
   async function remove() { if (await ctx.write('remove', 'expenses', expense.id)) { ctx.toast('已删除'); onClose(); } }
+  const person = id => html`<${Avatars} ids=${[id]} ctx=${ctx} max=${1} small />${nameOf(id)}`;
   return html`<${Sheet} title=${expense ? '这笔花费' : '记一笔'} onClose=${onClose} footer=${html`
       ${expense ? html`<${ConfirmButton} className="sm" label="删除" armedLabel="确认删除" icon="trash" onConfirm=${remove} /><span style=${{ flex: 1 }}></span>` : null}
       <button class="btn" onClick=${onClose}>取消</button><button class="btn green" disabled=${!(amt > 0)} onClick=${save}>保存</button>`}>
@@ -3277,8 +3537,10 @@ function ExpenseSheet({ ctx, trip, expense, onClose }) {
     </div>
     <p class="hint num">${amt ? (currency === ctx.home ? '　' : inHome != null ? `≈ ${fmtMoney(inHome, ctx.home, true)}` : `没有 ${currency} 的汇率，暂时换算不了`) : '　'}</p>
     <div class="field"><span class="label">类别</span><div class="chips wrap">${EXPENSE_CATS.map(([k, v]) => html`<button class="chip" aria-pressed=${category === k} onClick=${() => setCategory(k)}>${v}</button>`)}</div></div>
+    ${shared ? html`<div class="field"><span class="label">谁付的</span><div class="chips wrap">${members.map(id => html`<button key=${id} class="chip person" aria-pressed=${paidBy === id} onClick=${() => setPaidBy(id)}>${person(id)}</button>`)}</div></div>
+      <div class="field"><span class="label">谁分摊（平均分）</span><div class="chips wrap">${members.map(id => html`<button key=${id} class="chip person" aria-pressed=${split.has(id)} onClick=${() => toggleSplit(id)}>${person(id)}</button>`)}</div></div>` : null}
     <div class="grid2">
-      <div class="field"><label for="ex-note">备注</label><input id="ex-note" class="input" value=${note} onInput=${e => setNote(e.target.value)} placeholder="例如：一兰拉面 两人" /></div>
+      <div class="field"><label for="ex-note">备注</label><input id="ex-note" class="input" value=${note} onInput=${e => setNote(e.target.value)} placeholder="例如：晚餐 两人" /></div>
       <div class="field"><label for="ex-day">哪一天</label>
         <select id="ex-day" class="input" value=${day} onChange=${e => setDay(e.target.value)}><option value="">不分天</option>
           ${Array.from({ length: trip.days || plan.days.length || 1 }, (_, i) => html`<option value=${String(i)}>Day ${i + 1}${trip.startDate ? ' · ' + fmtDayChip(addDays(trip.startDate, i)) : ''}</option>`)}</select></div>
@@ -3390,8 +3652,10 @@ function AssistantView({ ctx }) {
       ${msgs.map(m => (m.role === 'me'
         ? html`<div class="msg me" key=${m.id}><div class="bubble">${m.text}<time>${fmtClock(m.at)}</time></div></div>`
         : html`<div class="msg ai" key=${m.id}><span class="bot sm"><${Icon} name="bot" size=${18} /></span>
-            <div class=${'bubble' + (m.error ? ' err' : '')}>
-              ${m.text ? html`<${RichText} text=${m.text} />` : html`<p class="typing" aria-label="正在输入"><i></i><i></i><i></i></p>`}
+            <div class="ai-col">
+              <div class=${'bubble' + (m.error ? ' err' : '')}>
+                ${m.text ? html`<${RichText} text=${m.text} />` : html`<p class="typing" aria-label="正在输入"><i></i><i></i><i></i></p>`}
+              </div>
               ${!m.pending ? html`<${Mentions} ctx=${ctx} text=${m.text} />` : null}
               ${(m.actions || []).map((a, i) => html`<${ActionCard} key=${i} a=${a} ctx=${ctx} state=${(m.done || {})[i]} onDone=${v => setDone(m.id, i, v)} />`)}
             </div></div>`))}
@@ -3410,8 +3674,14 @@ function AssistantView({ ctx }) {
 function Mentions({ ctx, text }) {
   const list = mentionedPlaces(text, ctx.places);
   if (!list.length) return null;
-  return html`<div class="mentions">${list.map(p => html`<button key=${p.id} onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
-    <${Photo} id=${p.coverAssetId} cat=${p.category} alt="" iconSize=${16} /><span>${p.name}</span></button>`)}</div>`;
+  const lead = list.find(p => p.coverAssetId);
+  const rest = list.filter(p => p !== lead);
+  return html`<div class="mentions-wrap">
+    ${lead ? html`<button class="ai-photo" onClick=${() => ctx.nav.push({ name: 'place', id: lead.id })}>
+      <${Photo} id=${lead.coverAssetId} cat=${lead.category} alt="" /><span><b>${lead.name}</b><small>${[lead.area, lead.city].filter(Boolean).join(' · ')}</small></span></button>` : null}
+    ${rest.length ? html`<div class="mentions">${rest.map(p => html`<button key=${p.id} onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
+      <${Photo} id=${p.coverAssetId} cat=${p.category} alt="" iconSize=${16} /><span>${p.name}</span></button>`)}</div>` : null}
+  </div>`;
 }
 function ActionCard({ a, ctx, state, onDone }) {
   const [busy, setBusy] = useState(false);
@@ -3512,7 +3782,9 @@ function GuideView({ ctx, id }) {
   const city = g.city, country = g.country;
   const steps = g.steps || [];
   const saved = (g.places || []).map(p => findDuplicate(p, ctx.places));
-  const cover = (g.imageAssetIds || [])[0] || (saved.find(p => p && p.coverAssetId) || {}).coverAssetId;
+  const coverPlace = (g.imageAssetIds || [])[0] ? null : saved.find(p => p && p.coverAssetId);
+  const cover = (g.imageAssetIds || [])[0] || (coverPlace && coverPlace.coverAssetId);
+  const coverCredit = (g.imageAssetIds || [])[0] ? { text: `图：${PLATFORMS[(g.source || {}).platform] || '原帖'}截图` } : coverPlace && coverPlace.coverCredit;
   const newPlaces = (g.places || []).filter((p, i) => !saved[i]);
   const stops = steps.map(s => s.to || s.placeName).filter(Boolean).map(name => ({ name, city, country }));
   const route = stops.length > 1 ? dayRouteLink(stops) : null;
@@ -3530,6 +3802,7 @@ function GuideView({ ctx, id }) {
       <${Photo} id=${cover} cat="transport" iconSize=${64} />
       <div class="top"><button class="icon-btn on-photo" aria-label="返回" onClick=${ctx.nav.back}><${Icon} name="back" /></button></div>
       <div class="g-title"><h1>${g.title}</h1><p>${[city, g.duration, `${steps.length} 步`].filter(Boolean).join(' · ')}</p></div>
+      ${coverCredit ? html`<span class="credit">${coverCredit.source ? html`<a href=${coverCredit.source} target="_blank" rel="noopener noreferrer">${coverCredit.text}</a>` : coverCredit.text}</span>` : null}
     </div>
     <div class="page">
       <div class="row wrap" style=${{ marginTop: '14px' }}>
@@ -3554,7 +3827,7 @@ function GuideView({ ctx, id }) {
                 ${s.mode ? html`<span class="row" style=${{ gap: '4px' }}><${Icon} name=${MODE_ICON[s.mode] || 'walk'} size=${15} />${MODES[s.mode]}${s.minutes ? ' ' + fmtMin(s.minutes) : ''}</span>` : null}
                 ${s.exit ? html`<span class="exit">出口 ${s.exit}</span>` : null}
                 ${s.cost ? html`<span>${s.cost}</span>` : null}
-                ${link ? html`<a href=${link} target="_blank" rel="noopener noreferrer">${from && to ? '导航' : '地图'}</a>` : null}
+                ${link ? html`<a class="route-link" href=${link} target="_blank" rel="noopener noreferrer">${from && to ? '路线' : '地图'}</a>` : null}
               </div></div></li>`;
           })}</ol>` : html`<${Notice} warn>没有整理出步骤：${g.overview || '内容里没有具体的走法。'}<//>`}
           ${route ? html`<a class="btn soft block" href=${route} target="_blank" rel="noopener noreferrer"><${Icon} name="map" size=${17} />在 Google Maps 中打开路线</a>` : null}
@@ -3668,15 +3941,22 @@ function AddSheet({ ctx, initial, onClose }) {
     const keep = result.places.filter(p => p._keep);
     if (!keep.length) return onClose();
     setSaving(true);
-    let coverAssetId = null;
-    if (media.length && ctx.assets) {
-      try { coverAssetId = (await ctx.assets.upload(await shrinkImage(media[0].blob, 1080, 0.82))).id; } catch { /* the places save without a picture */ }
+    // Upload the screenshots that became covers plus a few more for each card's photo strip, once each.
+    const wanted = [...new Set([...keep.map(p => p._img || 0), 0, 1, 2, 3])].filter(i => i < media.length);
+    const ids = [];
+    if (ctx.assets) {
+      for (const i of wanted) {
+        try { ids[i] = (await ctx.assets.upload(await shrinkImage(media[i].blob, 1080, 0.82))).id; } catch { break; /* the rest save without pictures */ }
+      }
     }
     const source = { platform: url ? platform : 'manual', url: url || '', title: result.post.title || title || '' };
+    const credit = { text: `图：${PLATFORMS[source.platform] || '截图'}${source.title ? ' · ' + source.title : ''}`, source: source.url || '' };
     let n = 0;
     for (const p of keep) {
-      const { _dup, _keep, evidence, ...clean } = p;
-      const doc = makePlaceDoc(clean, { source: { ...source, evidence }, coverAssetId, coverCredit: coverAssetId ? { text: `图：${PLATFORMS[source.platform] || '截图'}${source.title ? ' · ' + source.title : ''}`, source: source.url || '' } : null, savedVia: 'app', createdBy: ctx.me });
+      const { _dup, _keep, _img, evidence, ...clean } = p;
+      const coverAssetId = ids[_img || 0] || ids.find(Boolean) || null;
+      const photoIds = coverAssetId ? [coverAssetId, ...ids.filter(id => id && id !== coverAssetId)].slice(0, 4) : [];
+      const doc = makePlaceDoc(clean, { source: { ...source, evidence }, coverAssetId, photoIds, coverCredit: coverAssetId ? credit : null, savedVia: 'app', createdBy: ctx.me });
       if (await ctx.write('set', 'places', doc.id, doc)) n++;
     }
     setSaving(false);
@@ -3703,21 +3983,28 @@ function AddSheet({ ctx, initial, onClose }) {
     ${job.phase === 'working' ? html`<${AiProgress} label="正在识别地点" text=${job.stream} started=${job.started} onStop=${job.stop} counter=${t => `已找到 ${(t.match(/"name"\s*:/g) || []).length} 个`} />`
     : review ? html`<div class="stack">
         <div><b>${result.post.title || title || '识别结果'}</b>${result.post.summary ? html`<p class="hint">${result.post.summary}</p>` : null}</div>
-        ${media.length && keepCount ? html`<div class="row" style=${{ gap: '10px' }}><img class="cover-prev" src=${media[0].url} alt="" /><p class="hint">第一张图会当作这些地点的照片。</p></div>` : null}
+        ${media.length > 1 && keepCount ? html`<p class="hint">点地点左边的图换一张，选最能代表它的截图当照片。</p>` : null}
         ${!result.places.length ? html`<${Notice} warn>没找到具体地点。加几张截图（店名常在图里），或者交给 Agent 读取原帖。<//>` : null}
         ${result.places.map((p, i) => html`<div key=${i} class=${'review-item' + (p._keep ? '' : ' off')}>
           <input type="checkbox" id=${'keep-' + i} checked=${p._keep} onChange=${e => setPlace(i, { _keep: e.target.checked })} aria-label=${'保留 ' + p.name} />
+          <button class="rv-photo" disabled=${media.length < 2} onClick=${() => setPlace(i, { _img: ((p._img || 0) + 1) % media.length })}
+            aria-label=${media.length > 1 ? `换一张图当「${p.name}」的照片（第 ${(p._img || 0) + 1}/${media.length} 张）` : `「${p.name}」的照片`}>
+            ${media.length ? html`<img src=${media[p._img || 0].url} alt="" />` : html`<div class=${'art ' + p.category}><${Icon} name=${p.category} size=${24} stroke=${1.6} /></div>`}
+            ${media.length > 1 ? html`<span class="cycle num">${(p._img || 0) + 1}/${media.length}</span>` : null}
+          </button>
           <div style=${{ minWidth: 0 }}>
-            <div class="row wrap" style=${{ gap: '6px' }}><b>${p.name}</b>${p.nameLocal && p.nameLocal !== p.name ? html`<span class="hint">${p.nameLocal}</span>` : null}<${CatTag} cat=${p.category} />
+            <div class="row wrap" style=${{ gap: '6px' }}><b>${p.name}</b>${p.nameLocal && p.nameLocal !== p.name ? html`<span class="hint">${p.nameLocal}</span>` : null}
               ${p._dup ? html`<span class="tag plain">已收藏过</span>` : null}${p.chain ? html`<span class="tag plain">连锁</span>` : null}</div>
-            <p class="hint">${[p.city, p.area].filter(Boolean).join(' · ')}${p.coordConfidence ? '' : ' · 位置未知'}</p>
-            ${p.mustTry.length ? html`<p style=${{ fontSize: '13.5px' }}>必试：${p.mustTry.join('、')}</p>` : null}
+            <div class="pills">
+              <${CityPill} value=${p.city} onChange=${v => setPlace(i, { city: v })} />
+              <label class=${'pill-select tag ' + p.category}><span class="sr">类别</span>
+                <select value=${p.category} onChange=${e => setPlace(i, { category: e.target.value })}>${CATEGORIES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}</select>
+                <${Icon} name="chevronDown" size=${13} stroke=${2.2} /></label>
+              ${p.area ? html`<span class="tag plain">${p.area}</span>` : null}${p.coordConfidence ? null : html`<span class="tag plain">位置未知</span>`}
+            </div>
+            ${p.mustTry.length ? html`<p style=${{ fontSize: '13.5px', marginTop: '6px' }}>必试：${p.mustTry.join('、')}</p>` : null}
             ${p.tips ? html`<p class="hint">${p.tips}</p>` : null}
             ${p.evidence ? html`<p class="evidence">“${p.evidence}”</p>` : null}
-            <div class="edit">
-              <input class="input" aria-label="城市" value=${p.city} onInput=${e => setPlace(i, { city: e.target.value })} />
-              <select class="input" aria-label="类别" value=${p.category} onChange=${e => setPlace(i, { category: e.target.value })}>${CATEGORIES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}</select>
-            </div>
           </div></div>`)}
       </div>`
     : html`
@@ -3730,11 +4017,22 @@ function AddSheet({ ctx, initial, onClose }) {
       ${thin ? html`<${Notice} warn>只有链接${title ? '和标题' : ''}，这个页面里的 AI 打不开链接。再<b>加几张笔记截图</b>或粘贴正文；或者点「交给 Agent」，让 Claude Code 读取原帖的全文和图片。<//>` : null}
       <${MediaPicker} m=${m} aiOk=${ctx.ai.ok} />
       <div class="field"><label for="add-city">城市（可选，帮 AI 判断）</label>
-        <input id="add-city" class="input" list="known-cities" value=${cityHint} onInput=${e => setCityHint(e.target.value)} placeholder="例如：东京、首尔、曼谷" /></div>
+        <input id="add-city" class="input" list="known-cities" value=${cityHint} onInput=${e => setCityHint(e.target.value)} placeholder="例如：首尔、曼谷、巴黎" /></div>
       ${words || media.length ? html`<button class="btn ghost sm" style=${{ justifySelf: 'start' }} onClick=${() => ctx.openSheet({ type: 'guide', text })}><${Icon} name="book" size=${15} />这是一篇"怎么去"的攻略？整理成步骤</button>` : null}
       ${!ctx.ai.ok ? html`<${Notice} warn>${ctx.ai.reason}<//>` : null}
       ${job.error ? html`<${Notice} warn role="alert">${job.error}<//>` : null}`}
   <//>`;
+}
+/** A city name that reads as a pill and turns into a text field when tapped. */
+function CityPill({ value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => { if (editing && ref.current) ref.current.focus(); }, [editing]);
+  if (editing) {
+    return html`<input ref=${ref} class="input pill-input" list="known-cities" value=${value} aria-label="城市"
+      onInput=${e => onChange(e.target.value)} onBlur=${() => setEditing(false)} onKeyDown=${e => { if (e.key === 'Enter') { e.preventDefault(); setEditing(false); } }} />`;
+  }
+  return html`<button class="pill" onClick=${() => setEditing(true)} aria-label=${`城市：${value || '未填'}，点一下修改`}><${Icon} name="pin" size=${13} />${value || '填城市'}<${Icon} name="edit" size=${12} /></button>`;
 }
 function PlaceEditSheet({ ctx, place, onClose }) {
   const [form, setForm] = useState(() => ({
@@ -3759,7 +4057,8 @@ function PlaceEditSheet({ ctx, place, onClose }) {
     setUploading(true);
     try {
       const { id } = await ctx.assets.upload(await shrinkImage(file, 1080, 0.82));
-      if (await ctx.write('update', 'places', place.id, { coverAssetId: id, coverCredit: { text: '图：自己上传', source: '' }, updatedAt: Date.now() })) ctx.toast('照片换好了');
+      const photoIds = [id, ...(place.photoIds || []).filter(x => x && x !== place.coverAssetId)].slice(0, 4);
+      if (await ctx.write('update', 'places', place.id, { coverAssetId: id, photoIds, coverCredit: { text: '图：自己上传', source: '' }, updatedAt: Date.now() })) ctx.toast('照片换好了');
     } catch (e) {
       ctx.toast(e && e.code === 'quota_exceeded' ? '图片空间满了，删掉一些旧图片再试' : '上传失败了，换一张再试');
     } finally { setUploading(false); }
@@ -3819,7 +4118,7 @@ function FilterSheet({ ctx, onClose }) {
     <div class="field"><span class="label">进度</span><div class="chips wrap">
       <button class="chip" aria-pressed=${prefs.status === 'all'} onClick=${() => setPref({ status: 'all' })}>全部</button>
       ${STATUSES.map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.status === k} onClick=${() => setPref({ status: k })}>${v} <span class="n">${st[k] || 0}</span></button>`)}</div></div>
-    <p class="hint">种草 → 想去（点 ♡）→ 已拔草（去过之后在地点页标记）。</p>
+    <p class="hint">种草 → 想去（点<span class="inline-ic"><${Icon} name="heart" size=${13} stroke=${2.2} /></span>）→ 已拔草（去过之后在地点页标记）。</p>
   <//>`;
 }
 
@@ -3887,8 +4186,8 @@ function SettingsSheet({ ctx, onClose }) {
     <section class="card pad stack">
       <h3 class="card-title">备份和导出</h3>
       <div class="row wrap">
-        <button class="btn sm" onClick=${() => save('拔草计划-备份.json', JSON.stringify({ app: 'bacao', version: 2, exportedAt: new Date().toISOString(), places: ctx.places, trips: ctx.trips, guides: ctx.guides, expenses: ctx.expenses }, null, 1))}><${Icon} name="download" size=${15} />备份全部（JSON）</button>
-        <button class="btn sm" onClick=${() => save('拔草地点.csv', placesToCSV(ctx.places))}><${Icon} name="map" size=${15} />地点 CSV</button>
+        <button class="btn sm" onClick=${() => save('旅用-备份.json', JSON.stringify({ app: 'bacao', version: 2, exportedAt: new Date().toISOString(), places: ctx.places, trips: ctx.trips, guides: ctx.guides, expenses: ctx.expenses }, null, 1))}><${Icon} name="download" size=${15} />备份全部（JSON）</button>
+        <button class="btn sm" onClick=${() => save('旅用-地点.csv', placesToCSV(ctx.places))}><${Icon} name="map" size=${15} />地点 CSV</button>
       </div>
       <${ManualCopy} text=${manual} onClose=${() => setManual('')} />
       <p class="hint">CSV 可以导入 Google My Maps（mymaps.google.com → 新地图 → 导入，位置列选「Location」），手机上就能看所有种草的点。</p>
@@ -3984,7 +4283,7 @@ function App() {
   const meta = data.meta || [];
   const ctx = {
     places, placesById, cities, trips: data.trips || [], guides: data.guides || [], inbox: data.inbox || [], expenses: data.expenses || [],
-    maps: data.maps || [], fx: meta.find(d => d.id === 'fx') || null,
+    maps: data.maps || [], fx: meta.find(d => d.id === 'fx') || null, appMeta: meta.find(d => d.id === 'app') || null,
     loading: Object.fromEntries(COLLECTIONS.map(c => [c, data[c] == null])),
     prefs, setPref, home: CURRENCIES[prefs.home] ? prefs.home : 'MYR', write, toast: showToast, me, canWrite,
     user: rt && rt.user, assets: rt && rt.assets, downloads: rt && rt.downloads, permissions: rt && rt.permissions,
@@ -4038,7 +4337,7 @@ function App() {
 
   return html`<div class="shell">
     <nav class="nav" aria-label="主菜单">
-      <div class="rail-brand"><span class="mark"><${Sprout} size=${26} /></span><b>拔草计划</b></div>
+      <div class="rail-brand"><${BrandMark} size=${44} /><b>旅用</b></div>
       ${TABS.map(([k, label, icon]) => html`<button key=${k} aria-current=${activeTab === k ? 'page' : null} onClick=${() => navApi.go(k)}
           aria-label=${k === 'home' && pendingInbox ? `${label}（${pendingInbox} 条链接待处理）` : null}>
         <span class="ic-wrap"><${Icon} name=${activeTab === k && k === 'library' ? 'heartFill' : icon} size=${24} stroke=${activeTab === k ? 2.1 : 1.8} />${k === 'home' && pendingInbox ? html`<span class="badge num" aria-hidden="true">${pendingInbox}</span>` : null}</span>${label}</button>`)}

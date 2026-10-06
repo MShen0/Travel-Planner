@@ -60,8 +60,10 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 
 ## Evidence on Hand
 
-- Example data in the live app (marked as examples, removable in 设置): 28 places in 首尔, 釜山, 台北, 曼谷 and 巴黎 with
-  Wikimedia Commons photos, a 5-day 首尔 → 釜山 trip with expenses, a 3-day 台北 trip and an airport-to-hotel guide.
+- Example data in the live app (marked as examples, removable in 设置): 21 places in 首尔, 釜山, 曼谷 and 巴黎 with
+  Wikimedia Commons photos, a 5-day 首尔 → 釜山 trip with expenses and an airport-to-hotel guide.
+- The owner's own data: 17 places in 台北, 新北, 台中 and 基隆 from a public Instagram Reel (a 5-day Taiwan itinerary),
+  with cover frames cut from the video.
 - No ratings, review counts or hotel prices from Google or booking sites are available; never show invented ratings or
   prices. Social proof that does exist: the source post's like and save counts.
 

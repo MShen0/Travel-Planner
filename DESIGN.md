@@ -412,11 +412,11 @@ Tactile pills that press in slightly.
 - **Shadow Strategy:** card rest; see Elevation & Depth.
 - **Border:** none. Hairlines only divide rows inside a card.
 - **Internal Padding:** 16px; 12px for photo list cards; 14px for notices and action cards.
-- **Place card:** a 108 × 122px photo (14px corners) beside the category pill and stage chip, an 18px/800 name, the local name, the area line and a two-line note. A heart sits top-right. The foot row shows the source platform mark and companions' avatars.
-- **Mini card:** 148px wide, a 4:5 photo with a white heart disc, then the name and area.
+- **Place card:** a 108 × 122px photo (14px corners) beside the category pill and stage chip, an 18px/800 name, the local name, the area line and a two-line note. A heart sits top-right. A place with more than one photo shows a small count chip (image icon + number) on the photo's lower right; the photos themselves live in the place page's gallery, never as extra tiles on the card. The foot row shows the source platform mark and companions' avatars.
+- **Mini card:** 148px wide, a 4:5 photo frame (square in the map list) with a white heart disc, then the name and area. A place without a photo fills the same frame with its category tile.
 - **Trip card:** the home version has a 40px drawn flag badge, a 21px title, dates, cities, avatars and four tabular stats divided by hairlines. The list version opens with a 150px three-photo collage.
 - **Photo fallback:** a tinted tile with the category gradient and the category icon.
-- **Credit pill:** 11px white text on 55% forest-black glass with a 6px blur. It sits on every full-bleed photo.
+- **Credit pill:** 11px white text on 55% forest-black glass with a 6px blur, 10px corners. It sits on every full-bleed photo, at the photo's lower edge, and wraps to a second line rather than cutting off the source.
 
 ### Inputs / Fields
 - **Style:** a linen well with no visible border, 14px corners, 46px tall and 16px text, so phones do not zoom.
@@ -436,7 +436,7 @@ Tactile pills that press in slightly.
 The walkable day is a vertical transit line of photo stops.
 - **Row:** a right-aligned tabular time (13px/700), the rail, a 58px photo with 10px corners, then the name (15.5px/800) with its category pill and any AI 推荐 pill, a two-line meta, and a "more" button. A companion's avatar can sit on the photo's corner.
 - **Rail:** a 2px line mixing green into the hairline. Each stop has an 18px dot with a 2.5px green ring and its station number. The hotel start dot is solid green. A visited stop is solid green with a check, and an AI-suggested stop has a dashed ring.
-- **Leg:** between two stops, the rail turns dashed. A 12.5px line gives the mode icon, the bold mode and minutes, then detail and fare, and ends in a leaf-green 路线 link (a 44px tap target) that hands off to a map app.
+- **Leg:** between two stops, the rail turns dashed. A 12.5px line gives the mode icon, the bold mode and minutes, then detail and fare, and ends in a leaf-green 路线 pill on `green-tint` inside a 44px tap target that hands off to a map app.
 - **City change:** a transfer row uses a slate-teal transport tile with the mode icon and a 换城市 pill.
 - **AI changed:** touched rows fill with lamp glow, 14px corners, bleeding 8px past the row. The day shows an amber note bar ("AI 改了这一天的 N 处") with a 知道了 button, and they stay lit until it is tapped.
 
@@ -444,7 +444,7 @@ The walkable day is a vertical transit line of photo stops.
 - **Pin size by priority:** 想去 56px, 种草 42px, 已拔草 34px. A visited pin is desaturated to 55% and carries a green check, and higher priority draws on top. Clusters are 52px with a green count badge. A selected pin scales to 1.14 and its rim turns green. Day maps add a green station-number badge.
 - **Route:** a 7px white underlay with a 3.5px forest-green line through the day's stops in order.
 - **Hotel:** a 30px pine-ink square with 住 in paper colour.
-- **Basemap:** one recoloured image per city, with a dark version picked by the colour scheme. Its edges feather into map paper with a 5% mask. Area labels are 13px/800 slate with a paper halo.
+- **Basemap:** one recoloured image per city, with a dark version picked by the colour scheme, rendered with wide margins around the saved places. The full-screen 地图模式 opens with the basemap covering the whole view (no paper around it); 显示全部地点 may zoom out past that. Smaller in-page maps feather their edges into map paper with a 5% mask. Area labels are 13px/800 slate with a paper halo.
 
 ### Stage Control (signature)
 On a place page, 种草 → 想去 → 已拔草 is a three-step control on a white card. It has three 34px circles joined by a 2px line. Reached steps and their joining line fill forest green, and the current step adds a 4px moss-wash halo. Tapping the heart to mark a place 想去 plays a short "pluck": a scale to 1.25 with a -6° turn over 0.6s on the settle curve. The pluck is skipped under reduced motion.

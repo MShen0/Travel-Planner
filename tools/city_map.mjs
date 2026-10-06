@@ -33,8 +33,10 @@ const latFromMerc = y => (360 / Math.PI) * Math.atan(Math.exp(y)) - 90;
 /**
  * Mercator bounds around the places: at least minSpanKm wide, padded on every side, and widened along the short
  * side until width/height sits inside `aspect` — so a tall phone and a wide desktop both have map to look at.
+ * The default pad (0.9 of the places' span on each side) lets the app's full-screen map cover a portrait phone
+ * edge to edge while every pin still sits between the top bar and the place list.
  */
-export function boundsFor(points, pad = 0.12, minSpanKm = 1.6, aspect = [0.75, 1.4]) {
+export function boundsFor(points, pad = 0.9, minSpanKm = 1.6, aspect = [0.75, 1.4]) {
   const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
   let west = Math.min(...lngs), east = Math.max(...lngs);
   let south = mercY(Math.min(...lats)), north = mercY(Math.max(...lats));
@@ -126,15 +128,15 @@ async function render(bounds, size, palette, file) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   if (!args.places || !args.out) {
-    console.error('usage: node tools/city_map.mjs --places places.json [--city 首尔] --out DIR [--pad 0.12] [--max 1400]');
+    console.error('usage: node tools/city_map.mjs --places places.json [--city 首尔] --out DIR [--pad 0.9] [--max 1600]');
     process.exit(2);
   }
   const all = JSON.parse(readFileSync(args.places, 'utf8'));
   const pts = all.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng) && (!args.city || p.city === args.city));
   if (!pts.length) { console.error('no places with coordinates'); process.exit(1); }
   mkdirSync(args.out, { recursive: true });
-  const bounds = boundsFor(pts, Number(args.pad || 0.12));
-  const size = viewportFor(bounds, Number(args.max || 1400));
+  const bounds = boundsFor(pts, args.pad ? Number(args.pad) : undefined);
+  const size = viewportFor(bounds, Number(args.max || 1600));
   const drawn = await render(bounds, size, PALETTES.light, path.join(args.out, 'light.jpg'));
   await render(bounds, size, PALETTES.dark, path.join(args.out, 'dark.jpg'));
   const b = drawn, where = `${b.west.toFixed(4)},${b.south.toFixed(4)},${b.east.toFixed(4)},${b.north.toFixed(4)}`;

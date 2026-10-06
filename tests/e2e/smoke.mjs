@@ -95,7 +95,9 @@ const browser = await playwright.chromium.launch();
 const { png, webm } = media();
 let dumped;
 {
-  const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX] } });
+  // A new user still gets the shared home photo (meta/app) when the seed file carries one, as in the live app.
+  const appMeta = seedFile ? (JSON.parse(readFileSync(seedFile, 'utf8')).meta || []).filter(m => m.id === 'app') : [];
+  const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX, ...appMeta] } });
   await step('home renders for a new user', async () => {
     await text(page, '今天想拔哪一棵草').waitFor({ timeout: 8000 });
     await text(page, '三步把灵感变成行程').waitFor();

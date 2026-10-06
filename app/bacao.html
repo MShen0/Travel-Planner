@@ -205,7 +205,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .hero-bar { position: absolute; z-index: 2; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 14px); padding-inline: 18px 14px; display: flex; align-items: center; justify-content: space-between; max-width: 1040px; margin: 0 auto; }
 .hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 16px rgb(0 0 0 / .25); }
 .hero p { margin-top: 8px; font-size: 14.5px; line-height: 1.5; max-width: 30em; color: rgb(255 255 255 / .94); text-shadow: 0 1px 10px rgb(0 0 0 / .3); }
-.credit { font-size: 11px; line-height: 1.4; color: #fff; background: rgb(12 16 14 / .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 3px 9px; border-radius: 999px; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.credit { font-size: 11px; line-height: 1.4; color: #fff; background: rgb(12 16 14 / .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 3px 9px; border-radius: 10px; max-width: min(calc(100% - 28px), 460px); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .credit a { color: #fff; text-decoration: none; }
 .hero .credit { position: absolute; z-index: 1; right: 12px; bottom: 74px; }
 .home-body { position: relative; z-index: 2; margin-top: -64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -246,7 +246,9 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: 148px; gap: 12px; overflow-x: auto; padding: 2px 16px 8px; margin-inline: -16px; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none; }
 .hscroll::-webkit-scrollbar { display: none; }
 .mini { scroll-snap-align: start; display: grid; gap: 8px; border: 0; padding: 0; background: none; text-align: left; color: inherit; }
-.mini .photo { aspect-ratio: 4 / 5; border-radius: var(--r-md); }
+.mini { min-width: 0; width: 100%; }
+.mini .frame { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-md); overflow: hidden; }
+.mini .frame > .photo { position: absolute; inset: 0; }
 .mini b { font-size: 14px; font-weight: 700; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini small { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
 .mini .heart-dot { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgb(255 255 255 / .92); display: grid; place-items: center; color: #5F6762; }
@@ -298,6 +300,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .map-world img { display: block; width: 100%; height: 100%; pointer-events: none;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent), linear-gradient(180deg, transparent, #000 5%, #000 95%, transparent); mask-composite: intersect; }
+.mapwrap.full .map-world img { -webkit-mask-image: none; mask-image: none; }
 .map-world.synthetic { background-color: var(--map-land); background-image: linear-gradient(var(--map-grid) 1px, transparent 1px), linear-gradient(90deg, var(--map-grid) 1px, transparent 1px); background-size: 120px 120px; }
 .map-world.animate { transition: transform .45s cubic-bezier(.16, 1, .3, 1); }
 .map-overlay { position: absolute; inset: 0; pointer-events: none; }
@@ -329,8 +332,9 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .sheet-peek .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--fill-2); margin: 0 auto 10px; }
 .sheet-peek h2 { font-size: 17px; font-weight: 800; }
 .sheet-peek .hscroll { grid-auto-columns: 128px; margin-top: 10px; }
-.sheet-peek .mini .photo { aspect-ratio: 1 / 1; }
-.sheet-peek .mini.sel .photo { outline: 3px solid var(--green); outline-offset: 2px; }
+.sheet-peek .mini .frame { aspect-ratio: 1 / 1; overflow: visible; }
+.sheet-peek .mini .frame > .photo { border-radius: var(--r-md); }
+.sheet-peek .mini.sel .frame > .photo { outline: 3px solid var(--green); outline-offset: 2px; }
 .list-pill { position: absolute; z-index: 6; left: 16px; display: inline-flex; gap: 8px; }
 .list-pill .btn { box-shadow: var(--shadow-card); }
 .city-select { width: auto; min-height: 38px; padding: 6px 12px; background: var(--surface); border-color: var(--line); }
@@ -628,7 +632,8 @@ span.avatar { display: inline-block; }
 .g-hero .photo { position: absolute; inset: 0; }
 .g-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(10 16 14 / .35), rgb(10 16 14 / .05) 40%, rgb(10 16 14 / .64)); pointer-events: none; }
 .g-hero .top { position: absolute; z-index: 2; left: 14px; top: calc(env(safe-area-inset-top, 0px) + 12px); }
-.g-title { position: absolute; z-index: 2; left: 0; right: 0; bottom: 16px; padding-inline: 18px; max-width: 1040px; margin: 0 auto; }
+.g-hero .credit { position: absolute; z-index: 2; right: 12px; bottom: 8px; }
+.g-title { position: absolute; z-index: 2; left: 0; right: 0; bottom: 36px; padding-inline: 18px; max-width: 1040px; margin: 0 auto; }
 .g-title h1 { font-size: 26px; font-weight: 800; text-shadow: 0 2px 12px rgb(0 0 0 / .3); }
 .g-title p { font-size: 13.5px; color: rgb(255 255 255 / .92); }
 @media (min-width: 1024px) { .g-hero { height: 300px; max-width: 1040px; margin: 24px auto 0; border-radius: var(--r-xl); } }
@@ -693,14 +698,16 @@ span.avatar { display: inline-block; }
 /* timeline extras */
 .route-link { min-height: 44px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--green-text); text-decoration: none; border-radius: var(--r-sm); }
 .route-link:hover { background: var(--green-tint); }
+.leg .route-link span { padding: 5px 11px; border-radius: 999px; background: var(--green-tint); line-height: 1.2; }
+.leg .route-link:hover { background: none; }
+.leg .route-link:hover span { background: color-mix(in srgb, var(--green) 16%, var(--green-tint)); }
 .gsteps .facts2 .route-link { min-height: 36px; padding: 0 12px; background: var(--green-tint); }
 .tl-row .ph-wrap { position: relative; width: 58px; height: 58px; }
 .tl-row .who { position: absolute; right: -6px; bottom: -6px; }
 .avatars.sm .avatar { width: 18px; height: 18px; border-width: 1.5px; }
 .avatars.sm .avatar + .avatar { margin-left: -5px; }
 .pcard-foot .src .avatars { margin-right: 2px; }
-.pstrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.pstrip .photo { aspect-ratio: 4 / 3; border-radius: var(--r-sm); }
+.photo-count { position: absolute; right: 6px; bottom: 6px; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; background: rgb(12 16 14 / .55); padding: 4px 7px; border-radius: 999px; font-variant-numeric: tabular-nums; }
 .ov-photos { display: grid; grid-auto-flow: column; grid-auto-columns: 96px; gap: 8px; overflow-x: auto; scrollbar-width: none; }
 .ov-photos::-webkit-scrollbar { display: none; }
 .ov-photos .photo { aspect-ratio: 1; border-radius: var(--r-md); }
@@ -1866,8 +1873,6 @@ function Scene() {
     <path d="M0 262 C80 246 150 262 222 252 C290 244 340 258 390 250 L390 330 L0 330Z" fill="#3E5E52"/>
     <path d="M150 330 C168 300 214 286 236 266 C252 252 262 246 282 240" stroke="#E9DCC6" stroke-width="15" fill="none" stroke-linecap="round"/>
     <path d="M150 330 C168 300 214 286 236 266 C252 252 262 246 282 240" stroke="#3E5E52" stroke-width="2" stroke-dasharray="7 8" fill="none"/>
-    <path d="M44 104 C72 96 94 90 118 82" stroke="#fff" stroke-width="1.6" stroke-dasharray="3 5" opacity=".7" fill="none"/>
-    <path d="M122 80 l22 -3 l8 -5 l3 1 l-5 6 l6 5 l-3 1 l-9 -3 l-7 4 z" fill="#fff" opacity=".9"/>
   </svg>`;
 }
 function Sprout({ size = 26 }) {
@@ -2280,7 +2285,7 @@ function HomeView({ ctx }) {
 }
 function MiniCard({ p, ctx, selected, onClick }) {
   return html`<button class=${'mini' + (selected ? ' sel' : '')} onClick=${onClick || (() => ctx.nav.push({ name: 'place', id: p.id }))}>
-    <div class="photo" style=${{ position: 'relative' }}><${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
+    <div class="frame"><${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
       <span class=${'heart-dot' + (p.status === 'want' ? ' on' : '')} aria-hidden="true"><${Icon} name=${p.status === 'want' ? 'heartFill' : 'heart'} size=${16} /></span></div>
     <span><b>${p.name}</b><small><${Icon} name="pin" size=${12} />${p.area || p.city || ''}</small></span>
   </button>`;
@@ -2320,10 +2325,11 @@ function StageMark({ status }) {
 }
 function PlaceCard({ p, ctx }) {
   const desc = placeDesc(p);
-  const strip = (p.photoIds || []).filter(id => id && id !== p.coverAssetId).slice(0, 3);
+  const shots = new Set([p.coverAssetId, ...(p.photoIds || [])].filter(Boolean)).size;
   return html`<article class="card pcard">
     <div class="pcard-main" onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
       <div style=${{ position: 'relative' }}><${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
+        ${shots > 1 ? html`<span class="photo-count" aria-label=${`${shots} 张照片`}><${Icon} name="image" size=${12} stroke=${2} />${shots}</span>` : null}
         ${p.status === 'visited' ? html`<span class="tag done done-badge"><${Icon} name="check" size=${12} stroke=${2.6} />已拔草</span>` : null}</div>
       <div class="pcard-body">
         <div class="row wrap" style=${{ gap: '6px' }}><${CatTag} cat=${p.category} /><${StageMark} status=${p.status} />${p.example ? html`<span class="tag example">示例</span>` : null}${p.chain ? html`<span class="tag plain">连锁</span>` : null}</div>
@@ -2334,7 +2340,6 @@ function PlaceCard({ p, ctx }) {
         <${HeartButton} p=${p} ctx=${ctx} />
       </div>
     </div>
-    ${strip.length ? html`<div class="pstrip">${strip.map(id => html`<${Photo} key=${id} id=${id} cat=${p.category} alt="" iconSize=${18} />`)}</div>` : null}
     <div class="pcard-foot">
       <span class="src">${p.createdBy ? html`<${Avatars} ids=${[p.createdBy]} ctx=${ctx} max=${1} small />` : null}${sourceBits(p)}</span>
       <${ExtLink} href=${placeLink(p, ctx.prefs.mapPref)}><${Icon} name="map" size=${15} />地图<//>
@@ -2421,14 +2426,17 @@ function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, o
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  /** Full-screen maps open with the basemap covering the whole view (no paper around it); 显示全部地点 may zoom out past that. */
+  const cover = full && basemap ? Math.max(vp.w / world.w, vp.h / world.h) : 0;
   /** Keep the image over the whole view when it is big enough; otherwise centre it. Overlays may cover up to padTop/padBottom. */
   const clampPan = n => {
     const W = world.w * n.s, H = world.h * n.s, room = vp.h - padTop - padBottom;
+    if (cover && n.s >= cover - 1e-6) return { ...n, tx: Math.min(0, Math.max(vp.w - W, n.tx)), ty: Math.min(0, Math.max(vp.h - H, n.ty)) };
     const tx = W >= vp.w ? Math.min(0, Math.max(vp.w - W, n.tx)) : (vp.w - W) / 2;
     const ty = H >= room ? Math.min(padTop, Math.max(vp.h - padBottom - H, n.ty)) : padTop + (room - H) / 2;
     return { ...n, tx, ty };
   };
-  const fitTo = useCallback((pts, animate) => {
+  const fitTo = useCallback((pts, animate, all) => {
     if (!vp.w || !vp.h) return;
     const xy = pts.filter(hasCoord).map(p => world.project(p));
     const usableH = Math.max(80, vp.h - padTop - padBottom), usableW = Math.max(80, vp.w - padLeft - padRight);
@@ -2443,9 +2451,10 @@ function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, o
     }
     const min = Math.min(vp.w / world.w, vp.h / world.h) * 0.9;
     s = Math.max(min, Math.min(s, 4));
+    if (cover && !all) s = Math.max(s, cover);
     setAnim(!!animate);
     setT(clampPan({ s, tx: padLeft + usableW / 2 - cx * s, ty: padTop + usableH / 2 - cy * s }));
-  }, [vp.w, vp.h, world, padTop, padBottom, padLeft, padRight]);
+  }, [vp.w, vp.h, world, cover, padTop, padBottom, padLeft, padRight]);
   const fitPoints = () => fit || points.concat(base && hasCoord(base) ? [base] : []);
   const fitKey = points.map(p => p.id).join(',') + '|' + (fit ? fit.length : '') + (basemap ? basemap.id : '') + vp.w + 'x' + vp.h;
   useEffect(() => { fitTo(fitPoints(), false); }, [fitKey]);
@@ -2534,7 +2543,7 @@ function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, o
     <div class="map-ctrl" style=${{ right: '12px', top: (full ? padTop : 12) + 'px' }}>
       <button class="icon-btn" aria-label="放大" onClick=${() => zoomAt(1.6, vp.w / 2, vp.h / 2, true)}><${Icon} name="plus" /></button>
       <button class="icon-btn" aria-label="缩小" onClick=${() => zoomAt(1 / 1.6, vp.w / 2, vp.h / 2, true)}><${Icon} name="minus" /></button>
-      <button class="icon-btn" aria-label="显示全部地点" onClick=${() => fitTo(fitPoints(), true)}><${Icon} name="locate" /></button>
+      <button class="icon-btn" aria-label="显示全部地点" onClick=${() => fitTo(fitPoints(), true, true)}><${Icon} name="locate" /></button>
     </div>
     <span class="map-attrib" style=${full ? { bottom: padBottom + 6 + 'px' } : null}>${basemap ? basemap.attribution : '示意图：还没有这座城市的底图'}</span>
   </div>`;
@@ -2972,7 +2981,7 @@ function Leg({ ctx, from, to, travel, cur }) {
     <span></span><span class="rail"></span>
     <div class="leg"><${Icon} name=${MODE_ICON[travel.mode] || 'walk'} size=${16} />
       <span class="txt"><b>${MODES[travel.mode] || '步行'}${travel.minutes ? ' ' + fmtMin(travel.minutes) : ''}</b>${travel.detail ? ' · ' + travel.detail : ''}${fare ? ' · ' + fare : ''}</span>
-      ${link ? html`<a class="route-link" href=${link} target="_blank" rel="noopener noreferrer" aria-label=${`到${to.name}的路线`}>路线</a>` : html`<span></span>`}</div>
+      ${link ? html`<a class="route-link" href=${link} target="_blank" rel="noopener noreferrer" aria-label=${`到${to.name}的路线`}><span>路线</span></a>` : html`<span></span>`}</div>
   </li>`;
 }
 function StopRow({ ctx, trip, s, j, dayIndex, cls, lit, cur }) {
@@ -3592,7 +3601,9 @@ function AssistantView({ ctx }) {
   const lastAsk = useRef(0);
   useEffect(() => () => ctl.current && ctl.current.abort(), []);
   useEffect(() => { if (!busy) saveChat(msgs.filter(m => !m.pending)); }, [msgs, busy]);
-  useEffect(() => { endRef.current && endRef.current.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [msgs.length, busy]);
+  const toEnd = smooth => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' });
+  useEffect(() => { if (endRef.current) toEnd(true); }, [msgs.length, busy]);
+  useEffect(() => { if (busy && innerHeight + scrollY >= document.documentElement.scrollHeight - 240) toEnd(false); }, [msgs]);
   useEffect(() => {
     const a = ctx.ask;
     if (!a || a.n === lastAsk.current) return;

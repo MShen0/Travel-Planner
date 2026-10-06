@@ -1,0 +1,4 @@
+# Needed for video links (TikTok, YouTube, Bilibili, Douyin, Xiaohongshu video notes).
+yt-dlp>=2025.1.1
+# Optional: speech-to-text for videos without subtitles. First use downloads the model (~500 MB for "small").
+# faster-whisper>=1.0

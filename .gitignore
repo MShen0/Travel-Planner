@@ -1,0 +1,8 @@
+.cache/
+exports/
+tests/e2e/.cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+.DS_Store

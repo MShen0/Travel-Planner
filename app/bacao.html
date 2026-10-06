@@ -1,0 +1,2123 @@
+<title>拔草计划</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column of platform-tile panels; a trip is drawn as a metro line (day = line, stop = station). */
+:root {
+  --bg: #EEF1EF;
+  --surface: #FFFFFF;
+  --surface-2: #E4E9E6;
+  --ink: #17201C;
+  --muted: #56645E;
+  --hair: #D3DBD7;
+  --accent: #0C7556;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #D9EEE6;
+  --exit: #FFC629;
+  --exit-ink: #1A1A1A;
+  --warn: #A9521D;
+  --danger: #C02A25;
+  --ok: #1E8449;
+  --scrim: rgb(14 20 17 / .45);
+  --d1: #E08600; --d2: #D7151F; --d3: #0090B8; --d4: #0D9467; --d5: #7D60CC;
+  --d6: #9C5E31; --d7: #A07F45; --d8: #00897D; --d9: #66808C;
+  --font-sans: "Overpass", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "Overpass Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 6px;
+  --shadow: 0 1px 2px rgb(16 24 20 / .06), 0 6px 20px rgb(16 24 20 / .08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1513; --surface: #18201D; --surface-2: #222C28; --ink: #E6ECE9; --muted: #9AAAA3; --hair: #2D3934;
+    --accent: #3CC08F; --accent-ink: #062117; --accent-soft: #163A2D; --exit: #FFC629; --exit-ink: #1A1A1A;
+    --warn: #E28A52; --danger: #F0645E; --ok: #4CC07D; --scrim: rgb(0 0 0 / .6);
+    --d1: #F39A1F; --d2: #F0474F; --d3: #2EB5DC; --d4: #2DBE8C; --d5: #A28AF0;
+    --d6: #C98A5A; --d7: #CCAA6E; --d8: #2BC2B3; --d9: #93A9B4;
+    --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1513; --surface: #18201D; --surface-2: #222C28; --ink: #E6ECE9; --muted: #9AAAA3; --hair: #2D3934;
+  --accent: #3CC08F; --accent-ink: #062117; --accent-soft: #163A2D; --exit: #FFC629; --exit-ink: #1A1A1A;
+  --warn: #E28A52; --danger: #F0645E; --ok: #4CC07D; --scrim: rgb(0 0 0 / .6);
+  --d1: #F39A1F; --d2: #F0474F; --d3: #2EB5DC; --d4: #2DBE8C; --d5: #A28AF0;
+  --d6: #C98A5A; --d7: #CCAA6E; --d8: #2BC2B3; --d9: #93A9B4;
+  --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body.locked { overflow: hidden; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+h1, h2, h3 { text-wrap: balance; line-height: 1.25; margin: 0; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ic { flex: none; display: block; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* shell */
+.shell { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--hair); margin-inline: -16px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mark { width: 34px; height: 34px; border-radius: 50%; border: 4px solid var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 15px; background: var(--surface); flex: none; }
+.brand strong { display: block; font-size: 17px; letter-spacing: .02em; }
+.brand small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .spacer { flex: 1; }
+.tabs-top { display: none; gap: 4px; }
+.tab { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 8px 12px; border-radius: var(--radius); cursor: pointer; color: var(--muted); font-weight: 600; }
+.tab[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 -3px 0 var(--accent); }
+.tab .count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--hair); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabbar .tab { flex-direction: column; gap: 2px; padding: 8px 4px 10px; font-size: 12px; border-radius: 0; justify-content: center; }
+.tabbar .tab[aria-current="page"] { background: none; box-shadow: inset 0 3px 0 var(--accent); color: var(--accent); }
+@media (min-width: 860px) {
+  .tabbar { display: none; }
+  .tabs-top { display: flex; }
+  .shell { padding-block-end: 48px; }
+}
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--hair); background: var(--surface); cursor: pointer; font-weight: 600; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { background: none; border-color: transparent; }
+.btn.ghost:hover { background: var(--surface-2); }
+.btn.danger { color: var(--danger); }
+.btn.danger.armed { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.sm { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; filter: none; }
+.icon-btn { width: 40px; height: 40px; display: inline-grid; place-items: center; border-radius: var(--radius); border: 1px solid transparent; background: none; cursor: pointer; color: var(--ink); flex: none; }
+.icon-btn:hover { background: var(--surface-2); }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.row.end { justify-content: flex-end; }
+.stack { display: grid; gap: 12px; }
+.fab { position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 25; box-shadow: var(--shadow); min-height: 48px; padding-inline: 18px; border-radius: 24px; }
+@media (min-width: 860px) { .fab { bottom: 28px; right: max(16px, calc(50vw - 524px)); } }
+
+/* chips */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-block: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--hair); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; white-space: nowrap; color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.chip .n { font-family: var(--font-mono); font-size: 12px; opacity: .7; }
+a.chip { text-decoration: none; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 1px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.tag.example { background: var(--exit); color: var(--exit-ink); }
+.tag.ai { background: var(--accent-soft); color: var(--accent); }
+.tag.agent { border: 1px solid var(--hair); background: none; }
+.status { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--hair); background: none; cursor: pointer; color: var(--muted); white-space: nowrap; }
+.status.want { color: var(--accent); border-color: var(--accent); }
+.status.visited { background: var(--ok); border-color: var(--ok); color: #fff; }
+.exit { display: inline-flex; align-items: center; gap: 4px; background: var(--exit); color: var(--exit-ink); font-weight: 800; font-size: 12px; padding: 1px 7px; border-radius: 3px; letter-spacing: .02em; }
+
+/* sections */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-block: 22px 10px; }
+.section-head h2 { font-size: 20px; }
+.section-head h3 { font-size: 16px; }
+.filters { display: grid; gap: 8px; margin-block: 14px 4px; }
+.search { width: 100%; min-height: 42px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--hair); background: var(--surface); font-size: 16px; }
+.notice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--hair); font-size: 14px; }
+.notice.warn { border-color: var(--warn); }
+.notice .ic { margin-top: 2px; color: var(--accent); }
+.notice.warn .ic { color: var(--warn); }
+
+/* places */
+.city-head { display: flex; align-items: center; gap: 10px; margin-block: 22px 8px; }
+.city-head h3 { font-size: 17px; }
+.city-head .line { flex: 1; height: 1px; background: var(--hair); }
+.grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+@media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+.place { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); }
+.place.selected { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.thumb { width: 64px; height: 64px; border-radius: 4px; background: var(--surface-2); display: grid; place-items: center; overflow: hidden; color: var(--muted); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; }
+.place h4 { margin: 0; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.place .local { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.place .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.place .tips { font-size: 13px; color: var(--muted); margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.place .must { font-size: 13px; margin-top: 6px; }
+.place .must b { font-weight: 600; color: var(--accent); }
+.place .actions { display: flex; gap: 4px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.place .pick { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; accent-color: var(--accent); }
+.src { font-size: 12px; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; max-width: 100%; overflow: hidden; }
+.src a { color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.selectbar { position: fixed; left: 0; right: 0; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); z-index: 26; display: flex; justify-content: center; padding-inline: 16px; pointer-events: none; }
+.selectbar > div { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--bg); border-radius: 999px; padding: 6px 6px 6px 16px; box-shadow: var(--shadow); max-width: 100%; }
+.selectbar .btn.ghost { color: var(--bg); }
+@media (min-width: 860px) { .selectbar { bottom: 24px; } }
+
+/* empty state */
+.empty { margin-block: 28px; padding: 24px; background: var(--surface); border: 1px dashed var(--hair); border-radius: var(--radius); display: grid; gap: 14px; justify-items: start; }
+.empty h2 { font-size: 20px; }
+.steps-intro { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+.steps-intro li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; counter-increment: s; }
+.steps-intro li::before { content: counter(s); width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--accent); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+
+/* sheets */
+.backdrop { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-height: calc(100% - 24px - env(safe-area-inset-top, 0px)); background: var(--bg); border-radius: 14px 14px 0 0; display: flex; flex-direction: column; box-shadow: var(--shadow); outline: none; }
+.sheet-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px 16px; border-bottom: 1px solid var(--hair); }
+.sheet-head h2 { font-size: 18px; flex: 1; }
+.sheet-body { overflow-y: auto; padding: 16px; display: grid; gap: 14px; overscroll-behavior: contain; }
+.sheet-foot { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hair); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; background: var(--bg); border-radius: 0 0 14px 14px; }
+@media (min-width: 720px) {
+  .backdrop { align-items: center; padding: 24px; }
+  .sheet { max-width: 640px; border-radius: 12px; max-height: 88vh; }
+  .sheet.wide { max-width: 860px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sheet { animation: rise .22s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes rise { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+
+/* forms */
+.field { display: grid; gap: 6px; }
+.field > label, .label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.input, textarea.input, select.input { width: 100%; min-height: 42px; padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--hair); background: var(--surface); font-size: 16px; }
+textarea.input { resize: vertical; min-height: 120px; line-height: 1.5; }
+.two { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.three { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 520px) { .two, .three { grid-template-columns: 1fr; } }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.hint { font-size: 13px; color: var(--muted); }
+.detected { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.media { display: flex; gap: 8px; flex-wrap: wrap; }
+.media figure { position: relative; margin: 0; width: 76px; height: 96px; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+.media img { width: 100%; height: 100%; object-fit: cover; }
+.media figure button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgb(0 0 0 / .6); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.media figure figcaption { position: absolute; left: 3px; bottom: 3px; font-size: 10px; background: rgb(0 0 0 / .6); color: #fff; padding: 0 4px; border-radius: 3px; font-family: var(--font-mono); }
+.dropzone { border: 1px dashed var(--hair); border-radius: var(--radius); padding: 12px; display: grid; gap: 8px; background: var(--surface); }
+.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+.checklist { display: grid; gap: 6px; max-height: 300px; overflow-y: auto; padding: 4px; border: 1px solid var(--hair); border-radius: var(--radius); background: var(--surface); }
+.check-row { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 4px; cursor: pointer; }
+.check-row:hover { background: var(--surface-2); }
+.check-row input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.check-row .grow { flex: 1; min-width: 0; }
+
+/* review of AI results */
+.review { display: grid; gap: 8px; }
+.review-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 10px; background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); }
+.review-item.off { opacity: .55; }
+.review-item input[type=checkbox] { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--accent); }
+.review-item .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.review-item .edit-row input, .review-item .edit-row select { min-height: 34px; padding: 4px 8px; font-size: 14px; }
+.evidence { font-size: 12px; color: var(--muted); border-left: 3px solid var(--hair); padding-left: 8px; margin-top: 6px; }
+
+/* AI progress */
+.progress { display: grid; gap: 10px; padding: 16px; background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); }
+.progress .bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; position: relative; }
+.progress .bar::after { content: ""; position: absolute; inset: 0; width: 35%; background: var(--accent); border-radius: 3px; }
+@media (prefers-reduced-motion: no-preference) { .progress .bar::after { animation: slide 1.3s ease-in-out infinite; } @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } } }
+.progress .peek { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: pre-wrap; max-height: 5.6em; overflow: hidden; overflow-wrap: anywhere; }
+
+/* trips */
+.trip-card { display: grid; gap: 8px; padding: 14px; background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); cursor: pointer; text-align: left; width: 100%; }
+.trip-card:hover { border-color: var(--muted); }
+.trip-card h3 { font-size: 17px; }
+.strip { display: flex; gap: 3px; height: 8px; }
+.strip span { border-radius: 4px; min-width: 8px; }
+.trip-head { display: grid; gap: 8px; margin-block: 16px 8px; }
+.trip-head h1 { font-size: 24px; }
+.trip-layout { display: grid; gap: 16px; }
+@media (min-width: 900px) { .trip-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; } .trip-layout .map-col { position: sticky; top: 74px; } }
+.daychips { display: flex; gap: 6px; overflow-x: auto; padding-block: 2px 6px; scrollbar-width: thin; }
+.daychip { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hair); background: var(--surface); padding: 5px 12px 5px 6px; border-radius: 999px; cursor: pointer; font-size: 13px; color: var(--ink); }
+.daychip .code { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; font-weight: 600; background: var(--surface); }
+.daychip[aria-pressed="true"] { border-color: var(--line); box-shadow: inset 0 0 0 1px var(--line); font-weight: 600; }
+.map-box { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); overflow: hidden; }
+.map-box svg { display: block; width: 100%; height: auto; }
+.map-box .cap { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--hair); font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.map-grid { stroke: var(--hair); stroke-width: 1; }
+.map-label { font-size: 12px; fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; font-family: var(--font-sans); }
+.map-num { font-family: var(--font-mono); font-size: 10px; font-weight: 600; fill: var(--ink); }
+.map-scale { stroke: var(--ink); stroke-width: 2; }
+.map-scale-text { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+.day-head { display: grid; gap: 4px; padding: 12px 0 6px; }
+.day-head .title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.day-head .badge { width: 30px; height: 30px; border-radius: 50%; border: 4px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 600; font-size: 12px; background: var(--surface); flex: none; }
+.day-head h3 { font-size: 18px; }
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { display: grid; grid-template-columns: 50px 36px minmax(0, 1fr); column-gap: 10px; }
+.timeline .time { font-family: var(--font-mono); font-size: 14px; font-weight: 600; text-align: right; padding-top: 7px; font-variant-numeric: tabular-nums; }
+.timeline .rail { position: relative; display: flex; justify-content: center; }
+.timeline .rail::before { content: ""; position: absolute; left: 50%; width: 6px; margin-left: -3px; top: 0; bottom: 0; background: var(--line); }
+.timeline li.first .rail::before { top: 18px; }
+.timeline li.last .rail::before { bottom: auto; height: 18px; }
+.timeline li.only .rail::before { display: none; }
+.station { position: relative; z-index: 1; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 4px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.station.suggested { border-style: dashed; }
+.station.done { background: var(--line); color: var(--surface); }
+.stop-body { padding: 6px 0 16px; min-width: 0; }
+.stop-body h4 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.stop-body .local { font-size: 13px; color: var(--muted); }
+.stop-body .what { margin-top: 4px; font-size: 14px; }
+.stop-body .tip { margin-top: 4px; font-size: 13px; color: var(--muted); }
+.stop-body .actions { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.leg .rail::before { opacity: .55; }
+.leg-body { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0 12px; font-size: 13px; color: var(--muted); min-width: 0; }
+.leg-body .mode { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--hair); background: var(--surface); display: grid; place-items: center; color: var(--ink); flex: none; }
+.leg-body .txt { min-width: 0; overflow-wrap: anywhere; }
+.leg-body b { color: var(--ink); font-weight: 600; }
+.linkish { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
+.linkish:hover { text-decoration: underline; }
+.tips-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; }
+.panel h3 { font-size: 15px; }
+details.panel summary { cursor: pointer; font-weight: 600; }
+
+/* guides */
+.gsteps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: g; }
+.gsteps li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; position: relative; padding-bottom: 16px; counter-increment: g; }
+.gsteps li::before { content: counter(g); width: 32px; height: 32px; border-radius: 50%; border: 4px solid var(--accent); background: var(--surface); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 600; font-size: 13px; position: relative; z-index: 1; }
+.gsteps li::after { content: ""; position: absolute; left: 14px; top: 32px; bottom: 0; width: 4px; background: var(--hair); }
+.gsteps li:last-child::after { display: none; }
+.gsteps h4 { margin: 4px 0 2px; font-size: 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.gsteps .detail { font-size: 14px; white-space: pre-line; }
+.gsteps .facts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; font-size: 13px; color: var(--muted); }
+.check-item { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.check-item input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.check-item.done span { text-decoration: line-through; color: var(--muted); }
+.gallery { display: flex; gap: 8px; overflow-x: auto; }
+.gallery img { height: 160px; width: auto; border-radius: 4px; border: 1px solid var(--hair); }
+
+/* inbox */
+.inbox-item { display: grid; gap: 6px; padding: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); }
+.inbox-item .url { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; color: var(--muted); }
+.st { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--hair); }
+.st.pending { color: var(--warn); border-color: var(--warn); }
+.st.done { color: var(--ok); border-color: var(--ok); }
+.st.failed { color: var(--danger); border-color: var(--danger); }
+.code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: 13px; overflow-wrap: anywhere; }
+
+/* toast */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; box-shadow: var(--shadow); font-size: 14px; max-width: calc(100% - 32px); }
+@media (min-width: 860px) { .toast { bottom: 28px; } }
+.boot { padding: 16px; }
+</style>
+
+<div id="app"><div class="boot"><div class="brand"><span class="mark">拔</span><div><strong>拔草计划</strong><small>正在打开你的种草清单…</small></div></div></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.26.4/preact.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.26.4/hooks.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.umd.js"></script>
+<script>
+/* ===== @lib-start: pure helpers, no DOM (unit-tested in tests/app_lib.test.mjs) ===== */
+const CATEGORIES = [['food', '美食'], ['cafe', '咖啡甜品'], ['sight', '景点'], ['shopping', '购物'], ['stay', '住宿'], ['experience', '体验'], ['nightlife', '夜生活'], ['other', '其他']];
+const CAT_LABEL = Object.fromEntries(CATEGORIES);
+const STATUSES = [['saved', '种草'], ['want', '想去'], ['visited', '已拔草']];
+const STATUS_LABEL = Object.fromEntries(STATUSES);
+const MODES = { walk: '步行', metro: '地铁', train: '火车', tram: '电车', bus: '巴士', taxi: '打车', drive: '自驾', ferry: '渡轮', bike: '骑行', flight: '飞机' };
+const MODE_ICON = { walk: 'walk', metro: 'metro', train: 'train', tram: 'train', bus: 'bus', taxi: 'car', drive: 'car', ferry: 'ferry', bike: 'bike', flight: 'flight' };
+const PLATFORMS = { xiaohongshu: '小红书', instagram: 'Instagram', tiktok: 'TikTok', douyin: '抖音', youtube: 'YouTube', bilibili: 'B站', web: '网页', manual: '手动' };
+const PACES = { relaxed: '轻松', normal: '适中', packed: '紧凑' };
+const PACE_RULE = { relaxed: '每天 3-4 个点', normal: '每天 4-6 个点', packed: '每天 6-8 个点' };
+const TRANSPORTS = { transit: '公共交通', walk: '多走路', taxi: '打车为主', drive: '自驾' };
+const LANGS = { 'zh-Hans': '简体中文', 'zh-Hant': '繁體中文', en: 'English' };
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const DAY_COLORS = 9;
+
+function uid(prefix) {
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+function str(v, max = 200) {
+  if (v == null) return '';
+  const s = String(v).replace(/\s+/g, ' ').trim();
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+}
+function para(v, max = 1200) {
+  if (v == null) return '';
+  const s = String(v).replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+}
+function strList(v, maxItems = 8, maxLen = 60) {
+  const arr = Array.isArray(v) ? v : (typeof v === 'string' && v ? v.split(/[、,，;；\n]/) : []);
+  return arr.map(x => str(x, maxLen)).filter(Boolean).slice(0, maxItems);
+}
+function num(v) {
+  const n = typeof v === 'string' ? parseFloat(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+}
+function clampNum(v, lo, hi) {
+  const n = num(v);
+  return n == null ? null : Math.min(hi, Math.max(lo, Math.round(n)));
+}
+function hasCoord(p) {
+  return !!p && Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180 && !(p.lat === 0 && p.lng === 0);
+}
+function normTime(t) {
+  const m = /^(\d{1,2})[:：.](\d{2})/.exec(String(t || '').trim());
+  if (!m) return '';
+  return `${String(Math.min(23, +m[1])).padStart(2, '0')}:${m[2]}`;
+}
+function dayColor(i) { return `var(--d${(i % DAY_COLORS) + 1})`; }
+function fmtMin(m) {
+  m = Math.round(num(m) || 0);
+  if (m <= 0) return '';
+  if (m < 60) return `${m} 分钟`;
+  return `${Math.floor(m / 60)} 小时${m % 60 ? ` ${m % 60} 分` : ''}`;
+}
+function addDays(dateStr, n) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || '');
+  if (!m) return '';
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n));
+  return d.toISOString().slice(0, 10);
+}
+function weekday(dateStr) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || '');
+  return m ? WEEKDAYS[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] : '';
+}
+
+/* --- share texts and links --- */
+const URL_RE = /https?:\/\/[^\s<>"'，。！？、；：（）【】《》「」]+/gi;
+const TRAILING_JUNK = /[.,;:!?)\]}>'"，。！？、）】》」…]+$/u;
+const SHARE_BOILERPLATE = ['复制本条信息，打开【小红书】App查看精彩内容！', '复制打开抖音，看看', '发布了一篇小红书笔记，快来看吧！'];
+
+function extractUrls(text) {
+  const out = [];
+  for (const m of String(text || '').matchAll(URL_RE)) {
+    const u = m[0].replace(TRAILING_JUNK, '');
+    if (u && !out.includes(u)) out.push(u);
+  }
+  return out;
+}
+function hostOf(u) {
+  try { return new URL(u).host.toLowerCase(); } catch { return ''; }
+}
+function detectPlatform(s) {
+  const t = String(s || '').toLowerCase();
+  const target = /^https?:\/\//.test(t) ? hostOf(t) : t;
+  const rules = [
+    ['xiaohongshu', ['xiaohongshu.com', 'xhslink.com', 'xhs.cn', '小红书']],
+    ['instagram', ['instagram.com', 'instagr.am']],
+    ['tiktok', ['tiktok.com']],
+    ['douyin', ['douyin.com', 'iesdouyin.com', '抖音']],
+    ['youtube', ['youtube.com', 'youtu.be']],
+    ['bilibili', ['bilibili.com', 'b23.tv', '哔哩哔哩']],
+  ];
+  for (const [name, needles] of rules) if (needles.some(n => target.includes(n))) return name;
+  return 'web';
+}
+function pickUrl(text) {
+  const urls = extractUrls(text);
+  return urls.find(u => detectPlatform(u) !== 'web') || urls[0] || null;
+}
+function shareTitle(text) {
+  const t = String(text || '').trim();
+  if (!t) return '';
+  for (const m of t.matchAll(/【([^【】]{2,200})】/g)) {
+    let inner = m[1].trim();
+    if (inner === '小红书' || inner.endsWith('的作品')) continue;
+    inner = inner.split(/\s*\|\s*小红书/)[0].replace(/\s+-\s+[^-]{1,40}$/, '').trim();
+    if (inner) return inner;
+  }
+  let m = /【[^【】]*的作品】\s*([\s\S]+?)\s*https?:\/\//.exec(t);
+  if (m) return m[1].replace(/\s+/g, ' ').trim();
+  m = /《([^《》]{2,200})》/.exec(t);
+  if (m) return m[1].trim();
+  if (t.includes('发布了一篇小红书笔记')) return '';
+  return contentText(t).slice(0, 200);
+}
+/** The words in a paste once links and app boilerplate are gone. */
+function contentText(text) {
+  let s = String(text || '').replace(URL_RE, ' ');
+  for (const junk of SHARE_BOILERPLATE) s = s.split(junk).join(' ');
+  return s.replace(/😆\s*\w{6,20}\s*😆/gu, ' ').replace(/[😆\s]+/gu, ' ').trim().replace(/^[-|\s]+|[-|\s]+$/g, '');
+}
+
+/* --- places --- */
+function normKey(s) {
+  return String(s || '').toLowerCase().replace(/[\s\p{P}\p{S}_]+/gu, '');
+}
+function sameCity(a, b) {
+  const x = normKey(a), y = normKey(b);
+  return !x || !y || x === y || x.includes(y) || y.includes(x);
+}
+function findDuplicate(p, places) {
+  const names = [normKey(p.name), normKey(p.nameLocal)].filter(Boolean);
+  if (!names.length) return null;
+  return (places || []).find(q => sameCity(p.city, q.city) && [normKey(q.name), normKey(q.nameLocal)].some(n => n && names.includes(n))) || null;
+}
+function normalizePlace(raw, defaults = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const lat = num(r.lat), lng = num(r.lng);
+  const coordOk = hasCoord({ lat, lng });
+  const conf = r.coordConfidence === 'exact' || r.coordConfidence === 'area' ? r.coordConfidence : (coordOk ? 'area' : null);
+  return {
+    name: str(r.name, 60),
+    nameLocal: str(r.nameLocal, 80),
+    city: str(r.city, 30) || defaults.city || '',
+    country: str(r.country, 30) || defaults.country || '',
+    area: str(r.area, 40),
+    category: CAT_LABEL[r.category] ? r.category : 'other',
+    mustTry: strList(r.mustTry, 6, 40),
+    tags: strList(r.tags, 8, 20),
+    tips: para(r.tips, 400),
+    priceLevel: clampNum(r.priceLevel, 1, 4),
+    durationMin: clampNum(r.durationMin, 5, 600),
+    bestTime: str(r.bestTime, 60),
+    hours: str(r.hours, 80),
+    chain: !!r.chain,
+    lat: coordOk ? +lat.toFixed(6) : null,
+    lng: coordOk ? +lng.toFixed(6) : null,
+    coordConfidence: coordOk ? conf : null,
+    evidence: str(r.evidence, 80),
+  };
+}
+function normalizeExtraction(raw, ctx = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const post = r.post && typeof r.post === 'object' ? r.post : {};
+  const list = Array.isArray(r.places) ? r.places : (Array.isArray(raw) ? raw : []);
+  const defaults = { city: str(post.city, 30) || ctx.cityHint || '', country: str(post.country, 30) };
+  const places = list.map(p => normalizePlace(p, defaults)).filter(p => p.name);
+  const seen = new Set();
+  return {
+    post: { title: str(post.title, 100) || ctx.title || '', summary: str(post.summary, 200), city: defaults.city, country: defaults.country },
+    places: places.filter(p => { const k = normKey(p.city) + '|' + normKey(p.name); if (seen.has(k)) return false; seen.add(k); return true; }),
+  };
+}
+function makePlaceDoc(p, extra = {}) {
+  const now = Date.now();
+  return {
+    id: extra.id || uid('p'),
+    name: p.name, nameLocal: p.nameLocal || '', city: p.city || '', country: p.country || '', area: p.area || '',
+    category: p.category || 'other', mustTry: p.mustTry || [], tags: p.tags || [], tips: p.tips || '',
+    priceLevel: p.priceLevel ?? null, durationMin: p.durationMin ?? null, bestTime: p.bestTime || '', hours: p.hours || '',
+    chain: !!p.chain,
+    lat: hasCoord(p) ? p.lat : null, lng: hasCoord(p) ? p.lng : null, coordConfidence: hasCoord(p) ? (p.coordConfidence || 'area') : null,
+    status: extra.status || 'saved', note: '',
+    source: { platform: 'manual', url: '', title: '', author: '', evidence: p.evidence || '', ...(extra.source || {}) },
+    coverAssetId: extra.coverAssetId || null,
+    savedVia: extra.savedVia || 'app', example: false,
+    createdAt: now, updatedAt: now,
+  };
+}
+
+/* --- geography --- */
+function haversineKm(a, b) {
+  const R = 6371, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function centroid(points) {
+  const n = points.length || 1;
+  return { lat: points.reduce((s, p) => s + p.lat, 0) / n, lng: points.reduce((s, p) => s + p.lng, 0) / n };
+}
+function routeKm(points, start) {
+  let km = 0, prev = hasCoord(start) ? start : null;
+  for (const p of points) { if (prev && hasCoord(p)) km += haversineKm(prev, p); if (hasCoord(p)) prev = p; }
+  return km;
+}
+/** Nearest-neighbour tour from `start`, then 2-opt until no swap shortens it. */
+function orderRoute(points, start) {
+  const pts = points.filter(hasCoord);
+  if (pts.length < 3 && !hasCoord(start)) return pts;
+  const rest = pts.slice(), tour = [];
+  let cur = hasCoord(start) ? start : rest.shift();
+  if (!hasCoord(start)) tour.push(cur);
+  while (rest.length) {
+    let bi = 0, bd = Infinity;
+    rest.forEach((p, i) => { const d = haversineKm(cur, p); if (d < bd) { bd = d; bi = i; } });
+    cur = rest.splice(bi, 1)[0];
+    tour.push(cur);
+  }
+  const head = hasCoord(start) ? [start] : [];
+  let improved = true, guard = 0;
+  while (improved && guard++ < 50) {
+    improved = false;
+    for (let i = 0; i < tour.length - 1; i++) {
+      for (let j = i + 1; j < tour.length; j++) {
+        const cand = tour.slice(0, i).concat(tour.slice(i, j + 1).reverse(), tour.slice(j + 1));
+        if (routeKm(head.concat(cand)) + 1e-9 < routeKm(head.concat(tour))) { tour.splice(0, tour.length, ...cand); improved = true; }
+      }
+    }
+  }
+  return tour;
+}
+/** Split places into `days` geographic groups of similar size (capacity-limited k-means). */
+function clusterIntoDays(places, days, base) {
+  const pts = (places || []).filter(hasCoord);
+  const noCoord = (places || []).filter(p => !hasCoord(p));
+  const k = Math.max(1, Math.min(days, pts.length));
+  const groups = Array.from({ length: Math.max(1, days) }, () => []);
+  if (!pts.length) return { groups, noCoord };
+  const seeds = [];
+  const first = hasCoord(base) ? pts.reduce((m, p) => (haversineKm(p, base) > haversineKm(m, base) ? p : m), pts[0]) : pts[0];
+  seeds.push({ lat: first.lat, lng: first.lng });
+  while (seeds.length < k) {
+    let best = null, bestD = -1;
+    for (const p of pts) { const d = Math.min(...seeds.map(s => haversineKm(p, s))); if (d > bestD) { bestD = d; best = p; } }
+    seeds.push({ lat: best.lat, lng: best.lng });
+  }
+  let centers = seeds, assign = pts.map(() => -1);
+  const cap = Math.ceil(pts.length / k) + (pts.length > k ? 1 : 0);
+  for (let iter = 0; iter < 15; iter++) {
+    const pairs = [];
+    pts.forEach((p, i) => centers.forEach((c, j) => pairs.push([haversineKm(p, c), i, j])));
+    pairs.sort((x, y) => x[0] - y[0]);
+    const count = new Array(k).fill(0), next = pts.map(() => -1);
+    for (const [, i, j] of pairs) { if (next[i] !== -1 || count[j] >= cap) continue; next[i] = j; count[j]++; }
+    const changed = next.some((v, i) => v !== assign[i]);
+    assign = next;
+    centers = centers.map((c, j) => { const m = pts.filter((_, i) => assign[i] === j); return m.length ? centroid(m) : c; });
+    if (!changed) break;
+  }
+  for (let j = 0; j < k; j++) groups[j] = orderRoute(pts.filter((_, i) => assign[i] === j), base);
+  // Days nearest the base first, so day 1 starts close to where you sleep.
+  if (hasCoord(base)) groups.sort((a, b) => (a.length ? haversineKm(base, centroid(a)) : 1e9) - (b.length ? haversineKm(base, centroid(b)) : 1e9));
+  return { groups, noCoord };
+}
+function makeProjection(points, width, height, pad) {
+  const pts = points.filter(hasCoord);
+  if (!pts.length) return null;
+  let minLat = Math.min(...pts.map(p => p.lat)), maxLat = Math.max(...pts.map(p => p.lat));
+  let minLng = Math.min(...pts.map(p => p.lng)), maxLng = Math.max(...pts.map(p => p.lng));
+  const kx = Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
+  const minSpan = 0.008;
+  if (maxLat - minLat < minSpan) { const c = (maxLat + minLat) / 2; minLat = c - minSpan / 2; maxLat = c + minSpan / 2; }
+  if ((maxLng - minLng) * kx < minSpan) { const c = (maxLng + minLng) / 2; minLng = c - minSpan / (2 * kx); maxLng = c + minSpan / (2 * kx); }
+  const spanX = (maxLng - minLng) * kx, spanY = maxLat - minLat;
+  const s = Math.min((width - 2 * pad) / spanX, (height - 2 * pad) / spanY);
+  const offX = (width - spanX * s) / 2, offY = (height - spanY * s) / 2;
+  return {
+    project: p => [offX + (p.lng - minLng) * kx * s, offY + (maxLat - p.lat) * s],
+    kmPerPx: 111.32 / s,
+  };
+}
+function niceScale(kmPerPx, targetPx = 90) {
+  const steps = [0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+  const want = kmPerPx * targetPx;
+  const km = steps.reduce((best, s) => (Math.abs(s - want) < Math.abs(best - want) ? s : best), steps[0]);
+  return { km, px: km / kmPerPx, label: km < 1 ? `${Math.round(km * 1000)} m` : `${km} km` };
+}
+/** Greedy label placement: right, left, above, below — first spot that collides with nothing. */
+function placeLabels(items, width, height) {
+  const boxes = [];
+  const overlaps = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+  return items.map(it => {
+    const w = Math.min(14, [...it.text].length) * (/[　-鿿가-힯぀-ヿ]/.test(it.text) ? 12 : 7) + 4, h = 15;
+    const cands = [[it.x + 13, it.y - h / 2, 'start'], [it.x - 13 - w, it.y - h / 2, 'end'], [it.x - w / 2, it.y - 14 - h, 'middle'], [it.x - w / 2, it.y + 14, 'middle']];
+    for (const [x, y, anchor] of cands) {
+      const b = { x, y, w, h };
+      if (x < 2 || y < 2 || x + w > width - 2 || y + h > height - 2 || overlaps(b)) continue;
+      boxes.push(b);
+      const tx = anchor === 'start' ? x : anchor === 'end' ? x + w : x + w / 2;
+      return { ...it, tx, ty: y + h - 3, anchor, show: true };
+    }
+    return { ...it, show: false };
+  });
+}
+
+/* --- map links --- */
+function regionOf(p) {
+  const c = normKey(p && (p.country || ''));
+  if (/^(中国|中國|china|cn|中华人民共和国)$/.test(c)) return 'cn';
+  if (/(韩国|韓國|korea|kr|대한민국)/.test(c)) return 'kr';
+  return 'other';
+}
+function mapProvider(pref, p) {
+  if (pref && pref !== 'auto') return pref;
+  const r = regionOf(p);
+  return r === 'cn' ? 'amap' : r === 'kr' ? 'naver' : 'google';
+}
+function placeQuery(p) {
+  return [p.nameLocal || p.name, p.city].filter(Boolean).join(' ');
+}
+const enc = encodeURIComponent;
+function placeLink(p, pref) {
+  const provider = mapProvider(pref, p);
+  if (provider === 'amap') {
+    if (hasCoord(p) && p.coordConfidence === 'exact') return `https://uri.amap.com/marker?position=${p.lng},${p.lat}&name=${enc(p.name)}&coordinate=wgs84&callnative=1&src=bacao`;
+    return `https://uri.amap.com/search?keyword=${enc(p.nameLocal || p.name)}&city=${enc(p.city || '')}&callnative=1&src=bacao`;
+  }
+  if (provider === 'apple') return `https://maps.apple.com/?q=${enc(placeQuery(p))}${hasCoord(p) ? `&sll=${p.lat},${p.lng}` : ''}`;
+  if (provider === 'naver') return `https://map.naver.com/p/search/${enc(placeQuery(p))}`;
+  return `https://www.google.com/maps/search/?api=1&query=${enc(placeQuery(p))}`;
+}
+function legLink(a, b, mode, pref) {
+  const provider = mapProvider(pref, b);
+  if (provider === 'amap') {
+    if (hasCoord(a) && hasCoord(b)) {
+      const am = { walk: 'walk', bike: 'ride', taxi: 'car', drive: 'car' }[mode] || 'bus';
+      return `https://uri.amap.com/navigation?from=${a.lng},${a.lat},${enc(a.name)}&to=${b.lng},${b.lat},${enc(b.name)}&mode=${am}&coordinate=wgs84&callnative=1&src=bacao`;
+    }
+    const bm = { walk: 'walking', bike: 'riding', taxi: 'driving', drive: 'driving' }[mode] || 'transit';
+    return `https://api.map.baidu.com/direction?origin=name:${enc(a.nameLocal || a.name)}&destination=name:${enc(b.nameLocal || b.name)}&mode=${bm}&region=${enc(b.city || a.city || '')}&output=html&src=webapp.bacao`;
+  }
+  if (provider === 'apple') {
+    const f = { walk: 'w', bike: 'w', taxi: 'd', drive: 'd' }[mode] || 'r';
+    return `https://maps.apple.com/?saddr=${enc(placeQuery(a))}&daddr=${enc(placeQuery(b))}&dirflg=${f}`;
+  }
+  const g = { walk: 'walking', bike: 'bicycling', taxi: 'driving', drive: 'driving' }[mode] || 'transit';
+  return `https://www.google.com/maps/dir/?api=1&origin=${enc(placeQuery(a))}&destination=${enc(placeQuery(b))}&travelmode=${g}`;
+}
+/** One Google Maps link with every stop of a day (Google takes up to 10 points). */
+function dayRouteLink(points) {
+  const pts = points.filter(p => p && (p.name || p.nameLocal)).slice(0, 10);
+  if (pts.length < 2 || regionOf(pts[pts.length - 1]) === 'cn') return null;
+  return `https://www.google.com/maps/dir/${pts.map(p => enc(placeQuery(p))).join('/')}/`;
+}
+
+/* --- prompts for Claude --- */
+function langName(lang) { return LANGS[lang] || '简体中文'; }
+function buildExtractPrompt({ text, url, platform, cityHint, imageCount, lang, knownCities }) {
+  const L = langName(lang);
+  const cities = (knownCities || []).slice(0, 30);
+  return [
+    '你是「拔草计划」的旅行收藏助手。用户从社交媒体（小红书、Instagram、抖音、TikTok 等）收藏了一条内容，可能附带截图或视频截帧。',
+    '任务：找出内容里提到的每一个具体、可以前往的地点（餐厅、小吃、咖啡甜品、酒吧、景点、商店、市场、酒店、体验活动等）。',
+    '',
+    '规则：',
+    '1. 只要有名字的具体地点。"日本""便利店""商场"这类泛称不要。连锁店只记帖子提到的那家分店；帖子没说哪家分店时 chain 写 true、lat/lng 写 null（排行程时再挑顺路的分店）。',
+    '2. name 用帖子里的叫法；nameLocal 写当地语言的正式名称（日本写日文，韩国写韩文，泰国写泰文或英文，中国大陆/港澳台写中文），方便在地图 App 搜索；不确定就写空字符串。',
+    `3. city 用${L}的常用写法${cities.length ? `；如果和这些已有城市是同一个，必须写成完全一样：${cities.join('、')}` : ''}。country 写国家名。`,
+    '4. lat/lng 是你对位置的估计（WGS84，4 位小数）。确定具体位置时 coordConfidence 写 "exact"；只知道大概街区写 "area"；完全不知道时 lat 和 lng 写 null。',
+    '5. mustTry（必吃/必买/必做）和 tips（排队、价格、营业时间、交通、预约、避坑）只写帖子或图片里提到的内容，简短概括，不要编造。',
+    '6. category 只能是：food（正餐小吃）、cafe（咖啡甜品）、sight（景点）、shopping（购物）、stay（住宿）、experience（体验活动）、nightlife（酒吧夜生活）、other。',
+    '7. evidence：摘一句帖子里提到这个地点的原话（截图里的也算），20 字以内。',
+    '',
+    '只回复一个 JSON 对象：',
+    '{"post":{"title":"帖子标题","summary":"一句话说明这条内容讲什么","city":"主要城市","country":"国家"},',
+    ' "places":[{"name":"","nameLocal":"","city":"","country":"","area":"区域/商圈","category":"food","mustTry":[""],"tips":"","priceLevel":2,"durationMin":60,"bestTime":"","hours":"","chain":false,"lat":35.6586,"lng":139.7454,"coordConfidence":"area","evidence":""}]}',
+    `priceLevel 为 1-4（1 便宜，4 很贵，不知道写 null）；durationMin 为建议停留分钟数。找不到地点时 places 返回 []，并在 summary 里说明原因（例如"只有标题，没有正文和图片"）。所有文字用${L}。`,
+    '',
+    '--- 用户收藏的内容 ---',
+    url ? `链接：${url}（${PLATFORMS[platform] || '网页'}。你打不开链接，只能看下面的文字和图片）` : null,
+    cityHint ? `用户说城市是：${cityHint}` : null,
+    `文字：\n${String(text || '（无）').slice(0, 12000)}`,
+    imageCount ? `\n另附 ${imageCount} 张图片（社交媒体截图或视频截帧）。请仔细读图里的文字：店名、招牌、菜单、地址、字幕、地图截图。` : null,
+  ].filter(s => s != null).join('\n');
+}
+function compactPlace(p) {
+  const o = { id: p.id, name: p.name };
+  if (p.nameLocal) o.nameLocal = p.nameLocal;
+  if (p.area) o.area = p.area;
+  o.category = p.category;
+  if (p.mustTry && p.mustTry.length) o.mustTry = p.mustTry.slice(0, 3);
+  if (p.tips) o.tips = str(p.tips, 120);
+  if (p.hours) o.hours = p.hours;
+  if (p.bestTime) o.bestTime = p.bestTime;
+  if (p.durationMin) o.durationMin = p.durationMin;
+  if (hasCoord(p)) { o.lat = +p.lat.toFixed(4); o.lng = +p.lng.toFixed(4); }
+  if (p.chain) o.chain = '连锁店，挑当天路线附近的分店';
+  if (p.status === 'want') o.priority = '很想去';
+  return JSON.stringify(o);
+}
+const PLAN_SCHEMA = [
+  '{"title":"行程标题","summary":"两句话概括路线","base":{"name":"住宿","lat":0,"lng":0},"tips":[""],',
+  ' "days":[{"day":1,"theme":"当天主题","area":"主要区域","note":"当天注意事项","stops":[',
+  '   {"time":"09:30","placeId":"p_xxx","name":"","nameLocal":"","lat":0,"lng":0,"category":"sight","stayMin":60,"what":"做什么/吃什么","tip":"","suggested":false,',
+  '    "travel":{"mode":"metro","minutes":15,"detail":"","cost":""}}]}],',
+  ' "unplaced":[{"placeId":"","reason":""}]}',
+].join('\n');
+function planRules(trip, allowSuggest) {
+  return [
+    '规划规则：',
+    '1. 尽量把所有收藏地点排进去；排不进去的放进 unplaced 并写原因（太远、时间不够、定休日等）。',
+    '2. 同一天的地点要顺路、不走回头路；考虑营业时间和最佳时段（早市上午去，夜景晚上去，热门店避开高峰）。知道日期时注意周几休息。',
+    `3. 正餐放在饭点（午餐 11:30-13:30，晚餐 18:00-20:00），咖啡甜品放下午。节奏${PACES[trip.prefs.pace] || '适中'}：${PACE_RULE[trip.prefs.pace] || PACE_RULE.normal}（含吃饭）。`,
+    '4. 每个 stop 的 travel 写"从上一站怎么过来"：mode 只能是 walk/metro/train/tram/bus/taxi/drive/ferry/bike/flight；minutes 是预计分钟；detail 写具体走法（例如"银座线 浅草→上野广小路 3 站"或"步行约 800 米"）；cost 写大概费用（当地货币）。拿不准具体线路就写最可能的走法，并在 detail 末尾加"（出发前用地图确认）"。每天第一站的 travel 写从住宿出发怎么走；住宿未定时写 null。',
+    allowSuggest
+      ? `5. 可以补充最多 ${Math.max(2, trip.days * 2)} 个顺路的推荐（比如附近吃午饭的地方），标记 "suggested": true，placeId 写 null。`
+      : '5. 不要加入收藏以外的地点；吃饭和交通建议写进 tip。',
+    '6. tips 写整趟旅行的实用建议 3-6 条：交通卡或通票是否划算、需要预约的、天气穿着、现金支付等。',
+    '7. base：如果用户给了住宿，估计它的坐标；没给就写 null。',
+    '8. 标了 chain 的连锁店：挑当天路线附近的一家分店，name 写上分店名（例如"一兰拉面 涩谷店"），lat/lng 写那家分店的坐标。',
+  ];
+}
+function buildPlanPrompt({ trip, places, groups, noCoord, lang, allowSuggest }) {
+  const L = langName(lang);
+  const start = trip.startDate ? `${trip.startDate}（${weekday(trip.startDate)}）出发` : '日期未定';
+  return [
+    `你是熟悉${trip.city}的旅行规划师。根据用户收藏的地点，排一份 ${trip.days} 天的行程。`,
+    `日期：${start}；住宿/每天出发点：${trip.base && trip.base.name ? trip.base.name : '未定'}；交通偏好：${TRANSPORTS[trip.prefs.transport] || '公共交通'}。`,
+    trip.prefs.notes ? `用户的其他要求：${trip.prefs.notes}` : null,
+    '',
+    '收藏的地点（每行一个 JSON；priority=很想去 的优先保证）：',
+    ...places.map(compactPlace),
+    '',
+    '按地理位置预先分好的组（供参考，可以调整）：',
+    ...groups.map((g, i) => (g.length ? `第 ${i + 1} 组（${g.length} 个，顺路约 ${routeKm(g).toFixed(1)} km）：${g.map(p => p.name).join(' → ')}` : `第 ${i + 1} 组：空（可以安排没有坐标的地点或推荐）`)),
+    noCoord && noCoord.length ? `没有坐标的地点：${noCoord.map(p => p.name).join('、')}（按你的知识判断位置）` : null,
+    '',
+    ...planRules(trip, allowSuggest),
+    '',
+    '只回复一个 JSON 对象：',
+    PLAN_SCHEMA,
+    `days 必须正好 ${trip.days} 天。placeId 必须原样使用上面的 id。所有文字用${L}。`,
+  ].filter(s => s != null).join('\n');
+}
+function compactPlan(plan) {
+  return JSON.stringify({
+    title: plan.title, base: plan.base,
+    days: plan.days.map(d => ({ day: d.day, theme: d.theme, area: d.area, stops: d.stops.map(s => ({ time: s.time, placeId: s.placeId, name: s.name, stayMin: s.stayMin, suggested: s.suggested || undefined, travel: s.travel ? { mode: s.travel.mode, minutes: s.travel.minutes } : null })) })),
+    unplaced: plan.unplaced,
+  });
+}
+function buildRevisePrompt({ trip, places, feedback, lang, allowSuggest }) {
+  const L = langName(lang);
+  return [
+    `你是熟悉${trip.city}的旅行规划师。下面是已经排好的 ${trip.days} 天行程，用户想调整。`,
+    `用户的要求：${feedback}`,
+    '',
+    '当前行程（简化 JSON）：',
+    compactPlan(trip.plan),
+    '',
+    '可用的收藏地点（每行一个 JSON）：',
+    ...places.map(compactPlace),
+    '',
+    '按用户要求修改；用户没提到的部分尽量保持不变。',
+    ...planRules(trip, allowSuggest),
+    '',
+    '只回复完整的新行程 JSON（不是改动部分）：',
+    PLAN_SCHEMA,
+    `days 必须正好 ${trip.days} 天。所有文字用${L}。`,
+  ].join('\n');
+}
+function buildGuidePrompt({ text, url, platform, cityHint, imageCount, lang, knownCities }) {
+  const L = langName(lang);
+  return [
+    '你是旅行向导。用户收藏了一篇"怎么去/怎么玩"的攻略（文字、截图或视频截帧）。把它整理成可以一步一步照着走的指引。',
+    '',
+    '规则：',
+    '1. steps 按实际顺序，每一步一个动作：从哪里到哪里、坐什么（线路、方向、站台）、从几号出口出、走多久、到了做什么。攻略里的关键细节（出口编号、买票方式、排队技巧、价格、拍照点）写进对应步骤的 detail。',
+    '2. 攻略没写清楚的交通，用你的知识补全，并把这一步的 inferred 设为 true。',
+    '3. checklist：出发前要准备的（预约、门票、现金、交通卡、要装的 App、穿着）。',
+    `4. places：攻略里提到的具体地点，city 用${L}常用写法${(knownCities || []).length ? `（已有城市：${knownCities.slice(0, 30).join('、')}，同一城市写法要一致）` : ''}；lat/lng 是估计值，不知道写 null。`,
+    '5. warnings：可能过时、需要出发前确认的地方（价格、营业时间、已关闭的店、季节限定）。',
+    '6. mode 只能是 walk/metro/train/tram/bus/taxi/drive/ferry/bike/flight。exit 只写出口编号（如 "A3"），没有就写空字符串。',
+    '',
+    '只回复一个 JSON 对象：',
+    '{"title":"","city":"","country":"","overview":"两三句话说明这条路线","duration":"大约多久",',
+    ' "checklist":[""],',
+    ' "steps":[{"title":"","detail":"","from":"","to":"","mode":"metro","minutes":10,"exit":"A3","cost":"","placeName":"","lat":null,"lng":null,"inferred":false}],',
+    ' "places":[{"name":"","nameLocal":"","city":"","country":"","area":"","category":"food","mustTry":[],"tips":"","lat":null,"lng":null,"coordConfidence":null}],',
+    ' "warnings":[""]}',
+    `所有文字用${L}。如果内容不是攻略、整理不出步骤，steps 返回 []，并在 overview 里说明原因。`,
+    '',
+    '--- 攻略内容 ---',
+    url ? `链接：${url}（${PLATFORMS[platform] || '网页'}。你打不开链接，只能看下面的文字和图片）` : null,
+    cityHint ? `用户说城市是：${cityHint}` : null,
+    `文字：\n${String(text || '（无）').slice(0, 14000)}`,
+    imageCount ? `\n另附 ${imageCount} 张图片（截图或视频截帧），请仔细读图里的文字、路线图和指示牌。` : null,
+  ].filter(s => s != null).join('\n');
+}
+
+/* --- normalizing Claude's answers --- */
+function normalizeTravel(t) {
+  if (!t || typeof t !== 'object') return null;
+  return { mode: MODES[t.mode] ? t.mode : 'walk', minutes: clampNum(t.minutes, 0, 900), detail: str(t.detail, 200), cost: str(t.cost, 40) };
+}
+function normalizePlan(raw, placesById, opts = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const byId = placesById || {};
+  const used = new Set();
+  const days = (Array.isArray(r.days) ? r.days : []).slice(0, 30).map((d, i) => {
+    const stops = (Array.isArray(d && d.stops) ? d.stops : []).slice(0, 14).map(s => {
+      s = s && typeof s === 'object' ? s : {};
+      const ref = s.placeId && byId[s.placeId] ? byId[s.placeId] : null;
+      if (ref) used.add(ref.id);
+      const lat = num(s.lat), lng = num(s.lng);
+      const own = hasCoord({ lat, lng });
+      return {
+        time: normTime(s.time),
+        placeId: ref ? ref.id : null,
+        name: str(s.name, 60) || (ref && ref.name) || '未命名',
+        nameLocal: str(s.nameLocal, 80) || (ref && ref.nameLocal) || '',
+        city: (ref && ref.city) || opts.city || '',
+        country: (ref && ref.country) || opts.country || '',
+        lat: hasCoord(ref) ? ref.lat : own ? +lat.toFixed(6) : null,
+        lng: hasCoord(ref) ? ref.lng : own ? +lng.toFixed(6) : null,
+        category: CAT_LABEL[s.category] ? s.category : (ref && ref.category) || 'other',
+        stayMin: clampNum(s.stayMin, 0, 720),
+        what: para(s.what, 300),
+        tip: para(s.tip, 300),
+        suggested: !ref && !!s.suggested,
+        travel: normalizeTravel(s.travel),
+      };
+    });
+    return { day: i + 1, date: opts.startDate ? addDays(opts.startDate, i) : '', theme: str(d && d.theme, 40), area: str(d && d.area, 40), note: para(d && d.note, 300), stops };
+  });
+  const base = r.base && typeof r.base === 'object' && (r.base.name || opts.baseName)
+    ? { name: str(r.base.name, 60) || opts.baseName || '', lat: hasCoord({ lat: num(r.base.lat), lng: num(r.base.lng) }) ? num(r.base.lat) : null, lng: hasCoord({ lat: num(r.base.lat), lng: num(r.base.lng) }) ? num(r.base.lng) : null }
+    : (opts.baseName ? { name: opts.baseName, lat: null, lng: null } : null);
+  const unplaced = (Array.isArray(r.unplaced) ? r.unplaced : [])
+    .filter(u => u && byId[u.placeId] && !used.has(u.placeId))
+    .map(u => ({ placeId: u.placeId, reason: str(u.reason, 160) }));
+  // Anything Claude silently dropped still shows up, so nothing saved goes missing.
+  for (const id of opts.placeIds || []) if (!used.has(id) && !unplaced.some(u => u.placeId === id) && byId[id]) unplaced.push({ placeId: id, reason: '没有排进行程' });
+  return { title: str(r.title, 60), summary: para(r.summary, 400), tips: strList(r.tips, 8, 200), base, days, unplaced };
+}
+function normalizeGuide(raw, ctx = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const city = str(r.city, 30) || ctx.cityHint || '';
+  const country = str(r.country, 30);
+  return {
+    title: str(r.title, 80) || ctx.title || '未命名攻略',
+    city, country,
+    overview: para(r.overview, 600),
+    duration: str(r.duration, 40),
+    checklist: strList(r.checklist, 12, 120),
+    steps: (Array.isArray(r.steps) ? r.steps : []).slice(0, 40).map(s => {
+      s = s && typeof s === 'object' ? s : {};
+      const lat = num(s.lat), lng = num(s.lng), ok = hasCoord({ lat, lng });
+      return {
+        title: str(s.title, 60) || str(s.to, 60) || '下一步', detail: para(s.detail, 600), from: str(s.from, 60), to: str(s.to, 60),
+        mode: MODES[s.mode] ? s.mode : '', minutes: clampNum(s.minutes, 0, 900), exit: str(s.exit, 12), cost: str(s.cost, 40),
+        placeName: str(s.placeName, 60), lat: ok ? lat : null, lng: ok ? lng : null, inferred: !!s.inferred,
+      };
+    }),
+    places: (Array.isArray(r.places) ? r.places : []).map(p => normalizePlace(p, { city, country })).filter(p => p.name).slice(0, 40),
+    warnings: strList(r.warnings, 8, 200),
+  };
+}
+
+/* --- exports --- */
+function stopLine(s) {
+  return `${s.time ? s.time + ' ' : ''}${s.name}${s.nameLocal && s.nameLocal !== s.name ? `（${s.nameLocal}）` : ''}${s.stayMin ? ` · ${fmtMin(s.stayMin)}` : ''}`;
+}
+function travelLine(t) {
+  if (!t) return '';
+  return [MODES[t.mode] || t.mode, fmtMin(t.minutes), t.detail, t.cost].filter(Boolean).join(' · ');
+}
+function tripToMarkdown(trip, placesById) {
+  const p = trip.plan || { days: [] };
+  const out = [`# ${trip.title || trip.city + ' 行程'}`, ''];
+  const meta = [trip.city, `${trip.days} 天`, trip.startDate ? `${trip.startDate} 出发` : '', p.base && p.base.name ? `住 ${p.base.name}` : ''].filter(Boolean);
+  out.push(meta.join(' · '), '');
+  if (p.summary) out.push(`> ${p.summary}`, '');
+  if (p.tips && p.tips.length) { out.push('## 实用提示', ...p.tips.map(t => `- ${t}`), ''); }
+  for (const d of p.days) {
+    out.push(`## Day ${d.day}${d.theme ? ' · ' + d.theme : ''}${d.date ? `（${d.date} ${weekday(d.date)}）` : ''}`);
+    if (d.note) out.push(`> ${d.note}`);
+    for (const s of d.stops) {
+      if (s.travel) out.push(`  - ↳ ${travelLine(s.travel)}`);
+      out.push(`- **${stopLine(s)}**${s.suggested ? '（AI 推荐）' : ''}`);
+      if (s.what) out.push(`  ${s.what}`);
+      if (s.tip) out.push(`  提示：${s.tip}`);
+    }
+    out.push('');
+  }
+  if (p.unplaced && p.unplaced.length) {
+    out.push('## 没排进去的地点', ...p.unplaced.map(u => `- ${(placesById[u.placeId] || {}).name || u.placeId}：${u.reason}`), '');
+  }
+  out.push('— 用「拔草计划」生成');
+  return out.join('\n');
+}
+function tripToText(trip) {
+  const p = trip.plan || { days: [] };
+  const lines = [`【${trip.title || trip.city + ' 行程'}】`];
+  for (const d of p.days) {
+    lines.push('', `Day ${d.day}${d.theme ? ' ' + d.theme : ''}${d.date ? `（${d.date}）` : ''}`);
+    for (const s of d.stops) {
+      if (s.travel) lines.push(`   ↓ ${travelLine(s.travel)}`);
+      lines.push(`• ${stopLine(s)}`);
+    }
+  }
+  return lines.join('\n');
+}
+function csvCell(v) {
+  const s = v == null ? '' : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+/** CSV that Google My Maps can import (choose the "Location" column to place pins). */
+function placesToCSV(places) {
+  const head = ['Name', 'Location', 'Local name', 'City', 'Area', 'Category', 'Status', 'Must try', 'Tips', 'Source'];
+  const rows = places.map(p => [
+    p.name, hasCoord(p) ? `${p.lat}, ${p.lng}` : placeQuery(p), p.nameLocal, p.city, p.area, CAT_LABEL[p.category] || '',
+    STATUS_LABEL[p.status] || '', (p.mustTry || []).join(' / '), p.tips, (p.source && p.source.url) || '',
+  ]);
+  return [head, ...rows].map(r => r.map(csvCell).join(',')).join('\n');
+}
+function parseBackup(text) {
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('不是有效的 JSON'); }
+  const pick = (k, prefix) => (Array.isArray(data && data[k]) ? data[k] : [])
+    .filter(d => d && typeof d === 'object' && typeof d.id === 'string' && d.id.startsWith(prefix + '_') && /^[A-Za-z0-9_\-.~:@+]{3,200}$/.test(d.id));
+  const out = { places: pick('places', 'p'), trips: pick('trips', 't'), guides: pick('guides', 'g') };
+  if (!out.places.length && !out.trips.length && !out.guides.length) throw new Error('里面没有可导入的地点、行程或攻略');
+  return out;
+}
+function frameTimes(duration, n) {
+  n = Math.max(1, n);
+  return Array.from({ length: n }, (_, i) => Math.round(((i + 0.5) * duration / n) * 10) / 10);
+}
+/* ===== @lib-end ===== */
+
+/* ===== app ===== */
+const { h, render } = preact;
+const { useState, useEffect, useMemo, useRef, useCallback } = preactHooks;
+const html = htm.bind(h);
+
+const ICONS = {
+  food: '<path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0z"/><path d="M8 3.5l3.5 8M16.5 3l-3 8.5"/>',
+  cafe: '<path d="M4 9h12v4.5A5.5 5.5 0 0 1 10.5 19h-1A5.5 5.5 0 0 1 4 13.5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c-.8 1 .8 2-.1 3M12 3.5c-.8 1 .8 2-.1 3"/>',
+  sight: '<path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>',
+  shopping: '<path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>',
+  stay: '<path d="M3 19V6M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11.5" r="1.8"/>',
+  experience: '<path d="M4 7.5h16v3a1.8 1.8 0 0 0 0 3.6v3.4H4v-3.4a1.8 1.8 0 0 0 0-3.6z"/><path d="M14.5 7.5v10" stroke-dasharray="1.6 2"/>',
+  nightlife: '<path d="M5 4h14l-7 8z"/><path d="M12 12v7M8.5 20h7"/>',
+  other: '<path d="M12 21s-6.5-5.8-6.5-10.8a6.5 6.5 0 0 1 13 0C18.5 15.2 12 21 12 21z"/><circle cx="12" cy="10.2" r="2.4"/>',
+  walk: '<circle cx="13.5" cy="4.5" r="1.8"/><path d="M10 21l2.2-6.2L10 12l1.2-4.5 3.3 3.2 3 1.2"/><path d="M11.2 7.5L8 9.5 6.8 13"/><path d="M12.2 14.8l2.8 2.2 1 4"/>',
+  metro: '<rect x="5.5" y="3" width="13" height="14" rx="3.5"/><path d="M5.5 11h13M9 17l-2 4M15 17l2 4"/><circle cx="9" cy="14" r=".7" fill="currentColor"/><circle cx="15" cy="14" r=".7" fill="currentColor"/>',
+  train: '<path d="M7 3h10a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"/><path d="M4 10h16M12 3v7M8 21l1.5-4M16 21l-1.5-4"/>',
+  bus: '<rect x="4.5" y="3" width="15" height="15" rx="2.5"/><path d="M4.5 11h15M4.5 7h15M7.5 18v2.5M16.5 18v2.5"/><circle cx="8" cy="14.5" r=".7" fill="currentColor"/><circle cx="16" cy="14.5" r=".7" fill="currentColor"/>',
+  car: '<path d="M5 16.5V12l2-5h10l2 5v4.5z"/><path d="M5 16.5v2.5h2.5v-2.5M16.5 16.5v2.5H19v-2.5M3.5 11h2M18.5 11h2"/><circle cx="8.5" cy="13.5" r=".8" fill="currentColor"/><circle cx="15.5" cy="13.5" r=".8" fill="currentColor"/>',
+  ferry: '<path d="M3 18.5c1.5 1.3 3 1.3 4.5 0s3-1.3 4.5 0 3 1.3 4.5 0 3-1.3 4.5 0"/><path d="M5 15l1.2-5h11.6L19 15"/><path d="M9.5 10V6.5h5V10"/>',
+  bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h5.5L18 16M9.5 9l2.5 7H6M14 6h2.5"/>',
+  flight: '<path d="M10.5 13.5L4 11l1.5-1.5 7 .5 4-4a2 2 0 0 1 3 3l-4 4 .5 7L14.5 21l-2.5-6.5-3 3v2.5L7.5 21 6 18l-3-1.5 1-1.5h2.5z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  map: '<path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>',
+  route: '<circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3z"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  download: '<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
+  inbox: '<path d="M3.5 13.5l2.5-8h12l2.5 8v5h-17z"/><path d="M3.5 13.5H9l1 2h4l1-2h5.5"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  bookmark: '<path d="M6 3.5h12v17l-6-4.2-6 4.2z"/>',
+  book: '<path d="M4 5.5a2 2 0 0 1 2-2h5v16H6a2 2 0 0 0-2 2z"/><path d="M20 5.5a2 2 0 0 0-2-2h-5v16h5a2 2 0 0 1 2 2z"/>',
+  bot: '<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.5h5"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+};
+function Icon({ name, size = 18, label }) {
+  return html`<svg class="ic" width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden=${label ? null : 'true'} role=${label ? 'img' : null} aria-label=${label || null} dangerouslySetInnerHTML=${{ __html: ICONS[name] || ICONS.other }}></svg>`;
+}
+
+/* --- per-viewer preferences (browser storage, best effort) --- */
+const PREF_KEY = 'bacao.prefs.v1';
+const DEFAULT_PREFS = { mapPref: 'auto', aiLang: 'zh-Hans', deepPlan: false, tab: 'library', city: 'all', cat: 'all', status: 'all' };
+function loadPrefs() {
+  try { return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') }; } catch { return { ...DEFAULT_PREFS }; }
+}
+function savePrefs(p) {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch { /* storage blocked: keep in memory */ }
+}
+
+/* --- runtime: db / Claude / assets, each may be missing --- */
+async function connectRuntime() {
+  const rt = { db: null, sample: null, user: null, assets: null, downloads: null, permissions: null };
+  const c = window.claude;
+  if (!c || typeof c.use !== 'function') return rt;
+  await Promise.all(Object.keys(rt).map(async n => { try { rt[n] = await c.use(n); } catch { rt[n] = null; } }));
+  return rt;
+}
+const COLLECTIONS = ['places', 'trips', 'guides', 'inbox'];
+function createStore(db) {
+  if (db) {
+    return {
+      live: true,
+      subscribe: (col, cb, onErr) => db.collection(col).onSnapshot(snap => cb(snap.docs.map(d => ({ ...d.data(), id: d.id }))), onErr),
+      set: (col, id, data) => db.collection(col).doc(id).set(data),
+      update: (col, id, patch) => db.collection(col).doc(id).update(patch),
+      remove: (col, id) => db.collection(col).doc(id).delete(),
+    };
+  }
+  // Outside claude.ai (a saved copy, a preview): keep data in memory for this visit only.
+  const mem = Object.fromEntries(COLLECTIONS.map(c => [c, new Map()]));
+  const subs = Object.fromEntries(COLLECTIONS.map(c => [c, new Set()]));
+  const emit = col => { const list = [...mem[col].values()]; subs[col].forEach(cb => cb(list)); };
+  const merge = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k]) ? merge(a[k], v) : v; return o; };
+  return {
+    live: false,
+    subscribe(col, cb) { subs[col].add(cb); cb([...mem[col].values()]); return () => subs[col].delete(cb); },
+    async set(col, id, data) { mem[col].set(id, { ...data, id }); emit(col); },
+    async update(col, id, patch) { const cur = mem[col].get(id); if (!cur) throw { code: 'invalid_argument' }; mem[col].set(id, merge(cur, patch)); emit(col); },
+    async remove(col, id) { mem[col].delete(id); emit(col); },
+  };
+}
+const AI_ERRORS = {
+  not_available: '这里连不上 Claude。请在 claude.ai 里打开这个页面。',
+  not_granted: '你还没允许这个页面使用 Claude。点「权限」打开后再试。',
+  sampling_disabled: '这个账号或组织没有开启 Claude 调用。',
+  rate_limited: 'Claude 用量暂时到上限了，过一会儿再试。',
+  session_expired: '登录过期了，刷新页面重新登录后再试。',
+  image_rejected: '有图片读不了（格式不支持或太大），换一张再试。',
+  images_unavailable: '当前环境不能发送图片，请改为粘贴文字。',
+  prompt_too_large: '内容太长了，删掉一些再试。',
+  refused: 'Claude 不处理这段内容，换一段试试。',
+  empty_completion: 'Claude 没有给出结果，换个说法再试。',
+  invalid_json: 'Claude 的回复格式不对，再试一次。',
+  upstream_error: '连接 Claude 出错了，请再试一次。',
+};
+function aiErrorText(e) { return AI_ERRORS[e && e.code] || AI_ERRORS.upstream_error; }
+const PERMANENT_AI_ERRORS = new Set(['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'not_available']);
+
+/* --- images and video frames (browser side) --- */
+function loadImage(blob) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image')); };
+    img.src = url;
+  });
+}
+async function shrinkImage(blob, maxDim = 1600, quality = 0.85) {
+  let src;
+  try { src = await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch { src = await loadImage(blob); }
+  const w = src.width, h = src.height, s = Math.min(1, maxDim / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return await new Promise((res, rej) => c.toBlob(b => (b ? res(b) : rej(new Error('encode'))), 'image/jpeg', quality));
+}
+function waitFor(el, event, ms) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => { el.removeEventListener(event, ok); reject(new Error('timeout')); }, ms);
+    const ok = () => { clearTimeout(t); resolve(); };
+    el.addEventListener(event, ok, { once: true });
+  });
+}
+async function videoFrames(file, count, maxDim = 1280) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+  try {
+    await waitFor(v, 'loadedmetadata', 15000);
+    const dur = v.duration;
+    if (!Number.isFinite(dur) || dur <= 0 || !v.videoWidth) throw new Error('video');
+    try { await v.play(); v.pause(); } catch { /* autoplay refused: seeking still works */ }
+    const s = Math.min(1, maxDim / Math.max(v.videoWidth, v.videoHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(v.videoWidth * s); c.height = Math.round(v.videoHeight * s);
+    const g = c.getContext('2d');
+    const out = [];
+    for (const t of frameTimes(dur, count)) {
+      v.currentTime = Math.min(t, Math.max(0, dur - 0.05));
+      try { await waitFor(v, 'seeked', 8000); } catch { continue; }
+      g.drawImage(v, 0, 0, c.width, c.height);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+      if (blob) out.push({ blob, t });
+    }
+    return out;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* --- small shared components --- */
+function Sheet({ title, onClose, children, footer, wide }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const prev = document.activeElement;
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    document.body.classList.add('locked');
+    ref.current && ref.current.focus({ preventScroll: true });
+    return () => { document.removeEventListener('keydown', onKey); document.body.classList.remove('locked'); prev && prev.focus && prev.focus({ preventScroll: true }); };
+  }, []);
+  return html`<div class="backdrop" onClick=${e => { if (e.target === e.currentTarget) onClose(); }}>
+    <section class=${'sheet' + (wide ? ' wide' : '')} role="dialog" aria-modal="true" aria-label=${title} tabindex="-1" ref=${ref}>
+      <header class="sheet-head"><h2>${title}</h2><button class="icon-btn" aria-label="关闭" onClick=${onClose}><${Icon} name="x" /></button></header>
+      <div class="sheet-body">${children}</div>
+      ${footer ? html`<footer class="sheet-foot">${footer}</footer>` : null}
+    </section>
+  </div>`;
+}
+function ConfirmButton({ label, armedLabel, onConfirm, className = '', icon }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => { if (!armed) return; const t = setTimeout(() => setArmed(false), 3500); return () => clearTimeout(t); }, [armed]);
+  return html`<button class=${`btn danger ${className}${armed ? ' armed' : ''}`} onClick=${() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}>
+    ${icon ? html`<${Icon} name=${icon} size=${16} />` : null}${armed ? armedLabel || '再点一次确认' : label}
+  </button>`;
+}
+function ExtLink({ href, children, className = 'linkish' }) {
+  if (!href) return null;
+  return html`<a class=${className} href=${href} target="_blank" rel="noopener noreferrer">${children}<${Icon} name="external" size=${13} /></a>`;
+}
+function AiProgress({ label, text, started, onStop, counter }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const secs = Math.max(0, Math.round((now - started) / 1000));
+  const count = counter && text ? counter(text) : null;
+  return html`<div class="progress" role="status" aria-live="polite">
+    <div class="row" style=${{ justifyContent: 'space-between' }}>
+      <strong>${text ? (count != null ? `${label}… ${count}` : `${label}…`) : 'Claude 正在思考…'}</strong>
+      <span class="mono muted small">${secs}s</span>
+    </div>
+    <div class="bar"></div>
+    ${text ? html`<div class="peek">${text.slice(-260)}</div>` : html`<p class="hint">看图和规划路线一般要 20–90 秒。第一次使用时 claude.ai 会先问你是否允许。</p>`}
+    <div class="row end"><button class="btn sm" onClick=${onStop}><${Icon} name="stop" size=${14} />停止</button></div>
+  </div>`;
+}
+function PlatformTag({ source }) {
+  if (!source || !source.platform || source.platform === 'manual') return null;
+  return html`<span class="src">${PLATFORMS[source.platform] || '网页'}${source.title ? ' · ' : ''}${source.url
+    ? html`<a href=${source.url} target="_blank" rel="noopener noreferrer">${source.title || '原帖'}</a>`
+    : source.title || ''}</span>`;
+}
+/** Copy inside a click handler; resolves false when the viewer's browser refuses. */
+function copyText(text) {
+  try { return navigator.clipboard.writeText(text).then(() => true, () => false); } catch { return Promise.resolve(false); }
+}
+/** Read-only box shown when copying or downloading is refused, so the text can still be selected. */
+function ManualCopy({ text, onClose }) {
+  if (!text) return null;
+  return html`<div class="stack" style=${{ gap: '6px' }}>
+    <div class="row" style=${{ justifyContent: 'space-between' }}><span class="hint">这里不能自动复制：长按或全选下面的文字复制。</span><button class="btn ghost sm" onClick=${onClose}>收起</button></div>
+    <textarea class="input" rows="6" readonly value=${text} onFocus=${e => e.target.select()}></textarea>
+  </div>`;
+}
+
+/* --- screenshots and video frames shared by "add" and "guide" sheets --- */
+function useMedia(maxCount, toast) {
+  const [media, setMedia] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const live = useRef(media);
+  live.current = media;
+  useEffect(() => () => live.current.forEach(m => URL.revokeObjectURL(m.url)), []);
+  async function add(files) {
+    files = [...(files || [])];
+    if (!files.length || !maxCount) return;
+    setBusy(true);
+    try {
+      let left = maxCount - live.current.length;
+      const added = [];
+      for (const f of files) {
+        if (left <= 0) { toast(`最多 ${maxCount} 张图`); break; }
+        if ((f.type || '').startsWith('video/')) {
+          const frames = await videoFrames(f, Math.min(left, 8));
+          if (!frames.length) { toast('这个视频读不出画面，换成截图试试'); continue; }
+          for (const fr of frames) added.push({ id: uid('m'), blob: fr.blob, url: URL.createObjectURL(fr.blob), label: `${Math.round(fr.t)}s` });
+          left -= frames.length;
+        } else if ((f.type || '').startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name || '')) {
+          const blob = await shrinkImage(f, 1600, 0.85);
+          added.push({ id: uid('m'), blob, url: URL.createObjectURL(blob), label: '' });
+          left -= 1;
+        }
+      }
+      if (added.length) setMedia(m => [...m, ...added]);
+    } catch (e) {
+      toast('图片或视频处理失败，换一个文件试试');
+    } finally {
+      setBusy(false);
+    }
+  }
+  const remove = id => setMedia(m => { const x = m.find(i => i.id === id); if (x) URL.revokeObjectURL(x.url); return m.filter(i => i.id !== id); });
+  /** Paste handler for a textarea: screenshots pasted from the clipboard join the list. */
+  const onPaste = e => {
+    const files = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => (f.type || '').startsWith('image/'));
+    if (files.length && maxCount) { e.preventDefault(); add(files); }
+  };
+  return { media, busy, add, remove, onPaste, maxCount };
+}
+function MediaPicker({ m, aiOk }) {
+  const [over, setOver] = useState(false);
+  const imgRef = useRef(null), vidRef = useRef(null);
+  if (!m.maxCount) return aiOk ? html`<p class="hint">当前环境不能把图片发给 Claude，只能识别文字。</p>` : null;
+  const room = Math.max(0, m.maxCount - m.media.length);
+  return html`<div class=${'dropzone' + (over ? ' over' : '')}
+      onDragOver=${e => { e.preventDefault(); setOver(true); }} onDragLeave=${() => setOver(false)}
+      onDrop=${e => { e.preventDefault(); setOver(false); m.add(e.dataTransfer.files); }}>
+    <div class="row">
+      <button class="btn sm" disabled=${m.busy || !room} onClick=${() => imgRef.current.click()}><${Icon} name="image" size=${16} />加截图</button>
+      <button class="btn sm" disabled=${m.busy || !room} onClick=${() => vidRef.current.click()}><${Icon} name="video" size=${16} />加视频（自动截帧）</button>
+      <span class="hint mono">${m.busy ? '处理中…' : `${m.media.length}/${m.maxCount}`}</span>
+    </div>
+    <input ref=${imgRef} id="pick-images" class="sr" type="file" accept="image/*" multiple onChange=${e => { m.add(e.target.files); e.target.value = ''; }} />
+    <input ref=${vidRef} id="pick-video" class="sr" type="file" accept="video/*" onChange=${e => { m.add(e.target.files); e.target.value = ''; }} />
+    ${m.media.length ? html`<div class="media">${m.media.map(x => html`<figure key=${x.id}><img src=${x.url} alt="" />${x.label ? html`<figcaption>${x.label}</figcaption>` : null}<button aria-label="移除这张" onClick=${() => m.remove(x.id)}><${Icon} name="x" size=${14} /></button></figure>`)}</div>`
+      : html`<p class="hint">小红书攻略的店名常写在图里：截几张图加进来，识别会准很多。也可以直接把截图粘贴到上面的输入框。</p>`}
+  </div>`;
+}
+
+/* --- add (collect) sheet --- */
+function AddSheet({ ctx, onClose }) {
+  const [text, setText] = useState('');
+  const [cityHint, setCityHint] = useState('');
+  const m = useMedia(ctx.ai.images ? ctx.ai.images.maxCount : 0, ctx.toast);
+  const media = m.media;
+  const [phase, setPhase] = useState('input');
+  const [result, setResult] = useState(null);
+  const [stream, setStream] = useState('');
+  const [started, setStarted] = useState(0);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const ctl = useRef(null);
+  useEffect(() => () => ctl.current && ctl.current.abort(), []);
+  const url = pickUrl(text);
+  const platform = detectPlatform(url || text);
+  const title = shareTitle(text);
+  const words = contentText(text);
+  const thin = !!url && words.length < 40 && !media.length;
+
+  async function identify() {
+    setError(''); setStream(''); setStarted(Date.now()); setPhase('working');
+    ctl.current = new AbortController();
+    try {
+      const prompt = buildExtractPrompt({ text, url, platform, cityHint: cityHint.trim(), imageCount: media.length, lang: ctx.prefs.aiLang, knownCities: ctx.cities });
+      const raw = await ctx.ai.json(prompt, { images: media.map(x => x.blob), onText: setStream, signal: ctl.current.signal });
+      const norm = normalizeExtraction(raw, { cityHint: cityHint.trim(), title });
+      norm.places = norm.places.map(p => { const dup = findDuplicate(p, ctx.places); return { ...p, _dup: dup, _keep: !dup }; });
+      setResult(norm); setPhase('review');
+    } catch (e) {
+      setPhase('input');
+      if (e && e.code === 'cancelled') return;
+      setError(aiErrorText(e));
+      if (PERMANENT_AI_ERRORS.has(e && e.code)) ctx.onAiBlocked(e.code);
+    }
+  }
+  async function save() {
+    const keep = result.places.filter(p => p._keep);
+    if (!keep.length) return onClose();
+    setSaving(true);
+    let coverAssetId = null;
+    if (media.length && ctx.assets) {
+      try { coverAssetId = (await ctx.assets.upload(await shrinkImage(media[0].blob, 640, 0.8))).id; } catch { /* the place saves without a picture */ }
+    }
+    const source = { platform: url ? platform : 'manual', url: url || '', title: result.post.title || title || '' };
+    let n = 0;
+    for (const p of keep) {
+      const { _dup, _keep, evidence, ...clean } = p;
+      const doc = makePlaceDoc(clean, { source: { ...source, evidence }, coverAssetId, savedVia: 'app' });
+      if (await ctx.write('set', 'places', doc.id, doc)) n++;
+    }
+    setSaving(false);
+    if (n) { ctx.toast(`已种草 ${n} 个地点`); onClose(); }
+  }
+  async function toAgent() {
+    const doc = { id: uid('i'), text: text.slice(0, 4000), url: url || '', platform, cityHint: cityHint.trim(), mode: 'collect', status: 'pending', message: '', createdAt: Date.now() };
+    if (await ctx.write('set', 'inbox', doc.id, doc)) { ctx.toast('已放进「待处理」，Agent 下次运行时会读取这条链接'); onClose(); }
+  }
+  const setPlace = (i, patch) => setResult(r => ({ ...r, places: r.places.map((p, j) => (j === i ? { ...p, ...patch } : p)) }));
+  const keepCount = result ? result.places.filter(p => p._keep).length : 0;
+
+  let footer;
+  if (phase === 'input') {
+    footer = html`
+      <button class="btn" disabled=${!url} onClick=${toAgent} title="把链接交给 Claude Code Agent 读取全文和图片"><${Icon} name="bot" size=${16} />交给 Agent</button>
+      <button class="btn primary" disabled=${!ctx.ai.ok || (!words && !media.length)} onClick=${identify}><${Icon} name="spark" size=${16} />AI 识别地点</button>`;
+  } else if (phase === 'review') {
+    footer = html`
+      <button class="btn ghost" onClick=${() => setPhase('input')}>返回修改</button>
+      <button class="btn primary" disabled=${saving || !keepCount} onClick=${save}><${Icon} name="bookmark" size=${16} />${saving ? '保存中…' : `种草 ${keepCount} 个地点`}</button>`;
+  }
+  return html`<${Sheet} title="添加种草" onClose=${onClose} footer=${footer}>
+    ${phase === 'input' && html`
+      <div class="field">
+        <label for="add-text">分享文字、链接或笔记正文</label>
+        <textarea id="add-text" class="input" rows="5" value=${text} onInput=${e => setText(e.target.value)} onPaste=${m.onPaste}
+          placeholder="在小红书 / IG / 抖音点「分享 → 复制链接」，粘贴到这里。正文能复制的话一起粘贴。"></textarea>
+        ${(url || title) && html`<div class="detected">
+          ${url && html`<span class="tag">${PLATFORMS[platform] || '网页'}</span>`}
+          ${title && html`<span class="muted">${title}</span>`}
+        </div>`}
+      </div>
+      ${thin && html`<div class="notice warn"><${Icon} name="info" />
+        <div>这里只有链接${title ? '和标题' : ''}，Claude 在这个页面里打不开链接。请再<b>加几张笔记截图</b>或粘贴正文；或者点「交给 Agent」，让 Claude Code 自动读取原帖的全文和图片。</div></div>`}
+      <${MediaPicker} m=${m} aiOk=${ctx.ai.ok} />
+      <div class="field">
+        <label for="add-city">城市（可选，帮 AI 判断）</label>
+        <input id="add-city" class="input" list="known-cities" value=${cityHint} onInput=${e => setCityHint(e.target.value)} placeholder="例如：东京、首尔、成都" />
+      </div>
+      ${!ctx.ai.ok && html`<div class="notice warn"><${Icon} name="info" /><div>${ctx.ai.reason}</div></div>`}
+      ${error && html`<div class="notice warn" role="alert"><${Icon} name="info" /><div>${error}</div></div>`}`}
+    ${phase === 'working' && html`<${AiProgress} label="正在识别地点" text=${stream} started=${started} onStop=${() => ctl.current && ctl.current.abort()}
+        counter=${t => `已找到 ${(t.match(/"name"\s*:/g) || []).length} 个`} />`}
+    ${phase === 'review' && result && html`
+      <div class="stack">
+        <div>
+          <strong>${result.post.title || title || '识别结果'}</strong>
+          ${result.post.summary && html`<p class="hint">${result.post.summary}</p>`}
+        </div>
+        ${!result.places.length && html`<div class="notice warn"><${Icon} name="info" /><div>没找到具体地点。加几张截图（店名常在图里），或者交给 Agent 读取原帖。</div></div>`}
+        <div class="review">
+          ${result.places.map((p, i) => html`<div key=${i} class=${'review-item' + (p._keep ? '' : ' off')}>
+            <input type="checkbox" id=${'keep-' + i} checked=${p._keep} onChange=${e => setPlace(i, { _keep: e.target.checked })} aria-label=${'保留 ' + p.name} />
+            <div style=${{ minWidth: 0 }}>
+              <div class="row"><strong>${p.name}</strong>${p.nameLocal && p.nameLocal !== p.name ? html`<span class="muted small">${p.nameLocal}</span>` : null}
+                ${p._dup ? html`<span class="tag">已收藏过</span>` : null}</div>
+              <div class="hint">${[p.city, p.area, CAT_LABEL[p.category]].filter(Boolean).join(' · ')}${p.coordConfidence ? '' : ' · 位置未知'}</div>
+              ${p.mustTry.length ? html`<div class="small">必试：${p.mustTry.join('、')}</div>` : null}
+              ${p.tips ? html`<div class="small muted">${p.tips}</div>` : null}
+              ${p.evidence ? html`<div class="evidence">“${p.evidence}”</div>` : null}
+              <div class="edit-row">
+                <input class="input" id=${'city-' + i} aria-label="城市" value=${p.city} onInput=${e => setPlace(i, { city: e.target.value })} />
+                <select class="input" id=${'cat-' + i} aria-label="类别" value=${p.category} onChange=${e => setPlace(i, { category: e.target.value })}>
+                  ${CATEGORIES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}
+                </select>
+              </div>
+            </div>
+          </div>`)}
+        </div>
+      </div>`}
+  <//>`;
+}
+
+/* --- place editor --- */
+function PlaceSheet({ ctx, place, onClose }) {
+  const [form, setForm] = useState(() => ({ ...place, mustTry: (place.mustTry || []).join('、') }));
+  const set = patch => setForm(f => ({ ...f, ...patch }));
+  async function save() {
+    const patch = {
+      name: str(form.name, 60) || place.name, nameLocal: str(form.nameLocal, 80), city: str(form.city, 30), area: str(form.area, 40),
+      category: form.category, status: form.status, mustTry: strList(form.mustTry, 6, 40), tips: para(form.tips, 400), note: para(form.note, 400),
+      updatedAt: Date.now(),
+    };
+    if (await ctx.write('update', 'places', place.id, patch)) { ctx.toast('已保存'); onClose(); }
+  }
+  async function remove() {
+    if (await ctx.write('remove', 'places', place.id)) {
+      if (place.coverAssetId && ctx.assets && !ctx.places.some(p => p.id !== place.id && p.coverAssetId === place.coverAssetId)) ctx.assets.delete(place.coverAssetId).catch(() => {});
+      ctx.toast('已删除'); onClose();
+    }
+  }
+  return html`<${Sheet} title="编辑地点" onClose=${onClose} footer=${html`
+      <${ConfirmButton} label="删除" armedLabel="确认删除" icon="trash" onConfirm=${remove} />
+      <span style=${{ flex: 1 }}></span>
+      <button class="btn" onClick=${onClose}>取消</button>
+      <button class="btn primary" onClick=${save}>保存</button>`}>
+    <div class="two">
+      <div class="field"><label for="pe-name">名字</label><input id="pe-name" class="input" value=${form.name} onInput=${e => set({ name: e.target.value })} /></div>
+      <div class="field"><label for="pe-local">当地名称（地图搜索用）</label><input id="pe-local" class="input" value=${form.nameLocal} onInput=${e => set({ nameLocal: e.target.value })} /></div>
+      <div class="field"><label for="pe-city">城市</label><input id="pe-city" class="input" list="known-cities" value=${form.city} onInput=${e => set({ city: e.target.value })} /></div>
+      <div class="field"><label for="pe-area">区域</label><input id="pe-area" class="input" value=${form.area} onInput=${e => set({ area: e.target.value })} /></div>
+      <div class="field"><label for="pe-cat">类别</label>
+        <select id="pe-cat" class="input" value=${form.category} onChange=${e => set({ category: e.target.value })}>${CATEGORIES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}</select></div>
+      <div class="field"><label for="pe-status">状态</label>
+        <select id="pe-status" class="input" value=${form.status} onChange=${e => set({ status: e.target.value })}>${STATUSES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}</select></div>
+    </div>
+    <div class="field"><label for="pe-must">必吃 / 必买 / 必做（用顿号分隔）</label><input id="pe-must" class="input" value=${form.mustTry} onInput=${e => set({ mustTry: e.target.value })} /></div>
+    <div class="field"><label for="pe-tips">帖子里的提示</label><textarea id="pe-tips" class="input" rows="3" value=${form.tips} onInput=${e => set({ tips: e.target.value })}></textarea></div>
+    <div class="field"><label for="pe-note">我的备注</label><textarea id="pe-note" class="input" rows="2" value=${form.note || ''} onInput=${e => set({ note: e.target.value })}></textarea></div>
+    <p class="hint">${hasCoord(place) ? `坐标 ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}（${place.coordConfidence === 'exact' ? '精确' : '大概位置'}）` : '还没有坐标：规划时 Claude 会按名字判断位置。'}</p>
+  <//>`;
+}
+
+/* --- library --- */
+function PlaceCard({ p, ctx, selecting, selected, onToggle }) {
+  const [imgOk, setImgOk] = useState(true);
+  const nextStatus = { saved: 'want', want: 'visited', visited: 'saved' }[p.status || 'saved'];
+  return html`<article class=${'place' + (selected ? ' selected' : '')}>
+    ${selecting ? html`<input class="pick" type="checkbox" checked=${selected} onChange=${onToggle} aria-label=${'选择 ' + p.name} />` : null}
+    <div class="thumb">${p.coverAssetId && imgOk ? html`<img src=${'/_blob/' + p.coverAssetId} alt="" loading="lazy" onError=${() => setImgOk(false)} />` : html`<${Icon} name=${p.category} size=${26} />`}</div>
+    <div style=${{ minWidth: 0 }}>
+      <h4>${p.name}</h4>
+      ${p.nameLocal && p.nameLocal !== p.name ? html`<div class="local">${p.nameLocal}</div>` : null}
+      <div class="meta">
+        <span class="tag"><${Icon} name=${p.category} size=${13} />${CAT_LABEL[p.category] || '其他'}</span>
+        ${p.area ? html`<span class="tag">${p.area}</span>` : null}
+        ${p.chain ? html`<span class="tag">连锁 · 任选分店</span>` : null}
+        ${p.example ? html`<span class="tag example">示例</span>` : null}
+        ${p.savedVia === 'agent' ? html`<span class="tag agent">Agent</span>` : null}
+      </div>
+      ${p.mustTry && p.mustTry.length ? html`<div class="must"><b>必试</b> ${p.mustTry.join('、')}</div>` : null}
+      ${p.tips ? html`<div class="tips">${p.tips}</div>` : null}
+      ${p.note ? html`<div class="tips">备注：${p.note}</div>` : null}
+      <div class="actions">
+        <button class=${'status ' + (p.status || 'saved')} onClick=${() => ctx.write('update', 'places', p.id, { status: nextStatus, updatedAt: Date.now() })} title=${'改成「' + STATUS_LABEL[nextStatus] + '」'}>
+          ${p.status === 'visited' ? '✓ ' : ''}${STATUS_LABEL[p.status || 'saved']}</button>
+        <${ExtLink} href=${placeLink(p, ctx.prefs.mapPref)}>地图<//>
+        <button class="btn ghost sm" onClick=${() => ctx.openSheet({ type: 'place', id: p.id })}><${Icon} name="edit" size=${14} />编辑</button>
+      </div>
+      <div style=${{ marginTop: '6px' }}><${PlatformTag} source=${p.source} /></div>
+    </div>
+  </article>`;
+}
+function LibraryView({ ctx }) {
+  const { places, prefs, setPref } = ctx;
+  const [q, setQ] = useState('');
+  const [selecting, setSelecting] = useState(false);
+  const [sel, setSel] = useState(() => new Set());
+  const cityCounts = {};
+  for (const p of places) cityCounts[p.city || '未知城市'] = (cityCounts[p.city || '未知城市'] || 0) + 1;
+  const cities = Object.keys(cityCounts).sort((a, b) => cityCounts[b] - cityCounts[a]);
+  const city = prefs.city !== 'all' && cityCounts[prefs.city] ? prefs.city : 'all';
+  const nq = normKey(q);
+  const shown = places.filter(p => (city === 'all' || (p.city || '未知城市') === city)
+    && (prefs.cat === 'all' || p.category === prefs.cat)
+    && (prefs.status === 'all' || (p.status || 'saved') === prefs.status)
+    && (!nq || normKey([p.name, p.nameLocal, p.area, p.tips, (p.mustTry || []).join(' '), p.source && p.source.title].join(' ')).includes(nq)))
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const groups = {};
+  for (const p of shown) (groups[p.city || '未知城市'] = groups[p.city || '未知城市'] || []).push(p);
+  const toggle = id => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const examples = places.filter(p => p.example).length;
+
+  if (!places.length) {
+    const loading = ctx.loading.places;
+    return html`<div class="empty">
+      <span class="mark">拔</span>
+      <h2>${loading ? '把种草的店排成能走的路线' : '还没有种草'}</h2>
+      <p class="muted">刷小红书、IG、抖音时看到想去的店或景点：</p>
+      <ol class="steps-intro">
+        <li><span>点「分享 → 复制链接」，或者截几张图</span></li>
+        <li><span>回到这里点「添加」，粘贴进来，Claude 找出里面的店名和景点</span></li>
+        <li><span>选好城市和天数，一键排成每天顺路的路线，每段都有地图导航</span></li>
+      </ol>
+      ${loading ? html`<p class="hint" role="status">正在读取你的种草清单…</p>` : html`<button class="btn primary" onClick=${() => ctx.openSheet({ type: 'add' })}><${Icon} name="plus" size=${16} />添加第一条</button>`}
+      <p class="hint">不想手动截图？粘贴链接后选「交给 Agent」，Claude Code 会自动读取原帖全文、图片和视频。</p>
+    </div>`;
+  }
+  return html`<div>
+    <div class="filters">
+      <input id="lib-search" class="search" type="search" placeholder="搜索店名、区域、必吃…" value=${q} onInput=${e => setQ(e.target.value)} />
+      <div class="chips" role="group" aria-label="城市">
+        <button class="chip" aria-pressed=${city === 'all'} onClick=${() => setPref({ city: 'all' })}>全部城市 <span class="n">${places.length}</span></button>
+        ${cities.map(c => html`<button class="chip" aria-pressed=${city === c} onClick=${() => setPref({ city: c })}>${c} <span class="n">${cityCounts[c]}</span></button>`)}
+      </div>
+      <div class="chips" role="group" aria-label="类别和状态">
+        <button class="chip" aria-pressed=${prefs.cat === 'all'} onClick=${() => setPref({ cat: 'all' })}>全部类别</button>
+        ${CATEGORIES.filter(([k]) => places.some(p => p.category === k)).map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.cat === k} onClick=${() => setPref({ cat: prefs.cat === k ? 'all' : k })}><${Icon} name=${k} size=${14} />${v}</button>`)}
+        <span style=${{ width: '8px', flex: 'none' }}></span>
+        ${STATUSES.map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.status === k} onClick=${() => setPref({ status: prefs.status === k ? 'all' : k })}>${v}</button>`)}
+      </div>
+    </div>
+    ${examples ? html`<div class="notice" style=${{ marginTop: '12px' }}><${Icon} name="info" /><div>带<span class="tag example">示例</span>标记的是演示数据，看完效果后可以在 设置 → 清除示例 里一键删除。</div></div>` : null}
+    <div class="row" style=${{ marginTop: '12px', justifyContent: 'space-between' }}>
+      <span class="hint">${shown.length} 个地点</span>
+      <button class="btn sm" onClick=${() => { setSelecting(!selecting); setSel(new Set()); }}>${selecting ? '取消选择' : '选择地点排行程'}</button>
+    </div>
+    ${!shown.length ? html`<p class="hint" style=${{ marginTop: '16px' }}>没有符合条件的地点。</p>` : null}
+    ${Object.entries(groups).map(([c, list]) => html`<section key=${c}>
+      <div class="city-head"><h3>${c}</h3><span class="mono muted small">${list.length}</span><span class="line"></span>
+        ${c !== '未知城市' ? html`<button class="btn sm" onClick=${() => ctx.openSheet({ type: 'trip', city: c })}><${Icon} name="route" size=${14} />排 ${c} 行程</button>` : null}</div>
+      <div class="grid">${list.map(p => html`<${PlaceCard} key=${p.id} p=${p} ctx=${ctx} selecting=${selecting} selected=${sel.has(p.id)} onToggle=${() => toggle(p.id)} />`)}</div>
+    </section>`)}
+    ${selecting && sel.size ? html`<div class="selectbar"><div>
+      <span>已选 ${sel.size} 个</span>
+      <button class="btn ghost sm" onClick=${() => setSel(new Set())}>清空</button>
+      <button class="btn primary sm" onClick=${() => { ctx.openSheet({ type: 'trip', placeIds: [...sel] }); setSelecting(false); setSel(new Set()); }}><${Icon} name="route" size=${14} />排行程</button>
+    </div></div>` : null}
+  </div>`;
+}
+
+/* --- trip planning --- */
+function TripSheet({ ctx, onClose, initial }) {
+  const { places } = ctx;
+  const initialIds = initial.placeIds || [];
+  const firstCity = initial.city || (initialIds.length ? (places.find(p => p.id === initialIds[0]) || {}).city : '') || (ctx.cities[0] || '');
+  const [city, setCity] = useState(firstCity);
+  const [days, setDays] = useState(3);
+  const [startDate, setStartDate] = useState('');
+  const [base, setBase] = useState('');
+  const [pace, setPace] = useState('normal');
+  const [transport, setTransport] = useState('transit');
+  const [notes, setNotes] = useState('');
+  const [suggest, setSuggest] = useState(true);
+  const cityPlaces = places.filter(p => sameCity(p.city, city) && normKey(city));
+  const [picked, setPicked] = useState(() => new Set(initialIds.length ? initialIds : cityPlaces.filter(p => p.status !== 'visited').map(p => p.id)));
+  const [phase, setPhase] = useState('form');
+  const [stream, setStream] = useState('');
+  const [started, setStarted] = useState(0);
+  const [error, setError] = useState('');
+  const ctl = useRef(null);
+  useEffect(() => () => ctl.current && ctl.current.abort(), []);
+  useEffect(() => { if (!initialIds.length) setPicked(new Set(cityPlaces.filter(p => p.status !== 'visited').map(p => p.id))); }, [city]);
+  const chosen = places.filter(p => picked.has(p.id));
+  const toggle = id => setPicked(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const listed = initialIds.length ? places.filter(p => initialIds.includes(p.id) || sameCity(p.city, city)) : cityPlaces;
+
+  async function generate() {
+    setError(''); setStream(''); setStarted(Date.now()); setPhase('working');
+    ctl.current = new AbortController();
+    const trip = { city: city.trim(), days, startDate, base: base.trim() ? { name: base.trim() } : null, prefs: { pace, transport, notes: notes.trim() } };
+    try {
+      const { groups, noCoord } = clusterIntoDays(chosen, days, null);
+      const prompt = buildPlanPrompt({ trip, places: chosen, groups, noCoord, lang: ctx.prefs.aiLang, allowSuggest: suggest });
+      const raw = await ctx.ai.json(prompt, { tier: ctx.prefs.deepPlan ? 'complex' : 'default', onText: setStream, signal: ctl.current.signal, cache: false });
+      const byId = Object.fromEntries(chosen.map(p => [p.id, p]));
+      const country = (chosen.find(p => p.country) || {}).country || '';
+      const plan = normalizePlan(raw, byId, { startDate, baseName: base.trim(), placeIds: chosen.map(p => p.id), city: trip.city, country });
+      if (!plan.days.length) throw { code: 'invalid_json' };
+      const now = Date.now();
+      const doc = { id: uid('t'), title: plan.title || `${trip.city} ${days} 日`, city: trip.city, country, days, startDate, base: plan.base, prefs: { ...trip.prefs, suggest }, placeIds: chosen.map(p => p.id), plan, example: false, createdAt: now, updatedAt: now };
+      if (await ctx.write('set', 'trips', doc.id, doc)) { ctx.toast('行程排好了'); ctx.openView({ type: 'trip', id: doc.id }); onClose(); }
+      else setPhase('form');
+    } catch (e) {
+      setPhase('form');
+      if (e && e.code === 'cancelled') return;
+      setError(aiErrorText(e));
+      if (PERMANENT_AI_ERRORS.has(e && e.code)) ctx.onAiBlocked(e.code);
+    }
+  }
+  const footer = phase === 'form' ? html`
+    <span class="hint" style=${{ marginRight: 'auto' }}>${chosen.length} 个地点 · ${days} 天</span>
+    <button class="btn" onClick=${onClose}>取消</button>
+    <button class="btn primary" disabled=${!ctx.ai.ok || !chosen.length || !city.trim()} onClick=${generate}><${Icon} name="spark" size=${16} />生成行程</button>` : null;
+  return html`<${Sheet} title="排行程" onClose=${onClose} footer=${footer} wide>
+    ${phase === 'working' ? html`<${AiProgress} label="正在排路线" text=${stream} started=${started} onStop=${() => ctl.current && ctl.current.abort()}
+        counter=${t => `已排 ${(t.match(/"time"\s*:/g) || []).length} 站`} />` : html`
+      <div class="three">
+        <div class="field"><label for="tp-city">城市</label><input id="tp-city" class="input" list="known-cities" value=${city} onInput=${e => setCity(e.target.value)} /></div>
+        <div class="field"><label for="tp-days">天数</label>
+          <select id="tp-days" class="input" value=${days} onChange=${e => setDays(+e.target.value)}>${Array.from({ length: 14 }, (_, i) => html`<option value=${i + 1}>${i + 1} 天</option>`)}</select></div>
+        <div class="field"><label for="tp-date">出发日期（可选）</label><input id="tp-date" class="input" type="date" value=${startDate} onInput=${e => setStartDate(e.target.value)} /></div>
+      </div>
+      <div class="field"><label for="tp-base">住哪里（酒店名或区域，可选）</label><input id="tp-base" class="input" value=${base} onInput=${e => setBase(e.target.value)} placeholder="例如：新宿站附近 / 明洞 / 春熙路" /></div>
+      <div class="two">
+        <div class="field"><span class="label">节奏</span><div class="seg">${Object.entries(PACES).map(([k, v]) => html`<button class="chip" aria-pressed=${pace === k} onClick=${() => setPace(k)}>${v}</button>`)}</div></div>
+        <div class="field"><span class="label">交通</span><div class="seg">${Object.entries(TRANSPORTS).map(([k, v]) => html`<button class="chip" aria-pressed=${transport === k} onClick=${() => setTransport(k)}>${v}</button>`)}</div></div>
+      </div>
+      <div class="field"><label for="tp-notes">其他要求（可选）</label><input id="tp-notes" class="input" value=${notes} onInput=${e => setNotes(e.target.value)} placeholder="例如：第二天要去迪士尼、带老人少走路、想看日落" /></div>
+      <label class="check-row" style=${{ padding: 0 }}><input type="checkbox" checked=${suggest} onChange=${e => setSuggest(e.target.checked)} /><span>允许 AI 补充顺路的吃饭推荐（会标「AI 推荐」）</span></label>
+      <div class="field">
+        <div class="row" style=${{ justifyContent: 'space-between' }}><span class="label">要去的地点（${chosen.length}/${listed.length}）</span>
+          <span class="row"><button class="btn ghost sm" onClick=${() => setPicked(new Set(listed.map(p => p.id)))}>全选</button><button class="btn ghost sm" onClick=${() => setPicked(new Set())}>全不选</button></span></div>
+        ${listed.length ? html`<div class="checklist">${listed.map(p => html`<label key=${p.id} class="check-row"><input type="checkbox" checked=${picked.has(p.id)} onChange=${() => toggle(p.id)} />
+            <${Icon} name=${p.category} size=${16} /><span class="grow">${p.name} <span class="muted small">${p.area || ''}</span></span>
+            ${p.status === 'want' ? html`<span class="tag ai">想去</span>` : p.status === 'visited' ? html`<span class="tag">去过</span>` : null}</label>`)}</div>`
+          : html`<p class="hint">这个城市还没有种草。先去「种草」添加几个地点。</p>`}
+      </div>
+      ${!ctx.ai.ok && html`<div class="notice warn"><${Icon} name="info" /><div>${ctx.ai.reason}</div></div>`}
+      ${error && html`<div class="notice warn" role="alert"><${Icon} name="info" /><div>${error}</div></div>`}`}
+  <//>`;
+}
+
+function useNarrow(breakpoint) {
+  const [narrow, setNarrow] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const on = () => setNarrow(window.innerWidth < breakpoint);
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, [breakpoint]);
+  return narrow;
+}
+function RouteMap({ days, active, base }) {
+  // A smaller drawing on phones keeps the 12px labels readable once the SVG is scaled to the screen.
+  const narrow = useNarrow(560);
+  const W = narrow ? 400 : 600, H = narrow ? 320 : 380, PAD = 34;
+  const shownDays = active == null ? days.map((d, i) => ({ d, i })) : [{ d: days[active], i: active }].filter(x => x.d);
+  const pts = shownDays.flatMap(({ d }) => d.stops.filter(hasCoord));
+  const all = hasCoord(base) ? pts.concat([base]) : pts;
+  const proj = makeProjection(all, W, H, PAD);
+  if (!proj) return html`<div class="map-box"><p class="hint" style=${{ padding: '16px' }}>这天的地点还没有坐标，暂时画不出示意图。</p></div>`;
+  const scale = niceScale(proj.kmPerPx, narrow ? 70 : 90);
+  const markers = [];
+  shownDays.forEach(({ d, i }) => d.stops.forEach((s, k) => { if (hasCoord(s)) { const [x, y] = proj.project(s); markers.push({ x, y, i, k, text: str(s.name, 14), s }); } }));
+  const labels = active == null ? [] : placeLabels(markers, W, H);
+  const grid = [];
+  for (let x = 50; x < W; x += 50) grid.push(html`<line class="map-grid" x1=${x} y1="0" x2=${x} y2=${H} />`);
+  for (let y = 50; y < H; y += 50) grid.push(html`<line class="map-grid" x1="0" y1=${y} x2=${W} y2=${y} />`);
+  const bxy = hasCoord(base) ? proj.project(base) : null;
+  return html`<div class="map-box">
+    <svg viewBox=${`0 0 ${W} ${H}`} role="img" aria-label="路线示意图">
+      <rect x="0" y="0" width=${W} height=${H} style=${{ fill: 'var(--surface)' }} />
+      <g opacity=".7">${grid}</g>
+      ${shownDays.map(({ d, i }) => {
+        const line = d.stops.filter(hasCoord).map(s => proj.project(s));
+        if (bxy && line.length) line.unshift(bxy);
+        return line.length > 1 ? html`<polyline points=${line.map(p => p.join(',')).join(' ')} style=${{ fill: 'none', stroke: dayColor(i), strokeWidth: 5, strokeLinecap: 'round', strokeLinejoin: 'round' }} />` : null;
+      })}
+      ${bxy ? html`<g><rect x=${bxy[0] - 11} y=${bxy[1] - 11} width="22" height="22" rx="4" style=${{ fill: 'var(--ink)' }} /><text x=${bxy[0]} y=${bxy[1] + 4.5} text-anchor="middle" style=${{ fill: 'var(--surface)', fontSize: '12px', fontWeight: 700 }}>住</text></g>` : null}
+      ${markers.map(m => html`<g>
+        <circle cx=${m.x} cy=${m.y} r="10" style=${{ fill: 'var(--surface)', stroke: dayColor(m.i), strokeWidth: 3.5, strokeDasharray: m.s.suggested ? '3 2' : null }} />
+        <text class="map-num" x=${m.x} y=${m.y + 3.5} text-anchor="middle">${m.k + 1}</text></g>`)}
+      ${labels.filter(l => l.show).map(l => html`<text class="map-label" x=${l.tx} y=${l.ty} text-anchor=${l.anchor}>${l.text}</text>`)}
+      <g transform=${`translate(16 ${H - 18})`}>
+        <line class="map-scale" x1="0" y1="0" x2=${scale.px} y2="0" /><line class="map-scale" x1="0" y1="-5" x2="0" y2="5" /><line class="map-scale" x1=${scale.px} y1="-5" x2=${scale.px} y2="5" />
+        <text class="map-scale-text" x=${scale.px + 8} y="4">${scale.label}</text>
+      </g>
+      <g transform=${`translate(${W - 24} 26)`}><path d="M0 -12 L6 6 L0 2 L-6 6 Z" style=${{ fill: 'var(--ink)' }} /><text class="map-scale-text" x="0" y="20" text-anchor="middle">N</text></g>
+    </svg>
+    <div class="cap"><span>示意图，按大致坐标绘制，不是实际地图</span><span class="mono">${active == null ? `${days.length} 天` : `Day ${active + 1}`}</span></div>
+  </div>`;
+}
+
+function Timeline({ day, index, ctx, trip, base }) {
+  const color = dayColor(index);
+  const items = [];
+  let prev = hasCoord(base) || (base && base.name) ? { ...base, city: trip.city, country: trip.country } : null;
+  day.stops.forEach((s, k) => {
+    const place = s.placeId ? ctx.placesById[s.placeId] : null;
+    const target = { ...s, city: s.city || trip.city, country: s.country || trip.country };
+    const pos = day.stops.length === 1 ? 'only' : k === 0 ? 'first' : k === day.stops.length - 1 ? 'last' : '';
+    if (s.travel && (k > 0 || prev)) {
+      const from = k > 0 ? { ...day.stops[k - 1], city: trip.city, country: trip.country } : prev;
+      items.push(html`<li class="leg" key=${'l' + k}>
+        <span></span><span class="rail"></span>
+        <div class="leg-body"><span class="mode" title=${MODES[s.travel.mode] || ''}><${Icon} name=${MODE_ICON[s.travel.mode] || 'walk'} size=${16} /></span>
+          <div class="txt"><b>${MODES[s.travel.mode] || '步行'}${s.travel.minutes ? ' ' + fmtMin(s.travel.minutes) : ''}</b>${s.travel.detail ? ' · ' + s.travel.detail : ''}${s.travel.cost ? ' · ' + s.travel.cost : ''}
+            ${from ? html` <${ExtLink} href=${legLink(from, target, s.travel.mode, ctx.prefs.mapPref)}>路线<//>` : null}</div></div>
+      </li>`);
+    }
+    const visited = place && place.status === 'visited';
+    items.push(html`<li class=${pos} key=${'s' + k}>
+      <span class="time">${s.time}</span>
+      <span class="rail"><span class=${'station' + (s.suggested ? ' suggested' : '') + (visited ? ' done' : '')}>${visited ? '✓' : String(k + 1).padStart(2, '0')}</span></span>
+      <div class="stop-body">
+        <h4><${Icon} name=${s.category} size=${16} />${s.name}${s.suggested ? html`<span class="tag ai">AI 推荐</span>` : null}</h4>
+        ${s.nameLocal && s.nameLocal !== s.name ? html`<div class="local">${s.nameLocal}</div>` : null}
+        ${s.what ? html`<p class="what">${s.what}</p>` : null}
+        ${s.tip ? html`<p class="tip">${s.tip}</p>` : null}
+        <div class="actions">
+          ${s.stayMin ? html`<span class="tag"><${Icon} name="clock" size=${12} />${fmtMin(s.stayMin)}</span>` : null}
+          <${ExtLink} href=${placeLink(target, ctx.prefs.mapPref)}>地图<//>
+          ${place ? html`<button class=${'status ' + (place.status || 'saved')} onClick=${() => ctx.write('update', 'places', place.id, { status: visited ? 'want' : 'visited', updatedAt: Date.now() })}>${visited ? '✓ 已拔草' : '标记拔草'}</button>` : null}
+        </div>
+      </div>
+    </li>`);
+  });
+  return html`<ol class="timeline" style=${{ '--line': color }}>${items}</ol>`;
+}
+
+function TripView({ ctx, trip, onBack }) {
+  const [active, setActive] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [phase, setPhase] = useState('idle');
+  const [stream, setStream] = useState('');
+  const [started, setStarted] = useState(0);
+  const [error, setError] = useState('');
+  const [shareText, setShareText] = useState('');
+  const ctl = useRef(null);
+  useEffect(() => () => ctl.current && ctl.current.abort(), []);
+  const plan = { days: [], tips: [], unplaced: [], ...(trip.plan || {}) };
+  const base = plan.base || trip.base || null;
+  const dayIdx = active == null ? null : Math.min(active, Math.max(0, plan.days.length - 1));
+  const day = dayIdx == null ? null : plan.days[dayIdx];
+  const endDate = trip.startDate ? addDays(trip.startDate, trip.days - 1) : '';
+  const dayRoute = day ? dayRouteLink([...(base && base.name ? [{ ...base, city: trip.city, country: trip.country }] : []), ...day.stops.map(s => ({ ...s, city: s.city || trip.city, country: s.country || trip.country }))]) : null;
+
+  async function revise() {
+    const fb = feedback.trim();
+    if (!fb) return;
+    setError(''); setStream(''); setStarted(Date.now()); setPhase('working');
+    ctl.current = new AbortController();
+    try {
+      const tripIds = trip.placeIds || [];
+      const pool = ctx.places.filter(p => tripIds.includes(p.id) || sameCity(p.city, trip.city));
+      const prompt = buildRevisePrompt({ trip, places: pool, feedback: fb, lang: ctx.prefs.aiLang, allowSuggest: trip.prefs && trip.prefs.suggest !== false });
+      const raw = await ctx.ai.json(prompt, { tier: ctx.prefs.deepPlan ? 'complex' : 'default', onText: setStream, signal: ctl.current.signal, cache: false });
+      const byId = Object.fromEntries(pool.map(p => [p.id, p]));
+      const next = normalizePlan(raw, byId, { startDate: trip.startDate, baseName: base && base.name, placeIds: tripIds, city: trip.city, country: trip.country });
+      if (!next.days.length) throw { code: 'invalid_json' };
+      const placeIds = [...new Set([...tripIds, ...next.days.flatMap(d => d.stops.map(s => s.placeId).filter(Boolean))])];
+      if (await ctx.write('update', 'trips', trip.id, { plan: next, placeIds, updatedAt: Date.now(), revisions: (trip.revisions || 0) + 1 })) { ctx.toast('行程已调整'); setFeedback(''); }
+      setPhase('idle');
+    } catch (e) {
+      setPhase('idle');
+      if (e && e.code === 'cancelled') return;
+      setError(aiErrorText(e));
+      if (PERMANENT_AI_ERRORS.has(e && e.code)) ctx.onAiBlocked(e.code);
+    }
+  }
+  async function shareCopy() {
+    const text = tripToText(trip);
+    if (await copyText(text)) ctx.toast('已复制，可以直接发给旅伴'); else setShareText(text);
+  }
+  async function exportMd() {
+    const md = tripToMarkdown(trip, ctx.placesById);
+    if (!ctx.downloads) return setShareText(md);
+    try { await ctx.downloads.save({ filename: `${trip.title || trip.city}.md`, data: md }); ctx.toast('已导出'); }
+    catch (e) { if (!e || e.code !== 'declined') setShareText(md); }
+  }
+  async function remove() { if (await ctx.write('remove', 'trips', trip.id)) { ctx.toast('行程已删除'); onBack(); } }
+  const quick = ['第一天轻松一点', '每天加一个午餐推荐', '改成打车为主', '把购物放到最后一天', '早上晚点出发'];
+
+  return html`<div>
+    <div class="trip-head">
+      <div class="row"><button class="btn ghost sm" onClick=${onBack}><${Icon} name="back" size=${16} />全部行程</button>${trip.example ? html`<span class="tag example">示例</span>` : null}</div>
+      <h1>${trip.title}</h1>
+      <p class="muted">${[trip.city, `${trip.days} 天`, trip.startDate ? `${trip.startDate} → ${endDate}` : '', base && base.name ? `住 ${base.name}` : ''].filter(Boolean).join(' · ')}</p>
+      ${plan.summary ? html`<p>${plan.summary}</p>` : null}
+      <div class="row">
+        <button class="btn sm" onClick=${shareCopy}><${Icon} name="copy" size=${14} />复制文字（发给旅伴）</button>
+        <button class="btn sm" onClick=${exportMd}><${Icon} name="download" size=${14} />导出 Markdown</button>
+        <${ConfirmButton} className="sm" label="删除行程" armedLabel="确认删除" icon="trash" onConfirm=${remove} />
+      </div>
+      <${ManualCopy} text=${shareText} onClose=${() => setShareText('')} />
+    </div>
+    ${plan.tips && plan.tips.length ? html`<details class="panel" open><summary>实用提示（${plan.tips.length}）</summary><ul class="tips-list">${plan.tips.map(t => html`<li>${t}</li>`)}</ul></details>` : null}
+    <div class="daychips" role="group" aria-label="选择哪一天" style=${{ marginTop: '14px' }}>
+      <button class="daychip" style=${{ '--line': 'var(--ink)' }} aria-pressed=${active == null} onClick=${() => setActive(null)}><span class="code">全</span>总览</button>
+      ${plan.days.map((d, i) => html`<button class="daychip" style=${{ '--line': dayColor(i) }} aria-pressed=${dayIdx === i} onClick=${() => setActive(i)}>
+        <span class="code">${i + 1}</span>${d.date ? `${d.date.slice(5)} ${weekday(d.date)}` : `Day ${i + 1}`}${d.area ? ' · ' + d.area : ''}</button>`)}
+    </div>
+    <div class="trip-layout" style=${{ marginTop: '8px' }}>
+      <div class="map-col"><${RouteMap} days=${plan.days} active=${dayIdx} base=${base} /></div>
+      <div>
+        ${day ? html`<div>
+          <div class="day-head" style=${{ '--line': dayColor(dayIdx) }}>
+            <div class="title"><span class="badge">D${dayIdx + 1}</span><h3>${day.theme || `第 ${dayIdx + 1} 天`}</h3></div>
+            <p class="muted small">${[day.date ? `${day.date} ${weekday(day.date)}` : '', day.area, `${day.stops.length} 站`, `步行/车程约 ${fmtMin(day.stops.reduce((s, x) => s + ((x.travel && x.travel.minutes) || 0), 0)) || '—'}`].filter(Boolean).join(' · ')}</p>
+            ${day.note ? html`<p class="small">${day.note}</p>` : null}
+            ${dayRoute ? html`<div><${ExtLink} href=${dayRoute}>在 Google 地图打开当天全程<//></div>` : null}
+          </div>
+          <${Timeline} day=${day} index=${dayIdx} ctx=${ctx} trip=${trip} base=${base} />
+        </div>` : html`<div class="stack" style=${{ marginTop: '8px' }}>
+          ${plan.days.map((d, i) => html`<button class="trip-card" style=${{ '--line': dayColor(i) }} onClick=${() => setActive(i)}>
+            <div class="title row"><span class="daychip" style=${{ '--line': dayColor(i), padding: 0, border: 0, background: 'none' }}><span class="code">${i + 1}</span></span><strong>${d.theme || `第 ${i + 1} 天`}</strong><span class="muted small">${d.area}</span></div>
+            <span class="small muted">${d.stops.map(s => s.name).join(' → ')}</span></button>`)}
+        </div>`}
+        ${plan.unplaced && plan.unplaced.length ? html`<div class="panel" style=${{ marginTop: '16px' }}><h3>没排进去的地点</h3>
+          <ul class="tips-list">${plan.unplaced.map(u => html`<li>${(ctx.placesById[u.placeId] || {}).name || '已删除的地点'}：<span class="muted">${u.reason}</span></li>`)}</ul></div>` : null}
+        <div class="panel" style=${{ marginTop: '16px' }}>
+          <h3>想调整？</h3>
+          ${phase === 'working' ? html`<${AiProgress} label="正在调整" text=${stream} started=${started} onStop=${() => ctl.current && ctl.current.abort()} counter=${t => `已排 ${(t.match(/"time"\s*:/g) || []).length} 站`} />` : html`
+            <div class="chips">${quick.map(qk => html`<button class="chip" onClick=${() => setFeedback(f => (f ? f + '；' : '') + qk)}>${qk}</button>`)}</div>
+            <textarea id="trip-feedback" class="input" rows="2" style=${{ minHeight: '64px' }} value=${feedback} onInput=${e => setFeedback(e.target.value)} placeholder="例如：Day 2 太赶了，把浅草寺挪到 Day 3"></textarea>
+            ${error ? html`<div class="notice warn" role="alert"><${Icon} name="info" /><div>${error}</div></div>` : null}
+            <div class="row end"><button class="btn primary" disabled=${!ctx.ai.ok || !feedback.trim()} onClick=${revise}><${Icon} name="refresh" size=${16} />按要求重新排</button></div>`}
+          <p class="hint">交通时间和线路是 Claude 估计的，出发前点每段的「路线」用地图 App 看实时班次。</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function TripsView({ ctx }) {
+  if (ctx.loading.trips) return html`<p class="hint" style=${{ marginTop: '24px' }} role="status">正在读取行程…</p>`;
+  const list = ctx.trips.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  return html`<div>
+    <div class="section-head"><h2>行程</h2><button class="btn primary" onClick=${() => ctx.openSheet({ type: 'trip' })}><${Icon} name="plus" size=${16} />新行程</button></div>
+    ${!list.length ? html`<div class="empty"><h2>还没有行程</h2><p class="muted">在「种草」里选好一个城市的地点，或者直接点「新行程」：选天数、住哪里，Claude 会把地点按区域分到每一天，排好顺序和交通。</p>
+      <button class="btn primary" onClick=${() => ctx.openSheet({ type: 'trip' })}><${Icon} name="route" size=${16} />排第一个行程</button></div>` : null}
+    <div class="stack">${list.map(t => {
+      const stops = (t.plan && t.plan.days) || [];
+      const total = stops.reduce((s, d) => s + d.stops.length, 0);
+      return html`<button class="trip-card" key=${t.id} onClick=${() => ctx.openView({ type: 'trip', id: t.id })}>
+        <div class="row" style=${{ justifyContent: 'space-between' }}><h3>${t.title}</h3>${t.example ? html`<span class="tag example">示例</span>` : null}</div>
+        <span class="muted small">${[t.city, `${t.days} 天`, `${total} 站`, t.startDate ? `${t.startDate} 出发` : ''].filter(Boolean).join(' · ')}</span>
+        <div class="strip" aria-hidden="true">${stops.map((d, i) => html`<span style=${{ background: dayColor(i), flex: Math.max(1, d.stops.length) }}></span>`)}</div>
+      </button>`;
+    })}</div>
+  </div>`;
+}
+
+/* --- guides --- */
+function GuideSheet({ ctx, onClose }) {
+  const [text, setText] = useState('');
+  const [cityHint, setCityHint] = useState('');
+  const m = useMedia(ctx.ai.images ? ctx.ai.images.maxCount : 0, ctx.toast);
+  const media = m.media;
+  const [phase, setPhase] = useState('input');
+  const [stream, setStream] = useState('');
+  const [started, setStarted] = useState(0);
+  const [error, setError] = useState('');
+  const ctl = useRef(null);
+  useEffect(() => () => ctl.current && ctl.current.abort(), []);
+  const url = pickUrl(text), platform = detectPlatform(url || text), title = shareTitle(text), words = contentText(text);
+  async function generate() {
+    setError(''); setStream(''); setStarted(Date.now()); setPhase('working');
+    ctl.current = new AbortController();
+    try {
+      const prompt = buildGuidePrompt({ text, url, platform, cityHint: cityHint.trim(), imageCount: media.length, lang: ctx.prefs.aiLang, knownCities: ctx.cities });
+      const raw = await ctx.ai.json(prompt, { images: media.map(x => x.blob), onText: setStream, signal: ctl.current.signal });
+      const g = normalizeGuide(raw, { cityHint: cityHint.trim(), title });
+      const imageAssetIds = [];
+      if (ctx.assets) for (const x of media.slice(0, 6)) { try { imageAssetIds.push((await ctx.assets.upload(await shrinkImage(x.blob, 1080, 0.8))).id); } catch { break; } }
+      const now = Date.now();
+      const doc = { id: uid('g'), ...g, source: { platform: url ? platform : 'manual', url: url || '', title: title || g.title }, checked: [], savedPlaceIds: [], imageAssetIds, savedVia: 'app', example: false, createdAt: now, updatedAt: now };
+      if (await ctx.write('set', 'guides', doc.id, doc)) { ctx.toast('攻略整理好了'); ctx.openView({ type: 'guide', id: doc.id }); onClose(); }
+      else setPhase('input');
+    } catch (e) {
+      setPhase('input');
+      if (e && e.code === 'cancelled') return;
+      setError(aiErrorText(e));
+      if (PERMANENT_AI_ERRORS.has(e && e.code)) ctx.onAiBlocked(e.code);
+    }
+  }
+  async function toAgent() {
+    const doc = { id: uid('i'), text: text.slice(0, 4000), url: url || '', platform, cityHint: cityHint.trim(), mode: 'guide', status: 'pending', message: '', createdAt: Date.now() };
+    if (await ctx.write('set', 'inbox', doc.id, doc)) { ctx.toast('已放进「待处理」，Agent 会看完视频再整理成攻略'); onClose(); }
+  }
+  const footer = phase === 'input' ? html`
+    <button class="btn" disabled=${!url} onClick=${toAgent}><${Icon} name="bot" size=${16} />交给 Agent（看视频）</button>
+    <button class="btn primary" disabled=${!ctx.ai.ok || (!words && !media.length)} onClick=${generate}><${Icon} name="spark" size=${16} />整理成步骤</button>` : null;
+  return html`<${Sheet} title="跟着攻略走" onClose=${onClose} footer=${footer}>
+    ${phase === 'working' ? html`<${AiProgress} label="正在整理步骤" text=${stream} started=${started} onStop=${() => ctl.current && ctl.current.abort()} counter=${t => `已写 ${(t.match(/"title"\s*:/g) || []).length} 步`} />` : html`
+      <p class="hint">把教你"怎么去、怎么玩"的帖子交给 Claude：它会读文字和截图（视频会自动截帧），整理成一步一步的走法，每步带导航链接。</p>
+      <div class="field"><label for="g-text">攻略文字或分享链接</label>
+        <textarea id="g-text" class="input" rows="5" value=${text} onInput=${e => setText(e.target.value)} onPaste=${m.onPaste}
+          placeholder="粘贴攻略正文，或分享链接 + 截图"></textarea></div>
+      ${url && words.length < 40 && !media.length ? html`<div class="notice warn"><${Icon} name="info" /><div>只有链接时 Claude 在这里看不到内容。加截图 / 视频，或者「交给 Agent」：Claude Code 会下载视频、截帧、把语音转成文字后再整理。</div></div>` : null}
+      <${MediaPicker} m=${m} aiOk=${ctx.ai.ok} />
+      <div class="field"><label for="g-city">城市（可选）</label><input id="g-city" class="input" list="known-cities" value=${cityHint} onInput=${e => setCityHint(e.target.value)} /></div>
+      ${!ctx.ai.ok ? html`<div class="notice warn"><${Icon} name="info" /><div>${ctx.ai.reason}</div></div>` : null}
+      ${error ? html`<div class="notice warn" role="alert"><${Icon} name="info" /><div>${error}</div></div>` : null}`}
+  <//>`;
+}
+function GuideView({ ctx, guide, onBack }) {
+  const checked = new Set(guide.checked || []);
+  const toggleCheck = i => { const n = new Set(checked); n.has(i) ? n.delete(i) : n.add(i); ctx.write('update', 'guides', guide.id, { checked: [...n], updatedAt: Date.now() }); };
+  const city = guide.city;
+  const newPlaces = (guide.places || []).filter(p => !findDuplicate(p, ctx.places));
+  async function savePlaces() {
+    const ids = [];
+    for (const p of newPlaces) {
+      const doc = makePlaceDoc(p, { source: { platform: (guide.source && guide.source.platform) || 'manual', url: (guide.source && guide.source.url) || '', title: guide.title }, savedVia: guide.savedVia || 'app' });
+      if (await ctx.write('set', 'places', doc.id, doc)) ids.push(doc.id);
+    }
+    if (ids.length) { await ctx.write('update', 'guides', guide.id, { savedPlaceIds: [...(guide.savedPlaceIds || []), ...ids], updatedAt: Date.now() }); ctx.toast(`已种草 ${ids.length} 个地点`); }
+  }
+  async function remove() { if (await ctx.write('remove', 'guides', guide.id)) { ctx.toast('攻略已删除'); onBack(); } }
+  return html`<div>
+    <div class="trip-head">
+      <div class="row"><button class="btn ghost sm" onClick=${onBack}><${Icon} name="back" size=${16} />全部攻略</button>${guide.example ? html`<span class="tag example">示例</span>` : null}${guide.savedVia === 'agent' ? html`<span class="tag agent">Agent 整理</span>` : null}</div>
+      <h1>${guide.title}</h1>
+      <p class="muted">${[city, guide.duration, `${(guide.steps || []).length} 步`].filter(Boolean).join(' · ')}</p>
+      ${guide.overview ? html`<p>${guide.overview}</p>` : null}
+      <div class="row"><${PlatformTag} source=${guide.source} /><span style=${{ flex: 1 }}></span><${ConfirmButton} className="sm" label="删除" armedLabel="确认删除" icon="trash" onConfirm=${remove} /></div>
+    </div>
+    <div class="trip-layout">
+      <div class="stack">
+        ${(guide.checklist || []).length ? html`<div class="panel"><h3>出发前准备</h3>${guide.checklist.map((c, i) => html`<label class=${'check-item' + (checked.has(i) ? ' done' : '')}><input type="checkbox" checked=${checked.has(i)} onChange=${() => toggleCheck(i)} /><span>${c}</span></label>`)}</div>` : null}
+        ${(guide.warnings || []).length ? html`<div class="panel"><h3>出发前确认</h3><ul class="tips-list">${guide.warnings.map(w => html`<li>${w}</li>`)}</ul></div>` : null}
+        ${(guide.places || []).length ? html`<div class="panel"><h3>攻略里的地点（${guide.places.length}）</h3>
+          <div class="chips" style=${{ flexWrap: 'wrap' }}>${guide.places.map(p => html`<a class="chip" href=${placeLink({ ...p, city: p.city || city }, ctx.prefs.mapPref)} target="_blank" rel="noopener noreferrer"><${Icon} name=${p.category} size=${14} />${p.name}</a>`)}</div>
+          ${newPlaces.length ? html`<div><button class="btn sm primary" onClick=${savePlaces}><${Icon} name="bookmark" size=${14} />把 ${newPlaces.length} 个新地点加入种草</button></div>` : html`<p class="hint">这些地点都已经在种草清单里了。</p>`}</div>` : null}
+        ${(guide.imageAssetIds || []).length ? html`<div class="gallery">${guide.imageAssetIds.map(id => html`<img src=${'/_blob/' + id} alt="攻略截图" loading="lazy" onError=${e => { e.target.style.display = 'none'; }} />`)}</div>` : null}
+      </div>
+      <div>
+        ${(guide.steps || []).length ? html`<ol class="gsteps">${guide.steps.map((s, i) => {
+          const prevStep = i > 0 ? guide.steps[i - 1] : null;
+          const from = s.from || (prevStep && (prevStep.to || prevStep.placeName));
+          const to = s.to || s.placeName;
+          const link = from && to ? legLink({ name: from, city, country: guide.country }, { name: to, city, country: guide.country, lat: s.lat, lng: s.lng }, s.mode || 'walk', ctx.prefs.mapPref)
+            : to ? placeLink({ name: to, city, country: guide.country, lat: s.lat, lng: s.lng }, ctx.prefs.mapPref) : null;
+          return html`<li key=${i}><div>
+            <h4>${s.title}${s.inferred ? html`<span class="tag ai">AI 补充</span>` : null}</h4>
+            ${s.detail ? html`<p class="detail">${s.detail}</p>` : null}
+            <div class="facts">
+              ${s.mode ? html`<span class="row" style=${{ gap: '4px' }}><${Icon} name=${MODE_ICON[s.mode] || 'walk'} size=${15} />${MODES[s.mode]}${s.minutes ? ' ' + fmtMin(s.minutes) : ''}</span>` : null}
+              ${s.exit ? html`<span class="exit">出口 ${s.exit}</span>` : null}
+              ${s.cost ? html`<span>${s.cost}</span>` : null}
+              ${link ? html`<${ExtLink} href=${link}>${from && to ? '导航' : '地图'}<//>` : null}
+            </div></div></li>`;
+        })}</ol>` : html`<div class="notice warn"><${Icon} name="info" /><div>没有整理出步骤：${guide.overview || '内容里没有具体的走法。'}</div></div>`}
+      </div>
+    </div>
+  </div>`;
+}
+function GuidesView({ ctx }) {
+  if (ctx.loading.guides) return html`<p class="hint" style=${{ marginTop: '24px' }} role="status">正在读取攻略…</p>`;
+  const list = ctx.guides.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return html`<div>
+    <div class="section-head"><h2>跟着攻略走</h2><button class="btn primary" onClick=${() => ctx.openSheet({ type: 'guide' })}><${Icon} name="plus" size=${16} />整理攻略</button></div>
+    ${!list.length ? html`<div class="empty"><h2>还没有攻略</h2><p class="muted">看到"教你怎么去 / 怎么玩"的帖子或视频，交给 Claude 整理成一步一步的走法：哪个出口出、坐哪条线、走几分钟，每步都能一键导航。</p>
+      <button class="btn primary" onClick=${() => ctx.openSheet({ type: 'guide' })}><${Icon} name="book" size=${16} />整理第一篇</button></div>` : null}
+    <div class="stack">${list.map(g => html`<button class="trip-card" key=${g.id} onClick=${() => ctx.openView({ type: 'guide', id: g.id })}>
+      <div class="row" style=${{ justifyContent: 'space-between' }}><h3>${g.title}</h3><span class="row">${g.example ? html`<span class="tag example">示例</span>` : null}${g.savedVia === 'agent' ? html`<span class="tag agent">Agent</span>` : null}</span></div>
+      <span class="muted small">${[g.city, g.duration, `${(g.steps || []).length} 步`, g.source && PLATFORMS[g.source.platform]].filter(Boolean).join(' · ')}</span>
+      ${g.overview ? html`<span class="small">${str(g.overview, 90)}</span>` : null}
+    </button>`)}</div>
+  </div>`;
+}
+
+/* --- agent inbox --- */
+function InboxView({ ctx }) {
+  if (ctx.loading.inbox) return html`<p class="hint" style=${{ marginTop: '24px' }} role="status">正在读取…</p>`;
+  const list = ctx.inbox.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const pending = list.filter(i => i.status === 'pending').length;
+  return html`<div>
+    <div class="section-head"><h2>交给 Agent 的链接</h2><span class="mono muted">${pending} 条待处理</span></div>
+    <div class="panel">
+      <h3><span class="row" style=${{ gap: '8px' }}><${Icon} name="bot" />Agent 怎么处理这些链接</span></h3>
+      <p class="small">这个页面里的 Claude 打不开外部链接。Agent 是在 Claude Code 里运行的同一个 Claude，它能：读取小红书笔记全文和所有图片、下载视频截帧并把语音转成文字、用 OpenStreetMap 查准确坐标，然后把地点和攻略写回这里。</p>
+      <p class="small">用法：在 Claude Code（网页版、手机 App 或电脑）打开仓库 <span class="code">mshen0/travel-planner</span>，输入 <span class="code">/collect</span>。也可以直接把链接发给它：<span class="code">/collect 链接</span>、<span class="code">/guide 视频链接</span>。</p>
+    </div>
+    ${!list.length ? html`<p class="hint" style=${{ marginTop: '16px' }}>还没有链接。在「添加」或「整理攻略」里粘贴链接后点「交给 Agent」。</p>` : null}
+    <div class="stack" style=${{ marginTop: '14px' }}>${list.map(i => html`<div class="inbox-item" key=${i.id}>
+      <div class="row" style=${{ justifyContent: 'space-between' }}>
+        <span class="row"><span class=${'st ' + i.status}>${{ pending: '待处理', done: '已完成', failed: '失败' }[i.status] || i.status}</span><span class="tag">${i.mode === 'guide' ? '整理攻略' : '收藏地点'}</span><span class="tag">${PLATFORMS[i.platform] || '网页'}</span></span>
+        <${ConfirmButton} className="sm" label="移除" armedLabel="确认" onConfirm=${() => ctx.write('remove', 'inbox', i.id)} />
+      </div>
+      ${shareTitle(i.text) ? html`<strong>${shareTitle(i.text)}</strong>` : null}
+      ${i.url ? html`<a class="url" href=${i.url} target="_blank" rel="noopener noreferrer">${i.url}</a>` : null}
+      ${i.message ? html`<p class="small">${i.message}</p>` : null}
+      <span class="hint mono">${new Date(i.createdAt || Date.now()).toLocaleString()}</span>
+    </div>`)}</div>
+  </div>`;
+}
+
+/* --- settings --- */
+function SettingsSheet({ ctx, onClose }) {
+  const { prefs, setPref } = ctx;
+  const [importText, setImportText] = useState('');
+  const [importMsg, setImportMsg] = useState('');
+  const [manual, setManual] = useState('');
+  const fileRef = useRef(null);
+  const examples = [...(ctx.places || []), ...(ctx.trips || []), ...(ctx.guides || [])].filter(d => d.example);
+  async function save(name, data) {
+    if (!ctx.downloads) return setManual(data);
+    try { await ctx.downloads.save({ filename: name, data }); ctx.toast('已导出'); } catch (e) { if (!e || e.code !== 'declined') setManual(data); }
+  }
+  async function doImport(text) {
+    setImportMsg('');
+    try {
+      const data = parseBackup(text);
+      let n = 0;
+      for (const [col, list] of [['places', data.places], ['trips', data.trips], ['guides', data.guides]]) for (const d of list) if (await ctx.write('set', col, d.id, d)) n++;
+      setImportMsg(`导入了 ${n} 条`); setImportText('');
+    } catch (e) { setImportMsg(e.message || '导入失败'); }
+  }
+  async function clearExamples() {
+    for (const d of examples) {
+      const col = d.id.startsWith('p_') ? 'places' : d.id.startsWith('t_') ? 'trips' : 'guides';
+      await ctx.write('remove', col, d.id);
+    }
+    ctx.toast('示例已清除');
+  }
+  return html`<${Sheet} title="设置" onClose=${onClose}>
+    <div class="field"><span class="label">地图 App</span>
+      <div class="seg">${[['auto', '自动（中国用高德，韩国用 Naver，其他用 Google）'], ['google', 'Google 地图'], ['apple', 'Apple 地图'], ['amap', '高德'], ['naver', 'Naver']].map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.mapPref === k} onClick=${() => setPref({ mapPref: k })}>${v}</button>`)}</div></div>
+    <div class="field"><span class="label">AI 回复语言</span>
+      <div class="seg">${Object.entries(LANGS).map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.aiLang === k} onClick=${() => setPref({ aiLang: k })}>${v}</button>`)}</div></div>
+    <label class="check-row" style=${{ padding: 0 }}><input type="checkbox" checked=${prefs.deepPlan} onChange=${e => setPref({ deepPlan: e.target.checked })} /><span>深度规划：用最强的模型排行程，更慢，更耗用量</span></label>
+    <div class="panel"><h3>备份和导出</h3>
+      <div class="row">
+        <button class="btn sm" onClick=${() => save('拔草计划-备份.json', JSON.stringify({ app: 'bacao', version: 1, exportedAt: new Date().toISOString(), places: ctx.places || [], trips: ctx.trips || [], guides: ctx.guides || [] }, null, 1))}><${Icon} name="download" size=${14} />备份全部（JSON）</button>
+        <button class="btn sm" onClick=${() => save('拔草地点.csv', placesToCSV(ctx.places || []))}><${Icon} name="map" size=${14} />地点 CSV</button>
+      </div>
+      <${ManualCopy} text=${manual} onClose=${() => setManual('')} />
+      <p class="hint">CSV 可以导入 Google My Maps（mymaps.google.com → 新地图 → 导入，位置列选「Location」），手机上就能看所有种草的点。</p>
+    </div>
+    <div class="panel"><h3>导入备份</h3>
+      <textarea id="import-text" class="input" rows="3" style=${{ minHeight: '72px' }} value=${importText} onInput=${e => setImportText(e.target.value)} placeholder="粘贴备份 JSON，或选择文件"></textarea>
+      <div class="row"><button class="btn sm" onClick=${() => fileRef.current.click()}>选择文件</button><button class="btn sm primary" disabled=${!importText.trim()} onClick=${() => doImport(importText)}>导入</button><span class="hint">${importMsg}</span></div>
+      <input ref=${fileRef} id="import-file" class="sr" type="file" accept=".json,application/json" onChange=${async e => { const f = e.target.files[0]; e.target.value = ''; if (f) doImport(await f.text()); }} />
+    </div>
+    ${examples.length ? html`<div class="panel"><h3>示例数据</h3><p class="small">现在有 ${examples.length} 条示例（地点、行程、攻略）。</p><div><${ConfirmButton} className="sm" label="清除示例" armedLabel="确认清除全部示例" icon="trash" onConfirm=${clearExamples} /></div></div>` : null}
+    ${ctx.permissions ? html`<div><button class="btn sm" onClick=${() => ctx.permissions.manage().catch(() => ctx.toast('请从页面右上角的菜单打开权限设置'))}><${Icon} name="sliders" size=${14} />权限（Claude、存储）</button></div>` : null}
+    <p class="hint">数据保存在这个 claude.ai 页面里，只有你和你分享的人能看到。AI 识别和规划用的是你自己的 Claude 账号额度，不另外收费。</p>
+  <//>`;
+}
+
+/* --- app shell --- */
+function App() {
+  const [rt, setRt] = useState(null);
+  const storeRef = useRef(null);
+  const [data, setData] = useState({ places: null, trips: null, guides: null, inbox: null });
+  const [prefs, setPrefs] = useState(loadPrefs);
+  const [sheet, setSheet] = useState(null);
+  const [view, setView] = useState(null);
+  const [toast, setToastState] = useState(null);
+  const [ai, setAi] = useState({ ok: false, images: null, reason: '正在连接 Claude…' });
+  const [canWrite, setCanWrite] = useState(true);
+  const toastTimer = useRef(null);
+
+  const showToast = useCallback((msg, extra) => {
+    setToastState(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastState(null), extra ? 6000 : 3200);
+  }, []);
+  const setPref = useCallback(patch => setPrefs(p => { const n = { ...p, ...patch }; savePrefs(n); return n; }), []);
+
+  useEffect(() => {
+    let unsubs = [], alive = true;
+    connectRuntime().then(r => {
+      if (!alive) return;
+      const store = createStore(r.db);
+      storeRef.current = store;
+      setRt(r);
+      for (const col of COLLECTIONS) {
+        unsubs.push(store.subscribe(col, list => setData(d => ({ ...d, [col]: list })), err => {
+          setData(d => ({ ...d, [col]: d[col] || [] }));
+          if (err && err.code !== 'revoked') showToast('数据连接中断了，刷新页面试试');
+        }));
+      }
+      if (r.sample) {
+        r.sample.limits().then(l => alive && setAi({ ok: true, images: l && l.images ? l.images : null, reason: '' }))
+          .catch(() => alive && setAi({ ok: true, images: null, reason: '' }));
+      } else {
+        setAi({ ok: false, images: null, reason: AI_ERRORS.not_available });
+      }
+      if (r.user) r.user.can('data.write').then(v => alive && setCanWrite(v !== false)).catch(() => {});
+    });
+    return () => { alive = false; unsubs.forEach(u => u && u()); };
+  }, []);
+
+  const write = useCallback(async (op, col, id, payload) => {
+    const store = storeRef.current;
+    if (!store) { showToast('还没连上数据库，稍等再试'); return false; }
+    try {
+      if (op === 'set') await store.set(col, id, payload);
+      else if (op === 'update') await store.update(col, id, payload);
+      else await store.remove(col, id);
+      return true;
+    } catch (e) {
+      const code = e && e.code;
+      showToast(code === 'quota_exceeded' ? '存储空间满了，删掉一些旧数据再试' : code === 'invalid_argument' && !canWrite ? '你只有查看权限，不能修改' : '保存失败了，再试一次');
+      return false;
+    }
+  }, [canWrite]);
+
+  const places = data.places || [];
+  const placesById = useMemo(() => Object.fromEntries(places.map(p => [p.id, p])), [data.places]);
+  const cities = useMemo(() => {
+    const c = {};
+    for (const p of places) if (p.city) c[p.city] = (c[p.city] || 0) + 1;
+    return Object.keys(c).sort((a, b) => c[b] - c[a]);
+  }, [data.places]);
+  const pending = (data.inbox || []).filter(i => i.status === 'pending').length;
+  const tab = ['library', 'trips', 'guides', 'inbox'].includes(prefs.tab) ? prefs.tab : 'library';
+
+  const ctx = {
+    places, trips: data.trips || [], guides: data.guides || [], inbox: data.inbox || [], placesById,
+    loading: { places: data.places == null, trips: data.trips == null, guides: data.guides == null, inbox: data.inbox == null }, cities, prefs, setPref, write,
+    toast: showToast, ai: { ...ai, json: (prompt, o) => rt && rt.sample ? (() => {
+      const opts = { modelTier: o.tier || 'default' };
+      if (o.onText) opts.onText = ({ text }) => o.onText(text);
+      if (o.signal) opts.signal = o.signal;
+      if (o.images && o.images.length) opts.images = o.images;
+      if (o.cache === false) opts.cache = false;
+      return rt.sample.json(prompt, opts);
+    })() : Promise.reject({ code: 'not_available' }) },
+    assets: rt && rt.assets, downloads: rt && rt.downloads, permissions: rt && rt.permissions,
+    openSheet: s => setSheet(s), openView: v => { setView(v); if (v) setPref({ tab: v.type === 'trip' ? 'trips' : 'guides' }); window.scrollTo({ top: 0 }); },
+    onAiBlocked: code => setAi(a => ({ ...a, ok: false, reason: AI_ERRORS[code] || AI_ERRORS.not_available })),
+  };
+  // Pre-fill the city list for every city input.
+  const datalist = html`<datalist id="known-cities">${cities.map(c => html`<option value=${c}></option>`)}</datalist>`;
+
+  const go = t => { setView(null); setPref({ tab: t }); window.scrollTo({ top: 0 }); };
+  const tabs = [['library', '种草', 'bookmark', places.length], ['trips', '行程', 'route', (data.trips || []).length], ['guides', '攻略', 'book', (data.guides || []).length], ['inbox', '待处理', 'inbox', pending]];
+  const visited = places.filter(p => p.status === 'visited').length;
+  const subtitle = !rt ? '正在连接…' : !storeRef.current || !storeRef.current.live ? '离线预览：在 claude.ai 打开才会保存' : `${places.length} 个种草 · ${visited} 个已拔草 · ${cities.length} 座城市`;
+
+  let main;
+  const trip = view && view.type === 'trip' ? (data.trips || []).find(t => t.id === view.id) : null;
+  const guide = view && view.type === 'guide' ? (data.guides || []).find(g => g.id === view.id) : null;
+  if (trip) main = html`<${TripView} key=${trip.id} ctx=${ctx} trip=${trip} onBack=${() => setView(null)} />`;
+  else if (guide) main = html`<${GuideView} key=${guide.id} ctx=${ctx} guide=${guide} onBack=${() => setView(null)} />`;
+  else if (tab === 'trips') main = html`<${TripsView} ctx=${ctx} />`;
+  else if (tab === 'guides') main = html`<${GuidesView} ctx=${ctx} />`;
+  else if (tab === 'inbox') main = html`<${InboxView} ctx=${ctx} />`;
+  else main = html`<${LibraryView} ctx=${ctx} />`;
+
+  let sheetEl = null;
+  const close = () => setSheet(null);
+  if (sheet && sheet.type === 'add') sheetEl = html`<${AddSheet} ctx=${ctx} onClose=${close} />`;
+  if (sheet && sheet.type === 'place') { const p = placesById[sheet.id]; if (p) sheetEl = html`<${PlaceSheet} ctx=${ctx} place=${p} onClose=${close} />`; }
+  if (sheet && sheet.type === 'trip') sheetEl = html`<${TripSheet} ctx=${ctx} initial=${sheet} onClose=${close} />`;
+  if (sheet && sheet.type === 'guide') sheetEl = html`<${GuideSheet} ctx=${ctx} onClose=${close} />`;
+  if (sheet && sheet.type === 'settings') sheetEl = html`<${SettingsSheet} ctx=${ctx} onClose=${close} />`;
+
+  return html`<div class="shell">
+    <header class="top">
+      <div class="brand"><span class="mark" aria-hidden="true">拔</span><div><strong>拔草计划</strong><small>${subtitle}</small></div></div>
+      <span class="spacer"></span>
+      <nav class="tabs-top" aria-label="主菜单">${tabs.map(([k, label, icon, n]) => html`<button class="tab" aria-current=${!view && tab === k ? 'page' : null} onClick=${() => go(k)}><${Icon} name=${icon} size=${16} />${label}${n ? html`<span class="count">${n}</span>` : null}</button>`)}</nav>
+      <button class="icon-btn" aria-label="设置" onClick=${() => setSheet({ type: 'settings' })}><${Icon} name="sliders" /></button>
+    </header>
+    ${!canWrite ? html`<div class="notice warn" style=${{ marginTop: '12px' }}><${Icon} name="info" /><div>你只有查看权限：可以浏览，不能添加或修改。</div></div>` : null}
+    <main>${main}</main>
+    ${!view && tab === 'library' && places.length ? html`<button class="btn primary fab" onClick=${() => setSheet({ type: 'add' })}><${Icon} name="plus" />添加</button>` : null}
+    <nav class="tabbar" aria-label="主菜单">${tabs.map(([k, label, icon, n]) => html`<button class="tab" aria-current=${!view && tab === k ? 'page' : null} onClick=${() => go(k)}><${Icon} name=${icon} size=${20} /><span>${label}${k === 'inbox' && n ? ` ${n}` : ''}</span></button>`)}</nav>
+    ${datalist}
+    ${sheetEl}
+    ${toast ? html`<div class="toast" role="status">${toast}</div>` : null}
+  </div>`;
+}
+
+render(html`<${App} />`, document.getElementById('app'));
+</script>

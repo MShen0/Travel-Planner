@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 tools/fetch_post.py:*)",
+      "Bash(python3 tools/video_digest.py:*)",
+      "Bash(python3 tools/geocode.py:*)",
+      "Bash(python3 tools/trip_helper.py:*)"
+    ]
+  }
+}

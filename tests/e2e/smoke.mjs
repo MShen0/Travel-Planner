@@ -347,6 +347,29 @@ let dumped;
     // The crashes above were logged on purpose.
     for (let i = problems.length - 1; i >= 0; i--) if (problems[i].includes('test crash')) problems.splice(i, 1);
   });
+  await step('opening the AI tab never asks to scroll past the page (in the claude.ai frame on iPhone that slid the app away)', async () => {
+    await page.evaluate(() => {
+      window.__scrolls = [];
+      const scrollTo = (window.__scrollTo = window.scrollTo).bind(window);
+      window.scrollTo = (a, b) => {
+        const el = document.scrollingElement;
+        window.__scrolls.push({ top: typeof a === 'object' ? a.top : b, max: el.scrollHeight - el.clientHeight });
+        return scrollTo(a, b);
+      };
+    });
+    for (const n of [1, 30]) {
+      await tab(page, '行程');
+      await page.evaluate(n => localStorage.setItem('bacao.chat.v1', JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: 'q' + i, role: i % 2 ? 'ai' : 'me', text: `第 ${i + 1} 条消息`, at: 1 })))), n);
+      await tab(page, 'AI');
+      await text(page, `第 ${n} 条消息`).waitFor();
+      await page.waitForTimeout(400);
+    }
+    const scrolls = await page.evaluate(() => window.__scrolls);
+    const past = scrolls.filter(s => s.top > s.max + 1);
+    if (past.length) throw new Error('asked to scroll past the page: ' + JSON.stringify(past));
+    if (!scrolls.some(s => s.top > 0)) throw new Error('a long chat no longer opens at the newest message');
+    await page.evaluate(() => { window.scrollTo = window.__scrollTo; });
+  });
   await step('settings: map app, CSV, import, manual FX rate', async () => {
     await tab(page, '首页');
     await page.getByRole('button', { name: '设置' }).click();

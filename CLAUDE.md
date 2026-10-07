@@ -188,6 +188,10 @@ that it is the last fallback. Use the photo the user asks for; otherwise pick on
   (browser smoke test of every screen with a mocked claude.ai runtime; needs Playwright, ffmpeg and network for the
   CDN files; `--seed data.json --blobs blobs.json` screenshots real example data with local images).
 - The app is one HTML file. Pure logic sits between `@lib-start` and `@lib-end` and is unit-tested; keep it free of DOM code.
+- The app runs in a frame inside claude.ai. Never ask the window to scroll past `maxScroll()`, and never use
+  `scrollIntoView` (scroll the box that holds the element instead). On iPhone, either one scrolls the claude.ai page
+  around the frame, which slides the whole app out of view and leaves a white screen. Pages and sheets render inside
+  `Guard`, so an error shows a way back instead of a blank app.
 - Visual system: `DESIGN.md` (tokens, components, rules) and `PRODUCT.md` (users, purpose, principles). The direction
   contract is the comment at the top of `app/bacao.html`. Keep new UI inside that world.
 - Publish app changes with the Artifact tool to the same URL (`url` = `appUrl`) so the user's data stays attached.

@@ -4149,8 +4149,13 @@ function MapModeView({ ctx, country: country0, city: city0 }) {
   const scroller = useRef(null);
   useEffect(() => {
     if (!sel || !scroller.current) return;
-    const el = scroller.current.querySelector(`[data-id="${sel}"]`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const strip = scroller.current, el = strip.querySelector(`[data-id="${sel}"]`);
+    if (!el) return;
+    // Move only the card strip (and the side list on desktop): scrollIntoView would also scroll the claude.ai page around the frame.
+    const s = strip.getBoundingClientRect(), r = el.getBoundingClientRect();
+    strip.scrollTo({ left: strip.scrollLeft + r.left - s.left - (s.width - r.width) / 2, behavior: 'smooth' });
+    const list = strip.closest('.sheet-peek'), b = list && list.getBoundingClientRect();
+    if (b && (r.top < b.top || r.bottom > b.bottom)) list.scrollTo({ top: list.scrollTop + r.top - b.top - (b.height - r.height) / 2, behavior: 'smooth' });
   }, [sel]);
   const cats = CATEGORIES.filter(([k]) => all.some(p => p.category === k));
   const selPlace = sel ? ctx.placesById[sel] : null;
@@ -5531,6 +5536,14 @@ function fmtClock(ts) {
   const d = new Date(ts || Date.now());
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+/**
+ * How far this page can scroll itself. Scrolls stop there: in the claude.ai frame on iPhone, asking for more scrolls the
+ * claude.ai page around the frame instead, which slides the whole app out of view and leaves a white screen.
+ */
+function maxScroll() {
+  const el = document.scrollingElement || document.documentElement;
+  return Math.max(0, el.scrollHeight - el.clientHeight);
+}
 function AssistantView({ ctx }) {
   const [msgs, setMsgs] = useState(loadChat);
   const [input, setInput] = useState('');
@@ -5541,8 +5554,12 @@ function AssistantView({ ctx }) {
   const lastAsk = useRef(0);
   useEffect(() => () => ctl.current && ctl.current.abort(), []);
   useEffect(() => { if (!busy) saveChat(msgs.filter(m => !m.pending)); }, [msgs, busy]);
-  const toEnd = smooth => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' });
-  useEffect(() => { if (endRef.current) toEnd(true); }, [msgs.length, busy]);
+  const toEnd = smooth => {
+    const top = maxScroll();
+    if (top - scrollY < 2) return;
+    window.scrollTo({ top, behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' });
+  };
+  useEffect(() => { if (endRef.current && msgs.length) toEnd(true); }, [msgs.length, busy]);
   useEffect(() => { if (busy && innerHeight + scrollY >= document.documentElement.scrollHeight - 240) toEnd(false); }, [msgs]);
   useEffect(() => {
     const a = ctx.ask;
@@ -6520,7 +6537,7 @@ function App() {
   const navApi = useMemo(() => ({
     go: tab => { scrolls.current = []; setNav({ tab, stack: [] }); setPref({ tab }); window.scrollTo(0, 0); },
     push: route => { scrolls.current.push(window.scrollY); setNav(n => ({ ...n, stack: [...n.stack, route] })); window.scrollTo(0, 0); },
-    back: () => { const y = scrolls.current.pop() || 0; setNav(n => ({ ...n, stack: n.stack.slice(0, -1) })); requestAnimationFrame(() => window.scrollTo(0, y)); },
+    back: () => { const y = scrolls.current.pop() || 0; setNav(n => ({ ...n, stack: n.stack.slice(0, -1) })); requestAnimationFrame(() => window.scrollTo(0, Math.min(y, maxScroll()))); },
     patch: p => setNav(n => (n.stack.length ? { ...n, stack: [...n.stack.slice(0, -1), { ...n.stack[n.stack.length - 1], ...p }] } : n)),
   }), []);
 

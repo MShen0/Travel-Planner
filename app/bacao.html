@@ -3306,22 +3306,34 @@ function useProfiles(ids, ctx) {
 function latestTrip(trips) {
   return trips.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0] || null;
 }
-function heroFor(trip, places, byId) {
+/** A trip's photo: its own cover, else the first planned stop with one, else a saved place in its cities. */
+function tripHero(trip, places, byId) {
+  if (!trip) return null;
   const pick = p => p && p.coverAssetId ? p : null;
-  if (trip) {
-    if (trip.coverAssetId) return { id: trip.coverAssetId, credit: trip.coverCredit };
-    for (const d of (trip.plan && trip.plan.days) || []) for (const s of d.stops) { const p = pick(byId[s.placeId]); if (p) return { id: p.coverAssetId, credit: p.coverCredit, name: p.name }; }
-    const inCity = tripPlaces(trip, places).find(p => p.coverAssetId);
-    if (inCity) return { id: inCity.coverAssetId, credit: inCity.coverCredit, name: inCity.name };
-  }
+  if (trip.coverAssetId) return { id: trip.coverAssetId, credit: trip.coverCredit };
+  for (const d of (trip.plan && trip.plan.days) || []) for (const s of d.stops) { const p = pick(byId[s.placeId]); if (p) return { id: p.coverAssetId, credit: p.coverCredit, name: p.name }; }
+  const inCity = tripPlaces(trip, places).find(p => p.coverAssetId);
+  return inCity ? { id: inCity.coverAssetId, credit: inCity.coverCredit, name: inCity.name } : null;
+}
+function latestPhoto(places) {
   const any = places.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).find(p => p.coverAssetId);
   return any ? { id: any.coverAssetId, credit: any.coverCredit, name: any.name } : null;
+}
+/**
+ * The home photo. Example content only fills it until the user has something of their own; then their latest trip
+ * leads, then the photo picked for the home screen (meta/app), then their latest saved place.
+ */
+function heroFor(trips, places, byId, appMeta) {
+  const app = appMeta && appMeta.heroAssetId ? { id: appMeta.heroAssetId, credit: appMeta.heroCredit } : null;
+  const ownPlaces = places.filter(p => !p.example), ownTrips = trips.filter(t => !t.example);
+  if (!ownPlaces.length && !ownTrips.length) return tripHero(latestTrip(trips), places, byId) || latestPhoto(places) || app;
+  return tripHero(latestTrip(ownTrips), ownPlaces, byId) || app || latestPhoto(ownPlaces);
 }
 function HomeView({ ctx }) {
   const { places, trips } = ctx;
   const [paste, setPaste] = useState('');
   const trip = latestTrip(trips);
-  const hero = heroFor(trip, places, ctx.placesById) || (ctx.appMeta && ctx.appMeta.heroAssetId ? { id: ctx.appMeta.heroAssetId, credit: ctx.appMeta.heroCredit } : null);
+  const hero = heroFor(trips, places, ctx.placesById, ctx.appMeta);
   const scope = trip ? tripPlaces(trip, places) : places;
   const prog = progressOf(scope, trip ? [trip] : trips);
   const recent = places.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 9);

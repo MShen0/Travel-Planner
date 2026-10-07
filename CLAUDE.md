@@ -128,8 +128,9 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 **meta/fx** — exchange rates, base MYR: `{"id":"fx","base":"MYR","date":"2026-10-06","source":"…","rates":{"KRW":323.5,…},"manual":{}}`
 (`rates[C]` = units of C per 1 MYR; `manual` holds rates the user typed in the app — never overwrite it).
 
-**meta/app** — `{"id":"app","heroAssetId":"<asset id>","heroCredit":{"text":"…"},"updatedAt":0}`: the home-screen photo
-shown before the user has saved any place with a photo. Pick a photo that is not tied to one country.
+**meta/app** — `{"id":"app","heroAssetId":"<asset id>","heroCredit":{"text":"…"},"updatedAt":0}`: the home-screen photo.
+Once the user has places or trips of their own (examples don't count), it shows until they have a trip with a photo; before
+that it is the last fallback. Use the photo the user asks for; otherwise pick one that is not tied to one country.
 
 **guides/{id}**
 ```json

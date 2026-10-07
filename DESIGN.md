@@ -262,7 +262,7 @@ components:
 
 旅用 looks like the place its content came from: a phone feed of photos. Saved posts land as photo cards on warm paper, and the same photos follow the place everywhere it goes after that: into the map as round photo pins, into the day as a photo timeline, into the place page as a full-bleed gallery. One forest green does every action and draws the route. Pastel category pills say what a place is without ever asking to be tapped. The system is friendly and plain, and it gets dense only where it is used on the move: the day timeline packs time, station number, photo, name, pills and the leg to the next stop into one compact row.
 
-The world has five raises beyond the reference mockup, and each is a recorded rule below: the 种草 → 想去 → 已拔草 stage scale (three dots, three stages), pins sized by priority, AI-changed rows that stay lit amber until someone taps 知道了, dense day rows, and numbered station order on both the timeline rail and the map. A city gets one recoloured basemap image, in a light and a dark version. Where there is no photo, a pastel category tile with the category icon stands in. There is never an empty grey box.
+The world has five raises beyond the reference mockup, and each is a recorded rule below: the 收藏 → 想去 → 去过 stage scale (three dots, three stages), pins sized by priority, AI-changed rows that stay lit amber until someone taps 知道了, dense day rows, and numbered station order on both the timeline rail and the map. A city gets one recoloured basemap image, in a light and a dark version. Where there is no photo, a pastel category tile with the category icon stands in. There is never an empty grey box.
 
 Two rejections are confirmed. The first is the empty-form dashboard: a screen with nothing in it yet shows a three-step how-to card and one green action, never a page of blank fields. The second is single-country imagery: defaults, placeholders and fallback art stay country-neutral or mix countries (the fallback hero is a generic dusk landscape with a road and a plane, not a landmark).
 
@@ -283,7 +283,7 @@ Warm paper neutrals, one forest green that acts, one amber that signals, and nin
 - **Forest Green** (#1F5C45, `green`): every primary action. That covers the green buttons, the full-width AI action, the round paste "go" button, selected filter chips, my chat bubbles, the timeline rail dots and station numbers, the map route line, pin badges and the progress ring. In dark mode it lifts to a brighter jade (#3DA57A) with near-black ink on it.
 - **Deep Forest** (#184C39, `green-hover`): hover and pressed state of anything filled green.
 - **Green Ink** (#FFFFFF, `green-ink`): text and icons on a green fill.
-- **Moss Wash** (#E6F0EA, `green-tint`): soft green surfaces, used for the AI suggestion box, "AI 推荐" pills, the selected day chip, soft green buttons, the reached 已拔草 stage, the active rail item on desktop and numbered how-to circles.
+- **Moss Wash** (#E6F0EA, `green-tint`): soft green surfaces, used for the AI suggestion box, "AI 推荐" pills, the selected day chip, soft green buttons, the reached 去过 stage, the active rail item on desktop and numbered how-to circles.
 - **Leaf Text** (#1F6B4E, `green-text`): green words on paper or white. Links, the active tab label, "全部 N" section links and the 路线 handoff use it, because it holds contrast where the fill green would not be legible as text.
 
 ### Secondary
@@ -323,7 +323,7 @@ Warm paper neutrals, one forest green that acts, one amber that signals, and nin
 **Character:** A rounded, open geometric Latin sans paired with a heavy, plain Chinese sans. Headings feel like feed captions set loud, not editorial headlines. Body text stays quiet in the system's native Chinese face so long notes and tips read easily on a phone.
 
 ### Hierarchy
-- **Display** (800, 30px, 1.25, -0.01em): the hero question 今天想拔哪一棵草？ in white over the trip photo, and the big money total on the costs tab.
+- **Display** (800, 30px, 1.25, -0.01em): the hero question 下一站去哪儿？ in white over the trip photo, and the big money total on the costs tab.
 - **Headline** (800, 26px, 1.25, -0.01em): page titles, place titles under their photo, guide titles over their photo, and the progress-ring percentage.
 - **Title** (800, 19px, 1.25): section heads, sheet titles and trip-list card titles. Day titles, the trip header and the map title step up to 20px, the trip header to 24px from 760px, and the home trip card to 21px. Big stat numbers on the trip card are 22px.
 - **Title-sm** (800, 15.5px, 1.55): the dense row name in timeline and pending rows, set in the body family; card titles and guide step titles sit at 16px.
@@ -362,13 +362,16 @@ Depth is a hybrid. Tonal layering does most of the work: paper ground, white car
 ### Shadow Vocabulary
 - **Card rest** (`box-shadow: 0 1px 2px rgb(28 31 29 / .04), 0 6px 18px rgb(28 31 29 / .06)`): every card, notice, review item, AI bubble and map control.
 - **Float** (`box-shadow: 0 8px 28px rgb(28 31 29 / .14)`): sheets and dialogs, the floating add button and the toast.
-- **Green glow** (`box-shadow: 0 6px 18px color-mix(in srgb, var(--green) 30%, transparent)`): the full-width AI action. The round go button uses a tighter version (`0 4px 12px`, 32%).
-- **Over photo** (`box-shadow: 0 2px 8px rgb(0 0 0 / .18)`): icon discs on photos and the brand mark.
+- **Glass rest** (`box-shadow: 0 1px 2px rgb(28 31 29 / .07), 0 6px 16px -6px rgb(28 31 29 / .24)`, with an inset 1px top light, an inset lower-edge shade and a 0.5px outer hairline): every clear-glass control.
+- **Tinted glass** (`box-shadow: 0 2px 4px rgb(20 50 36 / .14), 0 10px 22px -8px color-mix(in srgb, var(--green) 62%, transparent)`, same insets in white and black): every tinted-glass button. The floating add button deepens it to `0 16px 32px -10px` at 70%.
+- **Over photo** (`box-shadow: 0 2px 10px rgb(0 0 0 / .22)`): milky glass discs on photos; the brand mark keeps `0 2px 8px rgb(0 0 0 / .18)`.
 - **Pin** (`box-shadow: 0 3px 10px rgb(0 0 0 / .25)`): photo pins and the hotel base marker on the map.
 - **Peek sheet** (`box-shadow: 0 -6px 24px rgb(0 0 0 / .1)`): the map's bottom peek sheet.
 
 ### Named Rules
 **The Soft Lift Rule.** Cards rest on paper with the card shadow and no border. Only things that float above content (sheets, the add button, the toast) take the float shadow. Every shadow is blurred and ambient; there are no hard offset shadows.
+
+**The Glass Controls Rule.** What you press is glass; what you read is solid. Buttons, chips, icon discs, the tab bar and stage circles are Liquid Glass; cards, sheets, bubbles, photos and text never are. Blur is spent only where something sits behind the control.
 
 ## Shapes
 
@@ -390,21 +393,22 @@ Lines are hairlines (1px) inside cards and on bars. Day chips and the drop zone 
 ## Components
 
 ### Buttons
-Tactile pills that press in slightly.
-- **Shape:** full pill (999px), 42px tall; small 34px.
-- **Primary:** forest green with white text, 14px at 600, 16px side padding; hover deepens to deep forest; press scales to 0.98.
-- **Secondary:** white pill with a hairline border and ink text; hover fills linen.
-- **Soft:** moss wash with leaf text, for secondary green actions.
-- **Ghost:** no fill or border; hover fills linen.
-- **Danger:** alarm-red text. The first tap arms it into a red fill, and the second confirms.
-- **AI action:** full-width, 56px, 18px corners, green with the green glow, 17px at 700, with a sparkle icon, label and arrow. It is the one green action of the home screen. A day's actions repeat it at 54px beside a 56px white square map button.
-- **Icon buttons:** 40px circles. Over photos they become 92% white discs with the over-photo shadow.
-- **Focus:** every focusable element gets a 2.5px green outline at 2px offset. Disabled elements drop to 45% opacity.
+Liquid Glass (user brief, 2026-10-07). Every button is a piece of glass that presses in: a translucent fill, a gradient rim that catches light at the top-left and bottom-right (a 1px masked `::before` ring), an inner shade along the lower edge that gives the glass its thickness, and a soft drop shadow. Controls that float over photos, maps or scrolling content (the tab bar, the add button, map controls, chips over the map, discs on photos, the composer's buttons) also blur and saturate what is behind them (`backdrop-filter: blur(18px) saturate(180%)`; 28px under the tab bar). Buttons inside cards skip the blur, which would show nothing on a solid surface.
+- **Shape:** full pill (999px), 42px tall; small 34px. Press scales to 0.96 with an exponential ease-out.
+- **Clear glass (secondary):** 55% white over whatever is behind (8% white in dark mode), a 75% white sheen in the top half, ink text. Hover raises the fill to 80%.
+- **Tinted glass (primary):** forest green at 88% (90% in dark mode) with a white sheen in the top half and a leaf-green caustic glow rising from the bottom edge, white text (dark ink in dark mode), and a green-tinted drop shadow. Used for the forward action: 加入行程, 收藏 N 个地点, the AI action, the round go and send buttons, the add button, selected filter chips and reached stage circles.
+- **Soft:** moss-wash glass with leaf text and a green inner hairline, for secondary green actions and the selected day chip.
+- **Ghost:** no fill, rim or shadow; hover fills linen.
+- **Danger:** alarm-red text. The first tap arms it into red tinted glass, and the second confirms.
+- **AI action:** full-width tinted-glass capsule, 56px, 17px at 700, with a sparkle icon, label and arrow. It is the one green action of the home screen.
+- **Icon buttons:** 40px glass circles. Over photos they use milky glass (52% white, brightened blur) with a dark glyph in both themes, so they hold on any image. Plain header icons stay unfilled.
+- **Fallbacks:** `prefers-reduced-transparency` swaps every glass fill for the solid surface or solid green and drops the blur; browsers without `backdrop-filter` get a near-opaque fill.
+- **Focus:** every focusable element gets a 2.5px green outline at 2px offset. Disabled elements drop to 45% opacity and do not press.
 
 ### Chips
-- **Filter chips:** 36px linen pills with slate text at 14px/600 and an optional count at 70% opacity. When selected they fill forest green with white text. The outline variant is white with a hairline border. Chip rows scroll sideways without a scrollbar.
+- **Filter chips:** 36px clear-glass pills with slate text at 14px/600 and an optional count at 70% opacity. When selected they turn to tinted green glass with white text. Over the map they blur the map behind them. Chip rows scroll sideways without a scrollbar.
 - **Category pills:** 22px tall, 7px corners, 12px/700, one pastel pair per category. Related pills share the shape: plain (linen and slate), AI 推荐 (moss wash and leaf text), 示例 (amber), done (green fill).
-- **Stage chip:** three 6px dots then the stage word. 种草 shows one ink dot on linen, 想去 two rose dots on the rose wash, and 已拔草 three leaf dots on moss wash.
+- **Stage chip:** three 6px dots then the stage word. 收藏 shows one ink dot on linen, 想去 two rose dots on the rose wash, and 去过 three leaf dots on moss wash.
 
 ### Cards / Containers
 - **Corner Style:** 18px.
@@ -427,10 +431,10 @@ Tactile pills that press in slightly.
 - **Drop zone:** a 1.5px dashed border; on drag-over it turns moss wash with a green border.
 
 ### Navigation
-- **Phone:** a fixed white bottom tab bar, 64px tall, with a hairline top. It has four tabs, 首页 · 收藏 · 行程 · AI 助手, each a 24px stroke icon over a 12px/600 label. The current tab turns leaf green, and a red count badge marks pending inbox items.
-- **Desktop (1024px and up):** a 96px left rail with the brand mark and wordmark on top. The current tab sits in a 14px-corner moss wash tile.
+- **Phone:** a floating Liquid Glass capsule, 64px tall and 32px round, 12px from the screen sides and 10px above the safe area, frosted over the content scrolling under it. It has four tabs, 首页 · 收藏 · 行程 · AI 助手, each a 24px stroke icon over a 12px/600 label. A moss-wash glass lens sits behind the current tab and slides to the next one (0.55s, exponential ease-out; instant with reduced motion); the current tab turns leaf green, and a red count badge marks pending inbox items.
+- **Desktop (1024px and up):** the same glass as a floating 84px rail, 12px from the window edges, with the brand mark and wordmark on top. The current tab sits in an 18px-corner moss-wash glass lens.
 - **Trip tabs:** 15px/700 text tabs (概览 · 行程 · 地图 · 花费 · 待安排) over a hairline. The selected tab is leaf green with a 2.5px green underline.
-- **Day chips:** at least 78px wide, with 14px corners and a 1.5px border. Each shows "Day N" over a tabular date. When selected the border turns green and the chip fills with moss wash. An amber dot flags a day with AI changes.
+- **Day chips:** at least 78px wide, clear glass with 14px corners. Each shows "Day N" over a tabular date. When selected the chip turns to moss-wash glass with a green inner hairline and leaf text. An amber dot flags a day with AI changes.
 
 ### Day Timeline (signature)
 The walkable day is a vertical transit line of photo stops.
@@ -441,13 +445,13 @@ The walkable day is a vertical transit line of photo stops.
 - **AI changed:** touched rows fill with lamp glow, 14px corners, bleeding 8px past the row. The day shows an amber note bar ("AI 改了这一天的 N 处") with a 知道了 button, and they stay lit until it is tapped.
 
 ### Photo Pins and City Basemap (signature)
-- **Pin size by priority:** 想去 56px, 种草 42px, 已拔草 34px. A visited pin is desaturated to 55% and carries a green check, and higher priority draws on top. Clusters are 52px with a green count badge. A selected pin scales to 1.14 and its rim turns green. Day maps add a green station-number badge.
+- **Pin size by priority:** 想去 56px, 收藏 42px, 去过 34px. A visited pin is desaturated to 55% and carries a green check, and higher priority draws on top. Clusters are 52px with a green count badge. A selected pin scales to 1.14 and its rim turns green. Day maps add a green station-number badge.
 - **Route:** a 7px white underlay with a 3.5px forest-green line through the day's stops in order.
 - **Hotel:** a 30px pine-ink square with 住 in paper colour.
 - **Basemap:** one recoloured image per city, with a dark version picked by the colour scheme, rendered with wide margins around the saved places. The full-screen 地图模式 opens with the basemap covering the whole view (no paper around it); 显示全部地点 may zoom out past that. Smaller in-page maps feather their edges into map paper with a 5% mask. Area labels are 13px/800 slate with a paper halo.
 
 ### Stage Control (signature)
-On a place page, 种草 → 想去 → 已拔草 is a three-step control on a white card. It has three 34px circles joined by a 2px line. Reached steps and their joining line fill forest green, and the current step adds a 4px moss-wash halo. Tapping the heart to mark a place 想去 plays a short "pluck": a scale to 1.25 with a -6° turn over 0.6s on the settle curve. The pluck is skipped under reduced motion.
+On a place page, 收藏 → 想去 → 去过 is a three-step control on a white card. It has three 34px circles joined by a 2px line. Reached steps and their joining line fill forest green, and the current step adds a 4px moss-wash halo. Tapping the heart to mark a place 想去 plays a short "pluck": a scale to 1.25 with a -6° turn over 0.6s on the settle curve. The pluck is skipped under reduced motion.
 
 ### AI Assistant
 - **Header:** a 46px green bot disc.
@@ -470,7 +474,7 @@ A 30%-radius square in forest green (#1F5C45), which stays that colour in both t
 - **Do** lead every place surface with its photo. Without one, show the category art tile (pastel gradient plus category icon).
 - **Do** put the credit pill on every full-bleed photo.
 - **Do** spend forest green (#1F5C45) on actions, the route, station numbers and progress, with one full-width green action per screen at thumb height.
-- **Do** keep the stage order 种草 → 想去 → 已拔草 wherever status appears, and size map pins by priority (56 / 42 / 34px).
+- **Do** keep the stage order 收藏 → 想去 → 去过 wherever status appears, and size map pins by priority (56 / 42 / 34px).
 - **Do** keep AI-touched rows lit in lamp glow until someone taps 知道了, and mark AI additions with the AI 推荐 pill and a dashed rail dot.
 - **Do** number stops in station order on both the timeline rail and the map pins.
 - **Do** end every travel leg with a 路线 handoff link (44px tap target).

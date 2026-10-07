@@ -52,7 +52,7 @@ on everything the agent creates (the app writes the viewer's user id, which it s
  "savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
 ```
 - `category`: `food | cafe | sight | shopping | stay | experience | nightlife | other`
-- `status`: `saved` (种草) `| want` (想去) `| visited` (已拔草) — never overwrite a user's status.
+- `status`: `saved` (收藏) `| want` (想去) `| visited` (去过) — never overwrite a user's status.
 - `coordConfidence`: `exact | area | null`. `priceLevel` 1–4 or null. `price` only when the post states one, else null.
 - `chain: true` = a chain with no branch named in the post: leave `lat`/`lng` null; planners pick a branch on the
   day's route (the geocoder skips these).

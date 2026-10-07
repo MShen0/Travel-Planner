@@ -15,7 +15,7 @@ page (shared from claude.ai), add places and edit the plan.
 
 ## Product Purpose
 
-旅用 turns social-media "种草" (places you got tempted by) into "拔草" (actually going), in any country: paste a post or
+旅用 turns places found on social media into trips actually taken, in any country: paste a post or
 screenshots and the places are saved with what to eat and what to watch out for; pick cities and days and get a
 day-by-day route with transport for every leg; follow how-to guides step by step; keep track of what the trip costs
 in RM. Success is a trip the group can follow from their phones without re-researching anything.
@@ -51,12 +51,14 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 
 ## Brand Commitments
 
-- Name 旅用 (renamed from 拔草计划 in 2026-10 at the user's request); the voice still plays on 种草 / 拔草
-  ("今天想拔哪一棵草？").
+- Name 旅用 (renamed from 拔草计划 in 2026-10 at the user's request). Plain words, no 种草 / 拔草 slang (user request
+  2026-10-07): a place moves 收藏 → 想去 → 去过, and the home question is 下一站去哪儿？.
 - Binding visual reference from the user (2026-10): a warm off-white phone app with deep forest-green accents, white
   rounded cards, photo-led place cards, pastel category tags, a home screen with a photo hero, a 收藏 list, a map mode
   with photo pins, trip days with photo timelines, an AI 旅行助手 chat, place detail pages and a progress ring.
   Bottom navigation: 首页 · 收藏 · 行程 · AI 助手.
+- Buttons are Liquid Glass (user request 2026-10-07): clear glass for everyday controls, forest-green tinted glass for
+  the forward action, and a floating glass tab bar.
 
 ## Evidence on Hand
 

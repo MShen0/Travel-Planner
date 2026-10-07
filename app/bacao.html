@@ -1,9 +1,9 @@
 <!--
 THESIS: A trip planner that feels like the feed it came from: saved posts become photo cards, cards become a day you can walk. Refuses the empty-form dashboard.
-OWN-WORLD: warm paper #F6F5F1, white rounded cards, forest green #1F5C45 for every action, pastel category pills, photo-led cards and pins, one recoloured city basemap.
+OWN-WORLD: warm paper #F6F5F1, white rounded cards, forest green #1F5C45 for every action, Liquid Glass controls (clear and green-tinted, user brief 2026-10-07), pastel category pills, photo-led cards and pins, one recoloured city basemap.
 STORY: paste a post, see it saved as a photo card, pick cities and days, follow a photo timeline with a transit line and map handoff per leg, settle costs in RM with companions.
-FIRST VIEWPORT: full-bleed trip photo with 今天想拔哪一棵草？ in white; paste card overlapping its foot; trip card with four stats; green AI action at thumb height; tab bar.
-FORM: user-pinned reference mockup (canon), seed 149fd3fa. Raises: 种草→想去→已拔草 stage scale (botanical folio), pin size by priority (star atlas), AI-changed rows stay lit (gate board), dense day rows (JP high-density), numbered station order (transit diagram).
+FIRST VIEWPORT: full-bleed trip photo with 下一站去哪儿？ in white; paste card overlapping its foot; trip card with four stats; green AI action at thumb height; tab bar.
+FORM: user-pinned reference mockup (canon), seed 149fd3fa. Raises: 收藏→想去→去过 stage scale (botanical folio), pin size by priority (star atlas), AI-changed rows stay lit (gate board), dense day rows (JP high-density), numbered station order (transit diagram).
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->
 <title>旅用</title>
@@ -47,7 +47,13 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   --r-xl: 22px; --r-lg: 18px; --r-md: 14px; --r-sm: 10px; --r-xs: 7px;
   --font: "Figtree", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --font-display: "Figtree", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-  --nav-h: 64px;
+  --glass: rgb(255 255 255 / .55); --glass-hover: rgb(255 255 255 / .8); --glass-bar: rgb(255 255 255 / .76);
+  --glass-sheen: rgb(255 255 255 / .75); --glass-inner-hi: rgb(255 255 255 / .9); --glass-shade: rgb(28 31 29 / .1); --glass-line: rgb(28 31 29 / .1);
+  --glass-rim-hi: rgb(255 255 255 / 1); --glass-rim-mid: rgb(255 255 255 / .7); --glass-rim-lo: rgb(255 255 255 / .22);
+  --glass-shadow: 0 1px 2px rgb(28 31 29 / .07), 0 6px 16px -6px rgb(28 31 29 / .24); --glass-blur: blur(18px) saturate(180%);
+  --glass-tint: color-mix(in srgb, var(--green) 88%, transparent); --glass-tint-hover: color-mix(in srgb, var(--green-hover) 92%, transparent);
+  --glass-tint-glow: rgb(155 227 140 / .42); --glass-tint-shadow: 0 2px 4px rgb(20 50 36 / .14), 0 10px 22px -8px color-mix(in srgb, var(--green) 62%, transparent);
+  --nav-h: 78px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -58,6 +64,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     --c-food-bg: #3A2716; --c-food: #F5A562; --c-cafe-bg: #33281E; --c-cafe: #DDB58E; --c-sight-bg: #17301F; --c-sight: #7FD39E;
     --c-shopping-bg: #3A1C28; --c-shopping: #F48FB4; --c-stay-bg: #182841; --c-stay: #8FB8F2; --c-experience-bg: #2A2140; --c-experience: #BBA5F4;
     --c-nightlife-bg: #1F2142; --c-nightlife: #A9ACF5; --c-other-bg: #262A28; --c-other: #B9BFBB; --c-transport-bg: #1A2A33; --c-transport: #8EC0D8;
+    --glass: rgb(255 255 255 / .08); --glass-hover: rgb(255 255 255 / .13); --glass-bar: rgb(28 34 31 / .78);
+    --glass-sheen: rgb(255 255 255 / .12); --glass-inner-hi: rgb(255 255 255 / .16); --glass-shade: rgb(0 0 0 / .35); --glass-line: rgb(0 0 0 / .5);
+    --glass-rim-hi: rgb(255 255 255 / .45); --glass-rim-mid: rgb(255 255 255 / .22); --glass-rim-lo: rgb(255 255 255 / .06);
+    --glass-shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 18px -6px rgb(0 0 0 / .6);
+    --glass-tint: color-mix(in srgb, var(--green) 90%, transparent); --glass-tint-hover: color-mix(in srgb, var(--green-hover) 92%, transparent);
+    --glass-tint-glow: rgb(155 227 140 / .28); --glass-tint-shadow: 0 2px 4px rgb(0 0 0 / .35), 0 10px 22px -8px color-mix(in srgb, var(--green) 40%, transparent);
     color-scheme: dark;
   }
 }
@@ -69,6 +81,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   --c-food-bg: #3A2716; --c-food: #F5A562; --c-cafe-bg: #33281E; --c-cafe: #DDB58E; --c-sight-bg: #17301F; --c-sight: #7FD39E;
   --c-shopping-bg: #3A1C28; --c-shopping: #F48FB4; --c-stay-bg: #182841; --c-stay: #8FB8F2; --c-experience-bg: #2A2140; --c-experience: #BBA5F4;
   --c-nightlife-bg: #1F2142; --c-nightlife: #A9ACF5; --c-other-bg: #262A28; --c-other: #B9BFBB; --c-transport-bg: #1A2A33; --c-transport: #8EC0D8;
+  --glass: rgb(255 255 255 / .08); --glass-hover: rgb(255 255 255 / .13); --glass-bar: rgb(28 34 31 / .78);
+  --glass-sheen: rgb(255 255 255 / .12); --glass-inner-hi: rgb(255 255 255 / .16); --glass-shade: rgb(0 0 0 / .35); --glass-line: rgb(0 0 0 / .5);
+  --glass-rim-hi: rgb(255 255 255 / .45); --glass-rim-mid: rgb(255 255 255 / .22); --glass-rim-lo: rgb(255 255 255 / .06);
+  --glass-shadow: 0 1px 2px rgb(0 0 0 / .4), 0 8px 18px -6px rgb(0 0 0 / .6);
+  --glass-tint: color-mix(in srgb, var(--green) 90%, transparent); --glass-tint-hover: color-mix(in srgb, var(--green-hover) 92%, transparent);
+  --glass-tint-glow: rgb(155 227 140 / .28); --glass-tint-shadow: 0 2px 4px rgb(0 0 0 / .35), 0 10px 22px -8px color-mix(in srgb, var(--green) 40%, transparent);
   color-scheme: dark;
 }
 
@@ -115,7 +133,7 @@ p { margin: 0; }
 .nav .ic-wrap { position: relative; }
 .rail-brand { display: none; }
 @media (min-width: 1024px) {
-  .shell { padding-bottom: 32px; padding-left: 96px; }
+  .shell { padding-bottom: 32px; padding-left: 108px; }
   .nav { top: 0; right: auto; width: 96px; grid-template-columns: 1fr; grid-auto-rows: min-content; align-content: start; gap: 6px;
     border-top: 0; border-right: 1px solid var(--line); padding: 18px 10px; }
   .nav button { border-radius: var(--r-md); padding: 10px 4px; }
@@ -284,7 +302,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .pcard-foot { display: flex; align-items: center; gap: 8px; }
 .pcard-foot .src { flex: 1; min-width: 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 5px; overflow: hidden; white-space: nowrap; }
 .fab { position: fixed; right: 16px; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 16px); z-index: 30; box-shadow: var(--shadow-float); min-height: 52px; padding-inline: 20px; font-size: 15px; }
-@media (min-width: 1024px) { .fab { bottom: 28px; right: max(28px, calc((100vw - 96px - 1040px) / 2 + 28px)); } }
+@media (min-width: 1024px) { .fab { bottom: 28px; right: max(28px, calc((100vw - 108px - 1040px) / 2 + 28px)); } }
 .empty { padding: 26px 20px; display: grid; gap: 12px; justify-items: start; }
 .empty h2 { font-size: 20px; font-weight: 800; }
 .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
@@ -339,7 +357,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .list-pill .btn { box-shadow: var(--shadow-card); }
 .city-select { width: auto; min-height: 38px; padding: 6px 12px; background: var(--surface); border-color: var(--line); }
 @media (min-width: 1024px) {
-  .mapmode { inset: 0 0 0 96px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+  .mapmode { inset: 0 0 0 108px; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
   .map-area { position: relative; inset: auto; }
   .mapmode .sheet-peek { position: relative; border-radius: 0; box-shadow: none; border-left: 1px solid var(--line); overflow-y: auto; padding-top: 18px; }
   .mapmode .sheet-peek .grab { display: none; }
@@ -464,7 +482,7 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 .composer { position: fixed; z-index: 35; left: 0; right: 0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); padding: 10px 16px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .composer form { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
 .composer .input { border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-card); min-height: 48px; }
-@media (min-width: 1024px) { .composer { left: 96px; bottom: 0; } .msgs { padding-bottom: 100px; } }
+@media (min-width: 1024px) { .composer { left: 108px; bottom: 0; } .msgs { padding-bottom: 100px; } }
 
 /* ---------- sheets ---------- */
 .backdrop { position: fixed; inset: 0; z-index: 60; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }
@@ -669,7 +687,7 @@ span.avatar { display: inline-block; }
   .home-side > .section:first-child { margin-top: 0; }
   .home-side .hscroll { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
 }
-/* stage of a place: 种草 → 想去 → 已拔草 */
+/* stage of a place: 收藏 → 想去 → 去过 */
 .stage { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 8px 0 7px; border-radius: var(--r-xs); background: var(--fill); color: var(--ink-2); font-size: 12px; white-space: nowrap; }
 .stage i { width: 6px; height: 6px; border-radius: 50%; background: var(--fill-2); }
 .stage b { margin-left: 3px; font-weight: 700; }
@@ -747,6 +765,96 @@ span.avatar { display: inline-block; }
 .pill-select { position: relative; padding: 0; height: 28px; border-radius: 999px; }
 .pill-select select { appearance: none; -webkit-appearance: none; height: 28px; border: 0; padding: 0 24px 0 11px; border-radius: 999px; background: transparent; color: inherit; font-size: 13px; font-weight: 700; }
 .pill-select .ic { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+/* ---------- liquid glass controls ----------
+   Buttons, chips and the tab bar are Liquid Glass (user brief, 2026-10-07). Clear glass for everyday controls;
+   forest-green tinted glass for the action that moves you forward. A gradient rim catches light at the top-left and
+   bottom-right, an inner shade gives the edge its thickness, and controls that float over photos, maps or scrolling
+   content blur and saturate what is behind them. Cards, sheets and text stay solid. */
+:where(.btn, .chip, .cta, .go, .icon-btn.on-photo, .icon-btn.bordered, .map-ctrl .icon-btn, .quick button, .daychip, .mentions button, .stepper button) { position: relative; isolation: isolate; }
+.btn, .chip, .chip.outline, .icon-btn.on-photo, .icon-btn.bordered, .composer .icon-btn.bordered, .map-ctrl .icon-btn, .quick button, .daychip, .mentions button, .stepper button {
+  border: 0; color: var(--ink);
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 56%), var(--glass);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -3px 8px -4px var(--glass-shade), inset 0 10px 16px -14px var(--glass-inner-hi), 0 0 0 .5px var(--glass-line), var(--glass-shadow);
+  transition: transform .4s cubic-bezier(.16, 1, .3, 1), box-shadow .2s, background-color .2s; }
+.chip, .chip.outline { color: var(--ink-2); }
+.btn::before, .chip::before, .cta::before, .go::before, .icon-btn.on-photo::before, .icon-btn.bordered::before, .map-ctrl .icon-btn::before,
+.quick button::before, .daychip::before, .mentions button::before, .stepper button::before, .nav::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(145deg, var(--glass-rim-hi), var(--glass-rim-lo) 30%, transparent 52%, var(--glass-rim-lo) 72%, var(--glass-rim-mid));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
+@media (hover: hover) {
+  .btn:hover, .chip:hover, .icon-btn.bordered:hover, .map-ctrl .icon-btn:hover, .quick button:hover, .daychip:hover, .mentions button:hover, .stepper button:hover { --glass: var(--glass-hover); background-color: transparent; }
+  .icon-btn.on-photo:hover { --glass: rgb(255 255 255 / .74); }
+}
+:is(.btn, .chip, .cta, .go, .icon-btn, .quick button, .daychip, .mentions button, .stepper button):not([disabled]):active { transform: scale(.96); transition-duration: .08s; }
+
+/* tinted glass: the forward action */
+.btn.green, .cta, .go, .chip[aria-pressed="true"], .chip.outline[aria-pressed="true"], .stage-ctl button.reached i {
+  --glass-rim-hi: rgb(255 255 255 / .78); --glass-rim-mid: rgb(255 255 255 / .38); --glass-rim-lo: rgb(255 255 255 / .1);
+  color: var(--green-ink);
+  background: radial-gradient(120% 75% at 50% 112%, var(--glass-tint-glow), transparent 62%), linear-gradient(180deg, rgb(255 255 255 / .24), transparent 58%), var(--glass-tint);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / .42), inset 0 -3px 8px -4px rgb(0 0 0 / .28), var(--glass-tint-shadow); }
+.cta { border-radius: 999px; }
+.btn.fab { box-shadow: inset 0 1px 1px rgb(255 255 255 / .42), inset 0 -3px 8px -4px rgb(0 0 0 / .28), 0 2px 4px rgb(20 50 36 / .16), 0 16px 32px -10px color-mix(in srgb, var(--green) 70%, transparent); }
+@media (hover: hover) { .btn.green:hover, .cta:hover, .go:hover, .chip[aria-pressed="true"]:hover { --glass-tint: var(--glass-tint-hover); background-color: transparent; } }
+.btn.soft, .daychip[aria-pressed="true"] {
+  color: var(--green-text);
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 56%), color-mix(in srgb, var(--green-tint) 88%, transparent);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -3px 8px -4px var(--glass-shade), inset 0 0 0 1.5px color-mix(in srgb, var(--green) 45%, transparent), var(--glass-shadow); }
+.daychip[aria-pressed="true"] small { color: var(--green-text); }
+.btn.danger.armed { --glass-tint: color-mix(in srgb, var(--danger) 92%, transparent); --glass-tint-glow: rgb(255 190 180 / .35); color: #fff;
+  background: radial-gradient(120% 75% at 50% 112%, var(--glass-tint-glow), transparent 62%), linear-gradient(180deg, rgb(255 255 255 / .24), transparent 58%), var(--glass-tint); }
+.btn.ghost { background: none; box-shadow: none; }
+.btn.ghost::before { content: none; }
+@media (hover: hover) { .btn.ghost:hover { background: var(--fill); } }
+
+/* floating controls blur what is behind them */
+.icon-btn.on-photo, .map-ctrl .icon-btn, .map-top .chip, .list-pill .btn, .btn.fab, .composer .go, .composer .icon-btn.bordered, .nav {
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+/* over photos the glass is the same in both themes: milky, with a dark glyph that holds on any image */
+.icon-btn.on-photo {
+  --glass: rgb(255 255 255 / .52); --glass-sheen: rgb(255 255 255 / .7); --glass-inner-hi: rgb(255 255 255 / .85); --glass-shade: rgb(0 0 0 / .14);
+  --glass-line: rgb(0 0 0 / .12); --glass-rim-hi: #fff; --glass-rim-mid: rgb(255 255 255 / .7); --glass-rim-lo: rgb(255 255 255 / .25);
+  --glass-shadow: 0 2px 10px rgb(0 0 0 / .22); --glass-blur: blur(14px) saturate(180%) brightness(1.08); color: #1C1F1D; }
+
+/* tab bar: a floating glass capsule; a lens slides to the current tab */
+.nav { --glass-blur: blur(28px) saturate(190%); left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); height: 64px; padding: 5px; border: 0; border-radius: 32px;
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 62%), var(--glass-bar);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -3px 8px -4px var(--glass-shade), 0 0 0 .5px var(--glass-line), 0 2px 6px rgb(28 31 29 / .08), 0 12px 32px -8px rgb(28 31 29 / .28); }
+.nav::before { content: ""; position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc((100% - 10px) / 4); border-radius: 27px; pointer-events: none;
+  transform: translateX(calc(var(--tab, 0) * 100%)); transition: transform .55s cubic-bezier(.16, 1, .3, 1), opacity .2s;
+  background: linear-gradient(180deg, rgb(255 255 255 / .55), transparent 70%), color-mix(in srgb, var(--green-tint) 82%, transparent);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -2px 6px -3px var(--glass-shade), inset 0 0 0 .5px color-mix(in srgb, var(--green) 30%, transparent), 0 3px 10px -4px rgb(20 50 36 / .25); }
+.nav:not([data-lens])::before { opacity: 0; }
+.nav button { position: relative; z-index: 1; padding: 4px; border-radius: 27px; align-content: center; }
+@media (min-width: 1024px) {
+  .nav { top: 12px; bottom: 12px; left: 12px; right: auto; width: 84px; height: auto; padding: 16px 8px; border-radius: 28px; }
+  .nav::before { display: none; }
+  .nav button { padding: 10px 4px; border-radius: 18px; }
+  .nav button[aria-current="page"] {
+    background: linear-gradient(180deg, rgb(255 255 255 / .55), transparent 70%), color-mix(in srgb, var(--green-tint) 82%, transparent);
+    box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -2px 6px -3px var(--glass-shade), inset 0 0 0 .5px color-mix(in srgb, var(--green) 30%, transparent), 0 3px 10px -4px rgb(20 50 36 / .25); }
+}
+
+/* stage steps and the 路线 pill share the material */
+.stage-ctl button i { background: linear-gradient(180deg, var(--glass-sheen), transparent 60%), var(--glass);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -3px 8px -4px var(--glass-shade), 0 0 0 .5px var(--glass-line), 0 3px 8px -4px rgb(28 31 29 / .2); }
+.stage-ctl button[aria-pressed="true"] i { box-shadow: inset 0 1px 1px rgb(255 255 255 / .42), inset 0 -3px 8px -4px rgb(0 0 0 / .28), 0 0 0 4px var(--green-tint), var(--glass-tint-shadow); }
+.stage-ctl button:not(.reached)[aria-pressed="true"] i { box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -3px 8px -4px var(--glass-shade), 0 0 0 4px var(--green-tint); }
+.leg .route-link span { background: linear-gradient(180deg, var(--glass-sheen), transparent 60%), var(--green-tint);
+  box-shadow: inset 0 1px 1px var(--glass-inner-hi), inset 0 -2px 5px -3px var(--glass-shade), 0 0 0 .5px color-mix(in srgb, var(--green) 28%, transparent), 0 2px 6px -3px rgb(20 50 36 / .25); }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass: var(--surface); --glass-hover: var(--fill); --glass-bar: var(--surface); --glass-tint: var(--green); --glass-tint-hover: var(--green-hover); }
+  .icon-btn.on-photo { --glass: #fff; }
+  .icon-btn.on-photo, .map-ctrl .icon-btn, .map-top .chip, .list-pill .btn, .btn.fab, .composer .go, .composer .icon-btn.bordered, .nav { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  :root { --glass-bar: var(--surface); }
+  .icon-btn.on-photo { --glass: rgb(255 255 255 / .92); }
+}
+@media (prefers-reduced-motion: reduce) { .nav::before { transition: none; } }
 </style>
 
 <div id="app"><div class="boot"><span class="brand-mark" style="width:52px;height:52px"><svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5.5h8.5a3.5 3.5 0 0 1 0 7h-5a3.5 3.5 0 0 0 0 7H18"/><circle cx="6" cy="5.5" r="2.1" fill="#9BE38C" stroke="none"/><circle cx="18" cy="19.5" r="2.1" fill="#fff" stroke="none"/></svg></span><b>旅用</b><small>正在打开你们的旅行灵感…</small></div></div>
@@ -758,7 +866,7 @@ span.avatar { display: inline-block; }
 /* ===== @lib-start: pure helpers, no DOM (unit-tested in tests/app_lib.test.mjs) ===== */
 const CATEGORIES = [['sight', '景点'], ['food', '美食'], ['cafe', '咖啡'], ['shopping', '购物'], ['stay', '酒店'], ['experience', '体验'], ['nightlife', '夜生活'], ['other', '其他']];
 const CAT_LABEL = Object.fromEntries(CATEGORIES);
-const STATUSES = [['saved', '种草'], ['want', '想去'], ['visited', '已拔草']];
+const STATUSES = [['saved', '收藏'], ['want', '想去'], ['visited', '去过']];
 const STATUS_LABEL = Object.fromEntries(STATUSES);
 const MODES = { walk: '步行', metro: '地铁', train: '电车', tram: '电车', bus: '巴士', taxi: '打车', drive: '自驾', ferry: '渡轮', bike: '骑行', flight: '飞机' };
 const MODE_ICON = { walk: 'walk', metro: 'metro', train: 'train', tram: 'train', bus: 'bus', taxi: 'car', drive: 'car', ferry: 'ferry', bike: 'bike', flight: 'flight' };
@@ -1564,7 +1672,7 @@ const ASSISTANT_RULES = [
   '回答用简体中文，口语化、简洁（一般 3-8 行），能用列表就用列表；提到收藏里的地点时用原名。营业时间、价格拿不准就提醒出发前确认。',
   '你不能直接修改数据。需要用户确认才能做的操作，在回复最后附上动作块（每个回复最多 3 个，只在真的需要时给）：',
   '<action>{"type":"plan_trip","label":"首尔 3 天行程建议","cities":["首尔"],"days":3,"startDate":"","bases":{"首尔":"明洞"},"pace":"normal","transport":"transit","notes":"以美食和购物为主","outline":[{"day":1,"city":"首尔","area":"景福宫·北村","theme":"宫殿 + 韩屋散步"}]}</action>',
-  '<action>{"type":"save_places","label":"把这 3 家店加入种草","places":[{"name":"","nameLocal":"","city":"","country":"","area":"","category":"food","tips":"","lat":null,"lng":null}]}</action>',
+  '<action>{"type":"save_places","label":"把这 3 家店加入收藏","places":[{"name":"","nameLocal":"","city":"","country":"","area":"","category":"food","tips":"","lat":null,"lng":null}]}</action>',
   '<action>{"type":"add_to_trip","label":"加入首尔行程","tripId":"t_xxx","placeIds":["p_xxx"]}</action>',
   '<action>{"type":"open_trip","label":"打开行程","tripId":"t_xxx"}</action>',
   'plan_trip 的 outline 是每天的大致区域和主题（只用收藏里的地点来想），用户确认后 App 会按收藏地点生成完整行程。规划行程前如果缺城市或天数，先问清楚，不要猜。动作块里的 id 必须来自下面的数据。',
@@ -1797,7 +1905,7 @@ const ICONS = {
   book: '<path d="M4 5.5a2 2 0 0 1 2-2h5v16H6a2 2 0 0 0-2 2z"/><path d="M20 5.5a2 2 0 0 0-2-2h-5v16h5a2 2 0 0 1 2 2z"/>',
   rain: '<path d="M7 15.5a4.5 4.5 0 0 1 .8-8.9 5.5 5.5 0 0 1 10.4 2A3.5 3.5 0 0 1 17.5 15.5z"/><path d="M8.5 18.5l-1 2M12.5 18.5l-1 2M16.5 18.5l-1 2"/>',
   compass: '<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
-  sprout: '<path d="M12 21v-9"/><path d="M12 12c0-4 2.6-6.5 7-6.5 0 4.2-2.8 6.5-7 6.5z"/><path d="M12 14.5c0-3.4-2.2-5.5-6-5.5 0 3.6 2.4 5.5 6 5.5z"/>',
+  bookmark: '<path d="M7 3.5h10a1 1 0 0 1 1 1v16l-6-4.2-6 4.2v-16a1 1 0 0 1 1-1z"/>',
   ticket: '<path d="M4 7.5h16v3a1.8 1.8 0 0 0 0 3.6v3.4H4v-3.4a1.8 1.8 0 0 0 0-3.6z"/><path d="M14.5 7.5v10" stroke-dasharray="1.6 2"/>',
   food: '<path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0z"/><path d="M8 3.5l3.5 8M16.5 3l-3 8.5"/>',
   cafe: '<path d="M4 9h12v4.5A5.5 5.5 0 0 1 10.5 19h-1A5.5 5.5 0 0 1 4 13.5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c-.8 1 .8 2-.1 3M12 3.5c-.8 1 .8 2-.1 3"/>',
@@ -1875,9 +1983,10 @@ function Scene() {
     <path d="M150 330 C168 300 214 286 236 266 C252 252 262 246 282 240" stroke="#3E5E52" stroke-width="2" stroke-dasharray="7 8" fill="none"/>
   </svg>`;
 }
-function Sprout({ size = 26 }) {
-  return html`<svg width=${size} height=${size} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8.5" stroke="#9BE38C" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-    <path d="M12 12.5c0-4.4 2.9-7.2 7.8-7.2 0 4.6-3.1 7.2-7.8 7.2z" fill="#7DD86F"/><path d="M12 15c0-3.6-2.4-5.8-6.3-5.8 0 3.8 2.5 5.8 6.3 5.8z" fill="#A8EC98"/></svg>`;
+/** The brand's route line on its own, for the home question. */
+function RouteMark({ size = 26 }) {
+  return html`<svg width=${size} height=${size} viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5h8.5a3.5 3.5 0 0 1 0 7h-5a3.5 3.5 0 0 0 0 7H18" stroke="#9BE38C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="6" cy="5.5" r="2.3" fill="#9BE38C"/><circle cx="18" cy="19.5" r="2.3" fill="#fff"/></svg>`;
 }
 const PLATFORM_GLYPH = {
   xiaohongshu: ['#FF2442', '<path d="M2.8 4.6c1.7-.7 3.5-.5 4.8.5v7.3c-1.3-.9-3.1-1-4.8-.4zM13.2 4.6c-1.7-.7-3.5-.5-4.8.5v7.3c1.3-.9 3.1-1 4.8-.4z" fill="#fff"/>'],
@@ -2210,7 +2319,7 @@ function HomeView({ ctx }) {
   const pendingInTrip = trip ? tripPlaces(trip, places).filter(p => p.status !== 'visited' && !scheduledIds(trip).has(p.id)) : [];
   const fresh = !places.length && !trips.length;
   let cta;
-  if (!trips.length) cta = { label: places.length ? '让 AI 帮我规划第一趟旅行' : '先添加一条种草', run: () => (places.length ? ctx.openSheet({ type: 'trip' }) : ctx.openSheet({ type: 'add', text: paste })) };
+  if (!trips.length) cta = { label: places.length ? '让 AI 帮我规划第一趟旅行' : '先收藏一个地方', run: () => (places.length ? ctx.openSheet({ type: 'trip' }) : ctx.openSheet({ type: 'add', text: paste })) };
   else if (pendingInTrip.length) cta = { label: '让 AI 帮我规划这趟旅行', run: () => ctx.nav.push({ name: 'trip', id: trip.id, tab: 'pending', tabGroup: 'trips' }) };
   else cta = { label: '让 AI 帮我优化这趟旅行', run: () => ctx.askAssistant(`帮我看看「${tripTitle(trip)}」这趟行程还有哪里可以优化？`, `用户在看行程 ${trip.id}「${tripTitle(trip)}」`) };
   const submit = e => { e.preventDefault(); ctx.openSheet({ type: 'add', text: paste }); setPaste(''); };
@@ -2223,7 +2332,7 @@ function HomeView({ ctx }) {
       ${hero ? html`<${Photo} id=${hero.id} alt=${hero.name || ''} />` : html`<${Scene} />`}
       <div class="hero-bar"><${Brand} light /><button class="icon-btn on-photo" aria-label="设置" onClick=${() => ctx.openSheet({ type: 'settings' })}><${Icon} name="sliders" /></button></div>
       <div class="hero-text">
-        <h1>今天想拔哪一棵草？<${Sprout} /></h1>
+        <h1>下一站去哪儿？<${RouteMark} /></h1>
         <p>${greeting(new Date().getHours())}！把你在小红书、Instagram、TikTok 看到的旅行灵感交给 AI，帮你变成行程。</p>
       </div>
       ${hero && hero.credit ? html`<span class="credit">${hero.credit.text || hero.credit}</span>` : null}
@@ -2267,11 +2376,11 @@ function HomeView({ ctx }) {
           </section>`}
         <button class="cta" onClick=${cta.run}><${Icon} name="sparkle" size=${20} />${cta.label}<${Icon} name="arrowRight" size=${18} /></button>
         ${pendingInbox ? html`<button class="notice" style=${{ border: 0, textAlign: 'left', width: '100%' }} onClick=${() => ctx.nav.push({ name: 'inbox', tabGroup: 'home' })}>
-            <${Icon} name="inbox" /><div class="grow"><b>${pendingInbox} 条链接在等 Agent 处理</b><p class="hint">在 Claude Code 里运行 /collect，原帖的全文和图片会自动变成种草。</p></div><${Icon} name="chevronRight" /></button>` : null}
+            <${Icon} name="inbox" /><div class="grow"><b>${pendingInbox} 条链接在等 Agent 处理</b><p class="hint">在 Claude Code 里运行 /collect，原帖的全文和图片会自动存进收藏。</p></div><${Icon} name="chevronRight" /></button>` : null}
       </div>
       <div class="home-side">
         ${recent.length ? html`<section class="section">
-          <div class="section-head"><h2>最近种草</h2><button class="more" onClick=${() => ctx.nav.go('library')}>全部 ${places.length}</button></div>
+          <div class="section-head"><h2>最近收藏</h2><button class="more" onClick=${() => ctx.nav.go('library')}>全部 ${places.length}</button></div>
           <div class="hscroll">${recent.map(p => html`<${MiniCard} key=${p.id} p=${p} ctx=${ctx} />`)}</div>
         </section>` : null}
         ${ctx.guides.length ? html`<section class="section">
@@ -2304,7 +2413,7 @@ function HeartButton({ p, ctx, className = 'heart' }) {
   const on = p.status === 'want';
   const toggle = e => {
     e.stopPropagation();
-    if (p.status === 'visited') return ctx.toast('已经拔草了，不用再想啦');
+    if (p.status === 'visited') return ctx.toast('这里已经去过了');
     setPop(true); setTimeout(() => setPop(false), 650);
     ctx.write('update', 'places', p.id, { status: on ? 'saved' : 'want', updatedAt: Date.now() });
   };
@@ -2318,7 +2427,7 @@ function sourceBits(p) {
   if (s.stats && (s.stats.likes || s.stats.collects)) bits.push(`原帖 ${s.stats.collects || s.stats.likes} 人收藏`);
   return bits.join(' · ');
 }
-/** 种草 → 想去 → 已拔草 as three dots: how far along a place is. */
+/** 收藏 → 想去 → 去过 as three dots: how far along a place is. */
 function StageMark({ status }) {
   const st = status || 'saved', n = st === 'visited' ? 3 : st === 'want' ? 2 : 1;
   return html`<span class=${'stage s' + n} title=${'进度：' + STATUS_LABEL[st]}><i></i><i></i><i></i><b>${STATUS_LABEL[st]}</b></span>`;
@@ -2330,7 +2439,7 @@ function PlaceCard({ p, ctx }) {
     <div class="pcard-main" onClick=${() => ctx.nav.push({ name: 'place', id: p.id })}>
       <div style=${{ position: 'relative' }}><${Photo} id=${p.coverAssetId} cat=${p.category} alt=${p.name} />
         ${shots > 1 ? html`<span class="photo-count" aria-label=${`${shots} 张照片`}><${Icon} name="image" size=${12} stroke=${2} />${shots}</span>` : null}
-        ${p.status === 'visited' ? html`<span class="tag done done-badge"><${Icon} name="check" size=${12} stroke=${2.6} />已拔草</span>` : null}</div>
+        ${p.status === 'visited' ? html`<span class="tag done done-badge"><${Icon} name="check" size=${12} stroke=${2.6} />去过</span>` : null}</div>
       <div class="pcard-body">
         <div class="row wrap" style=${{ gap: '6px' }}><${CatTag} cat=${p.category} /><${StageMark} status=${p.status} />${p.example ? html`<span class="tag example">示例</span>` : null}${p.chain ? html`<span class="tag plain">连锁</span>` : null}</div>
         <h3>${p.name}</h3>
@@ -2391,15 +2500,15 @@ function LibraryView({ ctx }) {
 }
 function LibraryEmpty({ ctx, loading }) {
   return html`<div class="card empty">
-    <span class="mark"><${Sprout} size=${28} /></span>
-    <h2>${loading ? '把种草的店排成能走的路线' : '还没有种草'}</h2>
+    <${BrandMark} size=${44} />
+    <h2>${loading ? '把收藏的地方排成能走的路线' : '还没有收藏'}</h2>
     <p class="muted">刷小红书、IG、抖音时看到想去的店或景点：</p>
     <ol class="steps">
       <li><span>点「分享 → 复制链接」，或者截几张图</span></li>
       <li><span>点「添加」粘贴进来，Claude 找出里面的店名和景点</span></li>
       <li><span>选好城市和天数，一键排成每天顺路的路线，每段都能打开地图导航</span></li>
     </ol>
-    ${loading ? html`<p class="hint" role="status">正在读取你的种草清单…</p>` : html`<button class="btn green" onClick=${() => ctx.openSheet({ type: 'add' })}><${Icon} name="plus" />添加第一条</button>`}
+    ${loading ? html`<p class="hint" role="status">正在读取你的收藏…</p>` : html`<button class="btn green" onClick=${() => ctx.openSheet({ type: 'add' })}><${Icon} name="plus" />添加第一条</button>`}
   </div>`;
 }
 
@@ -2614,13 +2723,13 @@ function MapModeView({ ctx }) {
 }
 
 /* ---------- place detail ---------- */
-/** The three stages as one control: tap to move a place along 种草 → 想去 → 已拔草. */
+/** The three stages as one control: tap to move a place along 收藏 → 想去 → 去过. */
 function StageControl({ p, ctx }) {
   const cur = p.status || 'saved';
   const at = STATUSES.findIndex(([k]) => k === cur);
   const set = k => k !== cur && ctx.write('update', 'places', p.id, { status: k, updatedAt: Date.now() });
-  const icon = { saved: 'sprout', want: 'heartFill', visited: 'check' };
-  return html`<div class="stage-ctl" role="group" aria-label="拔草进度">
+  const icon = { saved: 'bookmark', want: 'heartFill', visited: 'check' };
+  return html`<div class="stage-ctl" role="group" aria-label="地点状态">
     ${STATUSES.map(([k, v], i) => html`<button key=${k} class=${i <= at ? 'reached' : ''} aria-pressed=${k === cur} onClick=${() => set(k)}>
       <i><${Icon} name=${icon[k]} size=${16} stroke=${2.2} /></i><span>${v}</span></button>`)}
   </div>`;
@@ -2779,7 +2888,7 @@ function TripCard({ t, ctx }) {
         ${t.example ? html`<span class="tag example">示例</span>` : null}</div>
       <p class="meta">${tripCities(t).join(' → ')} · ${tripStopCount(t)} 站</p>
       <div class="meter" aria-hidden="true"><i style=${{ width: prog.pct + '%' }}></i></div>
-      <p class="hint num">${prog.arranged}/${prog.saved} 个收藏已安排${prog.pending ? ` · ${prog.pending} 个待安排` : ''}${prog.visited ? ` · ${prog.visited} 个已拔草` : ''}</p>
+      <p class="hint num">${prog.arranged}/${prog.saved} 个收藏已安排${prog.pending ? ` · ${prog.pending} 个待安排` : ''}${prog.visited ? ` · 去过 ${prog.visited} 个` : ''}</p>
     </div>
   </button>`;
 }
@@ -3439,7 +3548,7 @@ function StopSheet({ ctx, trip, dayIndex, stopIndex, onClose }) {
       ${s.kind !== 'transfer' ? html`<${ExtLink} href=${placeLink(here, ctx.prefs.mapPref)}><${Icon} name="map" size=${15} />地图<//>` : null}
       ${prev ? html`<${ExtLink} href=${legLink(prev, here, (s.travel && s.travel.mode) || 'walk', ctx.prefs.mapPref)}><${Icon} name="compass" size=${15} />路线<//>` : null}
       ${p ? html`<button class="btn sm" onClick=${() => { onClose(); ctx.nav.push({ name: 'place', id: p.id }); }}><${Icon} name="info" size=${15} />地点详情</button>` : null}
-      ${p ? html`<button class="btn sm" onClick=${() => ctx.write('update', 'places', p.id, { status: p.status === 'visited' ? 'want' : 'visited', updatedAt: Date.now() })}><${Icon} name="check" size=${15} />${p.status === 'visited' ? '改回没去过' : '标记已拔草'}</button>` : null}
+      ${p ? html`<button class="btn sm" onClick=${() => ctx.write('update', 'places', p.id, { status: p.status === 'visited' ? 'want' : 'visited', updatedAt: Date.now() })}><${Icon} name="check" size=${15} />${p.status === 'visited' ? '改回没去过' : '标记去过'}</button>` : null}
     </div>
     <div class="field"><span class="label">调整顺序</span>
       <div class="row wrap">
@@ -3674,7 +3783,7 @@ function AssistantView({ ctx }) {
     </div>
     <div class="composer">
       <form onSubmit=${e => { e.preventDefault(); send(input); }}>
-        <button type="button" class="icon-btn bordered" aria-label="更多：添加种草、整理攻略" onClick=${() => ctx.openSheet({ type: 'chatMore', clear })}><${Icon} name="plus" /></button>
+        <button type="button" class="icon-btn bordered" aria-label="更多：添加收藏、整理攻略" onClick=${() => ctx.openSheet({ type: 'chatMore', clear })}><${Icon} name="plus" /></button>
         <input id="chat-input" class="input" value=${input} onInput=${e => setInput(e.target.value)} placeholder="继续问我任何问题…" aria-label="问 AI 旅行助手" disabled=${!ctx.ai.ok} />
         ${busy ? html`<button type="button" class="go" aria-label="停止" onClick=${() => ctl.current && ctl.current.abort()}><${Icon} name="stop" size=${20} /></button>`
           : html`<button class="go" aria-label="发送" disabled=${!input.trim() || !ctx.ai.ok}><${Icon} name="send" size=${20} /></button>`}
@@ -3761,7 +3870,7 @@ function ActionCard({ a, ctx, state, onDone }) {
 function ChatMoreSheet({ ctx, clear, onClose }) {
   return html`<${Sheet} title="更多" onClose=${onClose}>
     <div class="menu-list">
-      <button onClick=${() => ctx.openSheet({ type: 'add' })}><${Icon} name="link" />添加种草（粘贴链接或截图）</button>
+      <button onClick=${() => ctx.openSheet({ type: 'add' })}><${Icon} name="link" />添加收藏（粘贴链接或截图）</button>
       <button onClick=${() => ctx.openSheet({ type: 'guide' })}><${Icon} name="book" />整理一篇攻略</button>
       <button onClick=${() => { clear(); onClose(); }}><${Icon} name="refresh" />清空对话，重新开始</button>
     </div>
@@ -3909,7 +4018,7 @@ function InboxView({ ctx }) {
       <p>这个页面里的 AI 打不开外部链接。Agent 是在 Claude Code 里运行的同一个 Claude：它读小红书笔记全文和所有图片、下载视频截帧并把语音转成文字、用 OpenStreetMap 查坐标、配上照片，再把地点和攻略写回这里。</p>
       <p>在 Claude Code 打开仓库 mshen0/travel-planner，输入 /collect；也可以直接发 /collect 链接、/guide 视频链接。</p>
     </section>
-    ${!list.length ? html`<p class="hint" style=${{ marginTop: '16px' }}>还没有链接。添加种草或整理攻略时，粘贴链接后点「交给 Agent」。</p>` : null}
+    ${!list.length ? html`<p class="hint" style=${{ marginTop: '16px' }}>还没有链接。添加收藏或整理攻略时，粘贴链接后点「交给 Agent」。</p>` : null}
     <div class="stack" style=${{ marginTop: '14px' }}>${list.map(i => html`<div class="card inbox-item" key=${i.id}>
       <div class="row" style=${{ justifyContent: 'space-between' }}>
         <span class="row wrap"><span class=${'st ' + i.status}>${{ pending: '待处理', done: '已完成', failed: '失败' }[i.status] || i.status}</span>
@@ -3971,7 +4080,7 @@ function AddSheet({ ctx, initial, onClose }) {
       if (await ctx.write('set', 'places', doc.id, doc)) n++;
     }
     setSaving(false);
-    if (n) { ctx.toast(`已种草 ${n} 个地点`); onClose(); }
+    if (n) { ctx.toast(`已收藏 ${n} 个地点`); onClose(); }
   }
   async function toAgent() {
     const doc = { id: uid('i'), text: text.slice(0, 4000), url: url || '', platform, cityHint: cityHint.trim(), mode: 'collect', status: 'pending', message: '', createdBy: ctx.me, createdAt: Date.now() };
@@ -3988,7 +4097,7 @@ function AddSheet({ ctx, initial, onClose }) {
   } else if (review) {
     footer = html`
       <button class="btn ghost" onClick=${() => setResult(null)}>返回修改</button>
-      <button class="btn green" disabled=${saving || !keepCount} onClick=${save}><${Icon} name="heart" size=${16} />${saving ? '保存中…' : `种草 ${keepCount} 个地点`}</button>`;
+      <button class="btn green" disabled=${saving || !keepCount} onClick=${save}><${Icon} name="heart" size=${16} />${saving ? '保存中…' : `收藏 ${keepCount} 个地点`}</button>`;
   }
   return html`<${Sheet} title="保存旅行灵感" onClose=${onClose} footer=${footer}>
     ${job.phase === 'working' ? html`<${AiProgress} label="正在识别地点" text=${job.stream} started=${job.started} onStop=${job.stop} counter=${t => `已找到 ${(t.match(/"name"\s*:/g) || []).length} 个`} />`
@@ -4129,7 +4238,7 @@ function FilterSheet({ ctx, onClose }) {
     <div class="field"><span class="label">进度</span><div class="chips wrap">
       <button class="chip" aria-pressed=${prefs.status === 'all'} onClick=${() => setPref({ status: 'all' })}>全部</button>
       ${STATUSES.map(([k, v]) => html`<button class="chip" aria-pressed=${prefs.status === k} onClick=${() => setPref({ status: k })}>${v} <span class="n">${st[k] || 0}</span></button>`)}</div></div>
-    <p class="hint">种草 → 想去（点<span class="inline-ic"><${Icon} name="heart" size=${13} stroke=${2.2} /></span>）→ 已拔草（去过之后在地点页标记）。</p>
+    <p class="hint">收藏 → 想去（点<span class="inline-ic"><${Icon} name="heart" size=${13} stroke=${2.2} /></span>）→ 去过（去过之后在地点页标记）。</p>
   <//>`;
 }
 
@@ -4201,7 +4310,7 @@ function SettingsSheet({ ctx, onClose }) {
         <button class="btn sm" onClick=${() => save('旅用-地点.csv', placesToCSV(ctx.places))}><${Icon} name="map" size=${15} />地点 CSV</button>
       </div>
       <${ManualCopy} text=${manual} onClose=${() => setManual('')} />
-      <p class="hint">CSV 可以导入 Google My Maps（mymaps.google.com → 新地图 → 导入，位置列选「Location」），手机上就能看所有种草的点。</p>
+      <p class="hint">CSV 可以导入 Google My Maps（mymaps.google.com → 新地图 → 导入，位置列选「Location」），手机上就能看所有收藏的地点。</p>
       <textarea id="import-text" class="input" rows="3" style=${{ minHeight: '72px' }} value=${importText} onInput=${e => setImportText(e.target.value)} placeholder="导入：粘贴备份 JSON，或选择文件"></textarea>
       <div class="row wrap"><button class="btn sm" onClick=${() => fileRef.current.click()}>选择文件</button><button class="btn sm green" disabled=${!importText.trim()} onClick=${() => doImport(importText)}>导入</button><span class="hint">${importMsg}</span></div>
       <input ref=${fileRef} id="import-file" class="sr" type="file" accept=".json,application/json" onChange=${async e => { const f = e.target.files[0]; e.target.value = ''; if (f) doImport(await f.text()); }} />
@@ -4346,8 +4455,9 @@ function App() {
   const pendingInbox = ctx.inbox.filter(i => i.status === 'pending').length;
   const offline = rt && storeRef.current && !storeRef.current.live;
 
+  const tabIndex = TABS.findIndex(([k]) => k === activeTab);
   return html`<div class="shell">
-    <nav class="nav" aria-label="主菜单">
+    <nav class="nav" aria-label="主菜单" data-lens=${tabIndex >= 0 ? '' : null} style=${{ '--tab': Math.max(0, tabIndex) }}>
       <div class="rail-brand"><${BrandMark} size=${44} /><b>旅用</b></div>
       ${TABS.map(([k, label, icon]) => html`<button key=${k} aria-current=${activeTab === k ? 'page' : null} onClick=${() => navApi.go(k)}
           aria-label=${k === 'home' && pendingInbox ? `${label}（${pendingInbox} 条链接待处理）` : null}>

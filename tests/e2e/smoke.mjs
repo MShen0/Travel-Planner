@@ -99,7 +99,7 @@ let dumped;
   const appMeta = seedFile ? (JSON.parse(readFileSync(seedFile, 'utf8')).meta || []).filter(m => m.id === 'app') : [];
   const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX, ...appMeta] } });
   await step('home renders for a new user', async () => {
-    await text(page, '今天想拔哪一棵草').waitFor({ timeout: 8000 });
+    await text(page, '下一站去哪儿').waitFor({ timeout: 8000 });
     await text(page, '三步把灵感变成行程').waitFor();
   });
   await page.screenshot({ path: path.join(shots, '01-phone-home-empty.png') });
@@ -121,8 +121,8 @@ let dumped;
   await page.screenshot({ path: path.join(shots, '02-phone-review.png') });
   await step('collect: save 3 of 4 places with a cover image', async () => {
     await page.locator('.review-item input[type=checkbox]').nth(3).uncheck();
-    await page.getByRole('button', { name: /种草 3 个地点/ }).click();
-    await text(page, '已种草 3 个地点').waitFor();
+    await page.getByRole('button', { name: /收藏 3 个地点/ }).click();
+    await text(page, '已收藏 3 个地点').waitFor();
     await tab(page, '收藏');
     await page.locator('.pcard').nth(2).waitFor();
     if (await page.locator('.pcard').count() !== 3) throw new Error('library does not show 3 places');
@@ -164,7 +164,7 @@ let dumped;
     await text(page, 'Day 2 — 东京').waitFor();
     await page.locator('.daychip').first().click();
     await page.locator('.tl-row .more').nth(1).click();
-    await page.getByRole('button', { name: '标记已拔草' }).click();
+    await page.getByRole('button', { name: '标记去过' }).click();
     await page.locator('.tl-row .dot.done').first().waitFor();
     await closeSheet(page);
   });

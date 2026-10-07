@@ -21,7 +21,7 @@ const NAMES = ['CATEGORIES', 'MODES', 'extractUrls', 'detectPlatform', 'pickUrl'
   'findNearbyPlaces', 'analyzeLibrary', 'buildLibraryContext', 'buildOrganizationPrompt', 'chunkPlacesForAi', 'normalizeOrganization',
   'mergeOrganization', 'applyOrganizationProposal', 'librarySignature', 'planProposalStats', 'nearestDays', 'appendStops', 'ACTION_TYPES',
   'stopFromPlace', 'ownStop', 'insertStop', 'shiftChanged', 'editStop', 'normFlight', 'normFlights', 'flightDay', 'airportBy', 'flightLine', 'flightPromptLines',
-  'clockMinus', 'cityHotel', 'transitFor', 'buildTransitPrompt', 'normalizeTransit', 'transitPoints'];
+  'clockMinus', 'cityHotel', 'transitFor', 'buildTransitPrompt', 'normalizeTransit', 'transitPoints', 'cleanChat', 'errorSummary'];
 const lib = vm.runInNewContext(`${page.slice(start, end)}\n;({${NAMES.join(',')}})`, { URL });
 // Values built inside the vm realm carry its own Array/Object prototypes; compare them as plain data.
 const plain = v => JSON.parse(JSON.stringify(v));
@@ -346,6 +346,24 @@ test('assistant: context, turns and confirmable actions', () => {
   assert.equal(reply.text, '建议这样走：\n- Day 1 浅草');
   assert.deepEqual(plain(reply.actions.map(a => a.type)), ['plan_trip']);
   assert.equal(lib.parseAssistantReply('马上好<action>{"type":"plan_tr').text, '马上好', 'a half-written action never shows');
+});
+
+test('a damaged saved chat or a crash never blanks the app', () => {
+  const kept = plain(lib.cleanChat([null, 'x', { role: 'me', text: '你好', at: 1 }, { role: 'ai', text: 42, actions: { 0: {} }, done: [] },
+    { role: 'ai', text: '好的', actions: [null, { type: 'plan_trip' }, { label: 'no type' }], done: { 0: 'done' } },
+    { role: 'ai', text: { a: 1 }, actions: [{ type: 'open_organize' }], done: ['done'] }, { role: 'ai', text: '', pending: true }, { role: 'bot', text: '?' }]));
+  assert.deepEqual(kept.map(m => [m.role, m.text]), [['me', '你好'], ['ai', '好的'], ['ai', '']], 'nothing to show: dropped');
+  assert.deepEqual(kept[1].actions, [{ type: 'plan_trip' }]);
+  assert.deepEqual(kept[1].done, { 0: 'done' });
+  assert.deepEqual(kept[2].actions, [{ type: 'open_organize' }]);
+  assert.deepEqual(kept[2].done, {});
+  assert.equal(plain(lib.cleanChat({ role: 'me' })).length, 0);
+  assert.equal(lib.cleanChat(Array.from({ length: 50 }, (_, i) => ({ role: 'me', text: String(i) }))).length, 40, 'the last 40 messages stay');
+  const chrome = { message: "Cannot read properties of null (reading 'day')", stack: "TypeError: Cannot read properties of null (reading 'day')\n    at Object.map (<anonymous>)\n    at ActionCard (https://x/:5630:57)\n    at B (preact.umd.js:1:1)" };
+  assert.equal(lib.errorSummary(chrome), "Cannot read properties of null (reading 'day') · ActionCard");
+  assert.equal(lib.errorSummary({ message: 'x is undefined', stack: 'describeChange@https://x/:1:2\nActionCard@https://x/:3:4\nS@https://cdn/p.js:1:1' }), 'x is undefined · ActionCard');
+  assert.equal(lib.errorSummary({ code: 'not_available' }), 'not_available');
+  assert.equal(lib.errorSummary(null), '未知错误');
 });
 
 test('exports: markdown, chat text, CSV, backup', () => {

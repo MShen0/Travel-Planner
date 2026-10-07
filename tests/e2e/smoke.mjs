@@ -321,6 +321,32 @@ let dumped;
     await closeSheet(page);
     await text(page, '已确认').waitFor();
   });
+  await step('a page or sheet that breaks shows a way out, never a blank screen', async () => {
+    // Top-level functions are globals: swap a component for one that throws, then put it back.
+    await page.evaluate(() => { window.__RichText = window.RichText; window.RichText = () => { throw new Error('test crash'); }; });
+    await tab(page, '首页');
+    await tab(page, 'AI');
+    await text(page, '这一页没打开').waitFor();
+    await text(page, '出错信息：test crash').waitFor();
+    if (!(await page.locator('.nav').isVisible())) throw new Error('tab bar gone');
+    await page.getByRole('button', { name: '回到首页' }).click();
+    await page.locator('.hero').waitFor();
+    await page.evaluate(() => { window.RichText = window.__RichText; window.__SettingsSheet = window.SettingsSheet; window.SettingsSheet = () => { throw new Error('test crash'); }; });
+    await page.getByRole('button', { name: '设置' }).click();
+    await text(page, '这个窗口没打开').waitFor();
+    await closeSheet(page);
+    await page.evaluate(() => { window.SettingsSheet = window.__SettingsSheet; });
+    await tab(page, 'AI');
+    await page.locator('.chat-head').waitFor();
+    // A damaged chat saved on this device (written while the AI tab is closed, since it saves its own): dropped entries, not a blank tab.
+    await tab(page, '首页');
+    await page.locator('.hero').waitFor();
+    await page.evaluate(() => localStorage.setItem('bacao.chat.v1', JSON.stringify([null, { role: 'ai', text: '旧消息还在', actions: { 0: 1 } }])));
+    await tab(page, 'AI');
+    await text(page, '旧消息还在').waitFor();
+    // The crashes above were logged on purpose.
+    for (let i = problems.length - 1; i >= 0; i--) if (problems[i].includes('test crash')) problems.splice(i, 1);
+  });
   await step('settings: map app, CSV, import, manual FX rate', async () => {
     await tab(page, '首页');
     await page.getByRole('button', { name: '设置' }).click();
@@ -396,7 +422,7 @@ for (const [label, opts] of [
     if (pin) await pin.evaluate(el => el.remove());
   };
   await step(`${label}: home`, async () => {
-    await page.locator('.trip-card .stats').waitFor({ timeout: 8000 });
+    await page.locator(seed.trips.length ? '.trip-card .stats' : '.home-body').waitFor({ timeout: 8000 });
     await page.waitForTimeout(400);
     await noSideScroll(page);
     await page.screenshot({ path: path.join(shots, `${label}-home-viewport.png`) });

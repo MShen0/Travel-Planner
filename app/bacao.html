@@ -530,6 +530,8 @@ textarea.input { resize: vertical; min-height: 110px; line-height: 1.5; }
 @media (min-width: 1024px) { .toast { bottom: 28px; margin-left: 48px; } }
 .boot { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 10px; color: var(--muted); }
 .mark { width: 44px; height: 44px; border-radius: 14px; background: var(--green); color: var(--green-ink); display: grid; place-items: center; }
+.mark.warn { background: var(--amber-tint); color: var(--amber); }
+.crash-detail { overflow-wrap: anywhere; }
 .gsteps { list-style: none; margin: 0; padding: 0; display: grid; }
 .gsteps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; position: relative; padding-bottom: 18px; }
 .gsteps li::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--line); }
@@ -2874,6 +2876,24 @@ function parseAssistantReply(raw) {
   const cut = text.indexOf('<action');
   return { text: (cut >= 0 ? text.slice(0, cut) : text).trim(), actions };
 }
+/** The chat as saved on this device, keeping only entries that still look like messages: a damaged one is dropped, not shown. */
+function cleanChat(list) {
+  return (Array.isArray(list) ? list : []).filter(m => m && typeof m === 'object' && (m.role === 'me' || m.role === 'ai') && !m.pending)
+    .map(m => ({
+      ...m, text: typeof m.text === 'string' ? m.text : '', raw: typeof m.raw === 'string' ? m.raw : '',
+      actions: Array.isArray(m.actions) ? m.actions.filter(a => a && typeof a === 'object' && typeof a.type === 'string') : [],
+      done: m.done && typeof m.done === 'object' && !Array.isArray(m.done) ? m.done : {},
+    }))
+    .filter(m => m.text || m.actions.length)
+    .slice(-40);
+}
+/** One line for a crash card: the message and the component it happened in ("… (reading 'day') · ActionCard"). */
+function errorSummary(e) {
+  const msg = str(e && typeof e === 'object' ? e.message || e.code : e, 160) || '未知错误';
+  // The first stack frame named like a component ("at ActionCard (" in Chrome, "ActionCard@" in Safari and Firefox).
+  const where = [...String((e && e.stack) || '').matchAll(/(?:^|\n)\s*(?:at (?:new )?([A-Z][\w$]{2,}) \(|([A-Z][\w$]{2,})@)/g)].map(m => m[1] || m[2]).find(Boolean);
+  return where ? `${msg} · ${where}` : msg;
+}
 
 /* --- normalizing Claude's answers --- */
 function normalizeTravel(t) {
@@ -3042,7 +3062,7 @@ function frameTimes(duration, n) {
 /* ===== @lib-end ===== */
 /* ===== app ===== */
 const { h, render } = preact;
-const { useState, useEffect, useMemo, useRef, useCallback } = preactHooks;
+const { useState, useEffect, useMemo, useRef, useCallback, useErrorBoundary } = preactHooks;
 const html = htm.bind(h);
 
 const ICONS = {
@@ -3238,7 +3258,7 @@ function savePrefs(p) {
 }
 const CHAT_KEY = 'bacao.chat.v1';
 function loadChat() {
-  try { return JSON.parse(localStorage.getItem(CHAT_KEY) || '[]').slice(-40); } catch { return []; }
+  try { return cleanChat(JSON.parse(localStorage.getItem(CHAT_KEY) || '[]')); } catch { return []; }
 }
 function saveChat(list) {
   try { localStorage.setItem(CHAT_KEY, JSON.stringify(list.slice(-40))); } catch { /* fine */ }
@@ -5626,7 +5646,7 @@ function ActionCard({ a, ctx, state, onDone }) {
     icon = 'calendar';
     title = title || `${cities.join(' → ')} ${days || ''} 天行程`;
     sub = [bases.length ? `住 ${bases.join('、')}` : '', PACES[a.pace], str(a.notes, 60)].filter(Boolean).join(' · ');
-    const outline = Array.isArray(a.outline) ? a.outline.slice(0, 10) : [];
+    const outline = Array.isArray(a.outline) ? a.outline.filter(d => d && typeof d === 'object').slice(0, 10) : [];
     body = outline.length ? html`<div class="plan-outline">${outline.map((d, i) => html`<div key=${i}><b>Day ${clampNum(d.day, 1, 30) || i + 1}</b>
       <span><span class="a">${str([d.city && cities.length > 1 ? d.city : '', d.area].filter(Boolean).join(' · '), 40)}</span><small>${str(d.theme, 40)}</small></span></div>`)}</div>` : null;
     cta = '确认，去生成行程';
@@ -6452,6 +6472,29 @@ function SettingsSheet({ ctx, onClose }) {
 }
 
 /* ---------- app shell ---------- */
+/** Keeps one broken page or sheet from blanking the whole app: fallback(error, reset) shows what went wrong and a way out. */
+function Guard({ children, fallback }) {
+  const [error, reset] = useErrorBoundary(e => console.error('[旅用] 页面出错', e));
+  return error ? fallback(error, reset) : children;
+}
+function CrashCard({ error, onHome, onRetry, onClearChat }) {
+  return html`<div class="page"><section class="card empty" role="alert" style=${{ marginTop: '24px' }}>
+    <span class="mark warn"><${Icon} name="alert" size=${24} /></span>
+    <h2>这一页没打开</h2>
+    <p class="muted">收藏和行程都还在。可以先回首页，或者再试一次。${onClearChat ? '如果 AI 页一直打不开，清空这台设备上的 AI 聊天记录再试。' : ''}</p>
+    <div class="row wrap">
+      ${onHome ? html`<button class="btn green" onClick=${onHome}>回到首页</button>` : null}
+      <button class="btn" onClick=${onRetry}>再试一次</button>
+      ${onClearChat ? html`<button class="btn" onClick=${onClearChat}>清空 AI 聊天记录</button>` : null}
+    </div>
+    <p class="hint crash-detail">出错信息：${errorSummary(error)}</p>
+  </section></div>`;
+}
+/** The app inside a last guard: if the shell itself breaks, start again from Home. */
+function Root() {
+  const restart = reset => { savePrefs({ ...loadPrefs(), tab: 'home' }); reset(); };
+  return html`<${Guard} fallback=${(e, reset) => html`<${CrashCard} error=${e} onRetry=${() => restart(reset)} onClearChat=${() => { saveChat([]); restart(reset); }} />`}><${App} /><//>`;
+}
 const TABS = [['home', '首页', 'home'], ['library', '收藏', 'heart'], ['trips', '行程', 'trips'], ['assistant', 'AI', 'sparkle']];
 function App() {
   const [rt, setRt] = useState(null);
@@ -6587,6 +6630,12 @@ function App() {
     else if (sTrip && k === 'dayEdit') sheetEl = html`<${DayEditSheet} ctx=${ctx} trip=${sTrip} dayIndex=${sheet.dayIndex} onClose=${close} />`;
     else if (sTrip && k === 'expense') sheetEl = html`<${ExpenseSheet} ctx=${ctx} trip=${sTrip} expense=${sheet.expenseId ? ctx.expenses.find(e => e.id === sheet.expenseId) : null} onClose=${close} />`;
   }
+  // Each page and sheet in its own guard, keyed by route so moving on clears the error.
+  const routeKey = top ? `${top.name}${depth}${top.id || ''}` : nav.tab;
+  const pageCrash = (e, reset) => html`<${CrashCard} error=${e} onRetry=${reset}
+    onHome=${top || nav.tab !== 'home' ? () => navApi.go('home') : null}
+    onClearChat=${!top && nav.tab === 'assistant' ? () => { saveChat([]); reset(); } : null} />`;
+  const sheetCrash = e => html`<${Sheet} title="出错了" onClose=${close}><${Notice} warn icon="alert">这个窗口没打开，关掉再试一次。<br />出错信息：${errorSummary(e)}<//><//>`;
   const pendingInbox = ctx.inbox.filter(i => i.status === 'pending').length;
   const offline = rt && storeRef.current && !storeRef.current.live;
 
@@ -6600,9 +6649,9 @@ function App() {
     </nav>
     ${offline ? html`<div class="banner">离线预览：在 claude.ai 打开这个页面才会保存数据。</div>` : null}
     ${!canWrite ? html`<div class="banner">你只有查看权限：可以浏览，不能添加或修改。</div>` : null}
-    <main>${main}</main>
+    <main><${Guard} key=${routeKey} fallback=${pageCrash}>${main}<//></main>
     <datalist id="known-cities">${cities.map(c => html`<option value=${c}></option>`)}</datalist>
-    ${sheetEl}
+    ${sheetEl ? html`<${Guard} key=${'sheet-' + sheet.type} fallback=${sheetCrash}>${sheetEl}<//>` : null}
     ${toast ? html`<div class="toast" role="status">${toast}</div>` : null}
   </div>`;
 }
@@ -6615,5 +6664,5 @@ function sampleOpts(o = {}) {
   return opts;
 }
 
-render(html`<${App} />`, document.getElementById('app'));
+render(html`<${Root} />`, document.getElementById('app'));
 </script>

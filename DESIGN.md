@@ -491,6 +491,7 @@ Nothing the AI suggests is written until the user confirms, and every proposal s
 ### Sheets and Toast
 - **Sheets:** bottom sheets on paper with 22px top corners, a grab handle and the float shadow. They rise in over 0.32s on the settle curve, and from 720px they become centred dialogs.
 - **Toast:** an ink pill with paper text, floating above the tab bar.
+- **When a page breaks:** never a blank screen. The page shows a card with an amber-tint alert tile, "这一页没打开", the reassurance that places and trips are still there, 回到首页 · 再试一次 (and 清空 AI 聊天记录 on the AI tab), and the error in one muted line for whoever fixes it. The tab bar stays. A broken sheet becomes a small "出错了" sheet with the same line.
 
 ### Brand Mark
 A 30%-radius square in forest green (#1F5C45), which stays that colour in both themes. Inside, a white route line runs from a light-green start dot to a white end dot, the same route that the 行程 tab icon draws. The wordmark 旅用 is 800 weight, tracked .04em, and turns white with a soft shadow over photos.

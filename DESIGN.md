@@ -479,7 +479,7 @@ Nothing the AI suggests is written until the user confirms, and every proposal s
 ### AI Assistant
 - **Header:** a 46px violet disc with the sparkle, "AI 旅行助手" and "我可以直接根据你的收藏和行程帮你处理旅行。"
 - **Bubbles:** mine are forest green with white text; the AI's are white with the card shadow. Both have 18px corners, with a 6px corner toward the speaker.
-- **Quick actions:** three-column outline pills (规划行程 · 路线优化 · 找美食 · 雨天方案 · 交通攻略 · 附近推荐), then a full-width violet-wash 整理我的收藏. Home shows the first six as two-column cards with a violet icon tile and a one-line description.
+- **Quick actions:** three-column outline pills (规划行程 · 路线优化 · 找美食 · 雨天方案 · 交通攻略 · 附近推荐), then a full-width violet-wash 整理我的收藏.
 - **Changes:** proposed changes arrive as white action cards with a violet-wash icon tile: plan a trip, save places, add to a trip, open a trip, 整理收藏 (opens the AI 整理 sheet), 合并重复 (the duplicate card inline) and 顺路分组 (加入 Day N). Places the AI mentions appear as 16:9 photo cards with a bottom scrim.
 - **Composer:** a frosted paper bar (92% paper, 10px blur) above the tab bar, with a pill field and the green go button.
 

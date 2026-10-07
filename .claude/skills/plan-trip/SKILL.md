@@ -10,7 +10,8 @@ Read `CLAUDE.md` for the trip schema and `travel.config.json` for `appUrl`.
 ## 1. Settle the brief
 
 Needed: the cities in visiting order and the number of days (per city when there are several). Useful: start date,
-where they sleep in each city (a city without a hotel is a day trip from the previous one), pace
+flights (the way out and home: flight number, airports, local take-off and landing times; an existing trip may
+already carry them in `flights`), where they sleep in each city (a city without a hotel is a day trip from the previous one), pace
 (`relaxed | normal | packed`), transport (`transit | walk | taxi | drive`), budget in RM, wishes (Disney on day 2,
 elderly parents, sunsets). Ask only for what is missing and matters; otherwise default to 3 days, `normal`,
 `transit`, and split days over cities by how many places each has (at least one day each).
@@ -40,7 +41,9 @@ point and adjust for:
 - opening hours and closing days (check the start date's weekday; WebSearch a place when unsure),
 - best times (markets in the morning, viewpoints at sunset, night views after dark),
 - meals at meal times (lunch 11:30–13:30, dinner 18:00–20:00), cafés in the afternoon,
-- pace: relaxed 3–4 stops a day, normal 4–6, packed 6–8 (meals included).
+- pace: relaxed 3–4 stops a day, normal 4–6, packed 6–8 (meals included),
+- flights: Day 1 starts 1.5–2 hours after landing (immigration, bags, the ride in); the last day ends 3 hours before
+  take-off, and its last stop's `tip` says how to reach the airport.
 
 ## 5. Write each leg
 
@@ -57,8 +60,8 @@ with its fare, `nameLocal` = the arrival station or airport with its `lat`/`lng`
 
 ## 6. Save
 
-`ArtifactData` `set` on `trips/<t_id>` with the full trip document from `CLAUDE.md`: `cities`, `stays`, `budget` (RM or
-null), `placeIds` = every saved place you considered, `changed: []`, `skipped: []`, `savedVia: "agent"`,
+`ArtifactData` `set` on `trips/<t_id>` with the full trip document from `CLAUDE.md`: `cities`, `stays`, `flights` (or
+null legs), `budget` (RM or null), `placeIds` = every saved place you considered, `changed: []`, `skipped: []`, `savedVia: "agent"`,
 `createdBy: null`, `example: false`, timestamps in ms, `days[].city` and `days[].date` filled. Without ArtifactData,
 write `exports/<date>-<city>.json` as `{"trips": [...]}` for 设置 → 导入备份.
 

@@ -82,6 +82,7 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 ```json
 {"id":"t_…","title":"首尔釜山 5 日","city":"首尔","cities":["首尔","釜山"],"country":"韩国","days":5,"startDate":"2026-11-19",
  "stays":[{"city":"首尔","days":3,"base":{"name":"明洞"}},{"city":"釜山","days":2,"base":{"name":"海云台"}}],
+ "flights":{"out":{"flightNo":"MH66","from":"吉隆坡 KUL","to":"仁川 ICN","depart":"2026-11-19T00:05","arrive":"2026-11-19T07:35"},"back":null},
  "base":{"name":"明洞","lat":37.5636,"lng":126.985},"prefs":{"pace":"normal","transport":"transit","notes":"","suggest":true},
  "budget":5000,"placeIds":["p_…"],"skipped":[],"changed":[],
  "plan":{"title":"…","summary":"…","currency":"KRW","tips":["…"],
@@ -95,6 +96,11 @@ on everything the agent creates (the app writes the viewer's user id, which it s
  "savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
 ```
 - `pace`: `relaxed | normal | packed`; `transport`: `transit | walk | taxi | drive`. `budget` is in RM (or null).
+- `flights.out` / `flights.back`: the way out and the way home, each `{flightNo, from, to, depart, arrive}` with times in
+  that airport's local time as `YYYY-MM-DDTHH:MM`, or null. The app shows the landing at the top of its day and the
+  take-off at the end of its day with 建议 HH:MM 前到机场 (3 hours ahead). Plan Day 1 from landing plus 1.5–2 hours
+  (immigration, bags, the ride in) and end the last day 3 hours before take-off, its last stop's `tip` saying how to
+  reach the airport.
 - A stay with `base: null` after the first city is a day trip from the previous city's hotel.
 - `days[].city` follows `stays` (sum of `stays[].days` = `days`). The first stop of the day you change city is
   `"kind": "transfer"`, `placeId: null`, `name: "首尔 → 釜山"`, `category: "transport"`, `nameLocal` = the arrival
@@ -103,7 +109,9 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 - `travel` = how to reach this stop from the previous one (first stop: from that day's base; `null` if none).
   `mode`: `walk | metro | train | tram | bus | taxi | drive | ferry | bike | flight`. `fare` = per-person fare in
   `plan.currency` (0 for walking, null if unknown); `spend` = rough per-person ticket/meal cost (0 free, null unknown).
-- A stop that is not a saved place has `placeId: null` and `"suggested": true`.
+- A stop that is not a saved place has `placeId: null`: `"suggested": true` when Claude proposed it, `false` when the
+  user wrote it in the app (加一站). Users can also edit any stop by hand (time, name, stay, what, tip, spend, leg);
+  keep their edits when revising unless they ask otherwise.
 - `days[].date` = startDate + index (empty string when no start date).
 - `changed` = `["day:stop", …]` rows an AI revision touched (the app lights them until 知道了); write `[]`.
   `skipped` = place ids the user set aside for this trip.

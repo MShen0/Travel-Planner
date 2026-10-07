@@ -19,7 +19,8 @@ const NAMES = ['CATEGORIES', 'MODES', 'extractUrls', 'detectPlatform', 'pickUrl'
   'tripMembers', 'settleUp', 'placeGeo', 'countryCodeOf', 'getCountryLabel', 'getRegionLabel', 'getCityLabel', 'groupPlacesByCountry',
   'getCountryPlaceCount', 'getRegionPlaceCount', 'getCityPlaceCount', 'matchesQuery', 'findDuplicatePlaces', 'mergePlaceProposal', 'remapTripPlace',
   'findNearbyPlaces', 'analyzeLibrary', 'buildLibraryContext', 'buildOrganizationPrompt', 'chunkPlacesForAi', 'normalizeOrganization',
-  'mergeOrganization', 'applyOrganizationProposal', 'librarySignature', 'planProposalStats', 'nearestDays', 'appendStops', 'ACTION_TYPES'];
+  'mergeOrganization', 'applyOrganizationProposal', 'librarySignature', 'planProposalStats', 'nearestDays', 'appendStops', 'ACTION_TYPES',
+  'stopFromPlace', 'ownStop', 'insertStop', 'shiftChanged', 'editStop', 'normFlight', 'normFlights', 'flightDay', 'airportBy', 'flightLine', 'flightPromptLines'];
 const lib = vm.runInNewContext(`${page.slice(start, end)}\n;({${NAMES.join(',')}})`, { URL });
 // Values built inside the vm realm carry its own Array/Object prototypes; compare them as plain data.
 const plain = v => JSON.parse(JSON.stringify(v));
@@ -554,5 +555,59 @@ test('trip proposals: minutes before and after, nearest day, adding to a day', (
   assert.deepEqual(r.changed, ['1:0', '1:1']);
   assert.equal(r.days[1].stops[0].stayMin, 60);
   assert.equal(lib.tripPlaces({ cities: ['东京'], placeIds: [] }, [{ id: 'nc', city: '' }]).length, 0, 'a place without a city is in no trip');
+});
+
+test('editing by hand: change a stop, insert one by its time, keep AI highlights on the right rows', () => {
+  const plan = { days: [{ day: 1, city: '首尔', stops: [
+    { time: '09:30', kind: 'visit', placeId: 'p_a', name: '景福宫', travel: { mode: 'metro', minutes: 20, detail: '3 号线', cost: '', fare: 1550 } },
+    { time: '12:00', kind: 'visit', placeId: null, name: '午饭', suggested: true, travel: null },
+    { time: '15:00', kind: 'visit', placeId: 'p_b', name: '北村', travel: null },
+  ] }], unplaced: [{ placeId: 'p_c', reason: '' }] };
+  const s = plain(lib.editStop(plan, 0, 0, { time: '10:15', name: '景福宫（看换岗）', stayMin: '90', what: '看守门将换岗', tip: '', spend: '3,000', mode: 'bus', minutes: '25', fare: '', detail: '' }))[0].stops[0];
+  assert.deepEqual([s.time, s.name, s.stayMin, s.what, s.spend], ['10:15', '景福宫（看换岗）', 90, '看守门将换岗', 3000]);
+  assert.deepEqual(s.travel, { mode: 'bus', minutes: 25, detail: '', cost: '', fare: null });
+  assert.equal(plan.days[0].stops[0].time, '09:30', 'the plan passed in is untouched');
+  // No mode means no leg; an emptied name keeps the old one.
+  const bare = plain(lib.editStop(plan, 0, 0, { time: '', name: ' ', mode: '' }))[0].stops[0];
+  assert.deepEqual([bare.travel, bare.name, bare.time, bare.spend], [null, '景福宫', '', null]);
+  // A stop the user writes goes in by its time, and the AI-lit rows after it move down with it.
+  const own = lib.ownStop({ name: '回酒店休息', time: '13:30', category: 'stay', stayMin: '60', what: '' }, plan.days[0], '韩国');
+  assert.deepEqual([own.placeId, own.suggested, own.city, own.country, own.stayMin], [null, false, '首尔', '韩国', 60]);
+  const ins = lib.insertStop(plan, 0, own);
+  assert.equal(ins.index, 2);
+  assert.deepEqual(plain(ins.days)[0].stops.map(x => x.name), ['景福宫', '午饭', '回酒店休息', '北村']);
+  assert.deepEqual(plain(lib.shiftChanged(['0:1', '0:2', '1:0'], 0, 2)), ['0:1', '0:3', '1:0']);
+  // A saved place without a time goes last and leaves the still-to-place list.
+  const saved = lib.insertStop(plan, 0, lib.stopFromPlace({ id: 'p_c', name: '广藏市场', city: '首尔', category: 'food', lat: 37.57, lng: 126.99 }, plan.days[0]));
+  assert.equal(saved.index, 3);
+  assert.deepEqual(plain(saved.unplaced), []);
+});
+
+test('flights: cleaned legs, the day each shows on, when to reach the airport, prompts and exports', () => {
+  assert.equal(lib.normFlight({ flightNo: '  ', depart: '19/11 08:30' }), null);
+  const out = lib.normFlight({ flightNo: 'ci 722', from: '吉隆坡 KUL', to: '桃园 TPE', depart: '2026-11-19T08:30', arrive: '2026-11-19T13:20:00' });
+  assert.deepEqual(plain(out), { flightNo: 'CI722', from: '吉隆坡 KUL', to: '桃园 TPE', depart: '2026-11-19T08:30', arrive: '2026-11-19T13:20' });
+  const trip = { days: 5, startDate: '2026-11-19', flights: { out, back: { from: '桃园 TPE', depart: '2026-11-23T18:00' } } };
+  assert.deepEqual([lib.flightDay(trip, 'out'), lib.flightDay(trip, 'back')], [0, 4]);
+  assert.equal(lib.flightDay({ ...trip, flights: { out: { arrive: '2026-11-20T06:10' } } }, 'out'), 1, 'an overnight flight lands on day 2');
+  assert.equal(lib.flightDay({ ...trip, flights: { back: { depart: '2026-12-01T10:00' } } }, 'back'), 4, 'dates past the trip stay on its last day');
+  assert.equal(lib.flightDay({ days: 3, flights: { back: { depart: '2026-11-23T18:00' } } }, 'back'), 2, 'no start date: the last day');
+  assert.deepEqual([lib.airportBy('2026-11-23T18:00'), lib.airportBy('2026-11-23T01:30'), lib.airportBy('')], ['15:00', '前一天 22:30', '']);
+  assert.equal(lib.flightLine(out), 'CI722 · 11月19日 08:30 吉隆坡 KUL → 13:20 桃园 TPE');
+  assert.equal(lib.flightLine({ flightNo: 'MH360', from: '吉隆坡', to: '仁川', depart: '2026-11-18T23:40', arrive: '2026-11-19T07:20' }), 'MH360 · 11月18日 23:40 吉隆坡 → 11月19日 07:20 仁川');
+  const lines = lib.flightPromptLines(trip.flights);
+  assert.equal(lines.length, 2);
+  assert.ok(lines[0].includes('落地前不要排') && lines[1].includes('（15:00）到机场'), lines.join('\n'));
+  assert.deepEqual(plain(lib.flightPromptLines({})), []);
+
+  const tokyo = { title: '东京两日', days: 2, startDate: '2026-12-24', stays: [{ city: '东京', days: 2, base: null }], prefs: { pace: 'normal', transport: 'transit', notes: '' },
+    flights: { out: { flightNo: 'MH88', from: '吉隆坡 KUL', to: '羽田 HND', depart: '2026-12-23T23:30', arrive: '2026-12-24T07:40' }, back: null },
+    plan: { title: '东京两日', currency: 'JPY', bases: [], days: [], unplaced: [] } };
+  const plan = lib.buildPlanPrompt({ trip: tokyo, stays: tokyo.stays, places: [], groupsByCity: {}, lang: 'zh-Hans', allowSuggest: true });
+  assert.ok(plan.includes('去程航班：MH88 · 12月23日 23:30 吉隆坡 KUL → 12月24日 07:40 羽田 HND'));
+  assert.ok(!plan.includes('回程航班'));
+  assert.ok(lib.buildRevisePrompt({ trip: tokyo, places: [], feedback: '轻松一点', lang: 'zh-Hans', allowSuggest: true }).includes('去程航班：MH88'));
+  assert.ok(lib.tripToMarkdown(tokyo, {}).includes('## 航班\n- 去程：MH88'));
+  assert.ok(lib.tripToText(tokyo).includes('✈ 去程 MH88'));
 });
 

@@ -182,12 +182,62 @@ let dumped;
     await page.locator('.tl-row .dot.done').first().waitFor();
     await closeSheet(page);
   });
+  await step('plan: edit a stop by hand; it is not lit as an AI change', async () => {
+    await page.locator('.tl-row .more').first().click();
+    await page.getByRole('button', { name: '编辑这一站' }).click();
+    await page.fill('#se-time', '10:05');
+    await page.fill('#se-what', '先去御守柜台');
+    await page.selectOption('#se-mode', 'taxi');
+    await page.fill('#se-min', '12');
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await text(page, '这一站改好了').waitFor();
+    const t = await page.evaluate(() => window.__dump().trips[0]);
+    const s = t.plan.days[0].stops[0];
+    if (s.time !== '10:05' || s.what !== '先去御守柜台' || s.travel.mode !== 'taxi' || s.travel.minutes !== 12) throw new Error(JSON.stringify(s));
+    if ((t.changed || []).length) throw new Error('a hand edit was lit');
+    await text(page, '打车 12 分钟').waitFor();
+  });
+  await step('plan: add your own stop by its time, edit the day theme', async () => {
+    await page.getByRole('button', { name: '加一站' }).click();
+    await page.getByRole('button', { name: '自己写一站' }).click();
+    await page.fill('#as-name', '回酒店休息');
+    await page.fill('#as-time', '23:00');
+    await page.getByRole('button', { name: '加到 Day 1', exact: true }).click();
+    await text(page, '已加到 Day 1').waitFor();
+    const stops = await page.evaluate(() => window.__dump().trips[0].plan.days[0].stops);
+    if (stops.at(-1).name !== '回酒店休息' || stops.at(-1).placeId !== null) throw new Error('own stop not last: ' + stops.map(s => s.name).join('、'));
+    await page.getByRole('button', { name: '编辑 Day 1 的主题和备注' }).click();
+    await page.fill('#de-theme', '浅草半日');
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await text(page, '浅草半日').waitFor();
+  });
+  await step('plan: flights from 行程信息 head day 1 and close the last day', async () => {
+    await page.getByRole('button', { name: '行程菜单' }).click();
+    await page.getByRole('button', { name: '改名称、日期、预算和航班' }).click();
+    await page.fill('#fl-out-no', 'mh 88');
+    await page.fill('#fl-out-to', '羽田 HND');
+    await page.fill('#fl-out-depart', '2026-12-23T23:30');
+    await page.fill('#fl-out-arrive', '2026-12-24T07:40');
+    await page.fill('#fl-back-from', '羽田 HND');
+    await page.fill('#fl-back-depart', '2026-12-25T18:00');
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await text(page, '已保存').waitFor();
+    await text(page, '羽田 HND 落地').waitFor();
+    await text(page, '先到住处放行李').waitFor();
+    await page.locator('.daychip').nth(1).click();
+    await text(page, '建议 15:00 前到机场').waitFor();
+    await page.locator('.daychip').first().click();
+    const f = await page.evaluate(() => window.__dump().trips[0].flights);
+    if (f.out.flightNo !== 'MH88' || f.back.depart !== '2026-12-25T18:00') throw new Error(JSON.stringify(f));
+  });
   await step('plan: AI revision lights the changed rows until acknowledged', async () => {
     await page.getByRole('button', { name: 'AI 优化这一天' }).click();
     await page.getByRole('button', { name: '这天轻松一点' }).click();
     await page.getByRole('button', { name: '开始调整' }).click();
     // a proposal first: before/after minutes, nothing saved until 采用
     await page.locator('.proposal .cmp').waitFor({ timeout: 10000 });
+    const asked = await page.evaluate(() => window.__sampleCalls.at(-1).input);
+    if (!asked.includes('去程航班：MH88') || !asked.includes('回程航班')) throw new Error('flights missing from the revise prompt');
     const rev = await page.evaluate(() => window.__dump().trips[0].revisions || 0);
     if (rev) throw new Error('revision saved before it was adopted');
     await page.getByRole('button', { name: '采用这个方案' }).click();
@@ -387,7 +437,7 @@ for (const [label, opts] of [
     }
     await step(`${label}: place page`, async () => {
       await page.getByRole('tab', { name: /行程/ }).click();
-      await page.locator('.tl-row .info').nth(1).click();
+      await page.locator('.tl-row button.info').first().click();
       await page.locator('.pp-body h1').waitFor();
       await page.waitForTimeout(300);
       await noSideScroll(page);

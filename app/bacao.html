@@ -567,7 +567,7 @@ ul.tips { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14p
 .day-note { font-size: 13.5px; color: var(--ink-2); background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 6px; box-shadow: var(--shadow-card); }
 .tl-row .info { border: 0; background: none; padding: 0; text-align: left; color: inherit; }
 .tl-row .info small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tl-row .more { width: 34px; height: 34px; color: var(--muted); }
+.tl-row .more, .tl-row .fl-edit { width: 34px; height: 34px; color: var(--muted); }
 .tl-row .stay-ph { display: grid; place-items: center; background: var(--c-stay-bg); color: var(--c-stay); }
 .tl-row.changed { margin-inline: -8px; padding-inline: 8px; }
 .route-card { display: grid; gap: 12px; align-content: start; }
@@ -2369,11 +2369,59 @@ function appendStops(plan, dayIndex, places) {
   days.forEach((d, i) => { if (i !== dayIndex) d.stops = d.stops.filter(s => !ids.has(s.placeId)); });
   const changed = [];
   for (const p of fresh) {
-    day.stops.push({ time: '', kind: 'visit', placeId: p.id, name: p.name, nameLocal: p.nameLocal || '', city: p.city || day.city || '', country: p.country || '',
-      lat: hasCoord(p) ? p.lat : null, lng: hasCoord(p) ? p.lng : null, category: p.category || 'other', stayMin: p.durationMin || null, what: '', tip: '', spend: null, suggested: false, travel: null });
+    day.stops.push(stopFromPlace(p, day));
     changed.push(`${dayIndex}:${day.stops.length - 1}`);
   }
   return { days, unplaced: unplacedIn.filter(u => !ids.has(u.placeId)), added: fresh.length, changed };
+}
+/** A stop for a saved place, without a time or a leg yet (filled in by hand or by the next AI revision). */
+function stopFromPlace(p, day) {
+  return { time: '', kind: 'visit', placeId: p.id, name: p.name, nameLocal: p.nameLocal || '', city: p.city || (day && day.city) || '', country: p.country || '',
+    lat: hasCoord(p) ? p.lat : null, lng: hasCoord(p) ? p.lng : null, category: p.category || 'other', stayMin: p.durationMin || null, what: '', tip: '', spend: null, suggested: false, travel: null };
+}
+/** A stop someone writes themselves ("回酒店休息"): no saved place and no coordinates, and never an AI suggestion. */
+function ownStop(form, day, country) {
+  return { time: normTime(form.time), kind: 'visit', placeId: null, name: str(form.name, 60), nameLocal: '', city: (day && day.city) || '', country: country || '',
+    lat: null, lng: null, category: CAT_LABEL[form.category] ? form.category : 'other', stayMin: clampNum(form.stayMin, 0, 720), what: para(form.what, 300), tip: '',
+    spend: null, suggested: false, travel: null };
+}
+/**
+ * The days with one stop added by hand: among the timed stops by its time, else at the end of the day. A saved place
+ * leaves the still-to-place list. Returns {days, unplaced, index}.
+ */
+function insertStop(plan, dayIndex, stop) {
+  const days = ((plan && plan.days) || []).map(d => ({ ...d, stops: (d.stops || []).slice() }));
+  const unplaced = ((plan && plan.unplaced) || []).filter(u => !stop.placeId || u.placeId !== stop.placeId);
+  const day = days[dayIndex];
+  if (!day) return { days, unplaced, index: -1 };
+  const time = normTime(stop.time);
+  const later = time ? day.stops.findIndex(s => s.time && s.time > time) : -1;
+  const index = later >= 0 ? later : day.stops.length;
+  day.stops.splice(index, 0, { ...stop, time });
+  return { days, unplaced, index };
+}
+/** The AI-lit "day:stop" keys after a stop is inserted at `index` of one day: later rows of that day move down one. */
+function shiftChanged(changed, dayIndex, index) {
+  return (changed || []).map(k => {
+    const [d, s] = k.split(':').map(Number);
+    return d === dayIndex && s >= index ? `${d}:${s + 1}` : k;
+  });
+}
+/**
+ * The days after one stop is edited by hand. `form` holds the inputs as typed: time, name, stayMin, what, tip, spend,
+ * and the leg there as mode, minutes, fare, detail (no mode: no leg).
+ */
+function editStop(plan, dayIndex, stopIndex, form) {
+  const days = ((plan && plan.days) || []).map(d => ({ ...d, stops: (d.stops || []).slice() }));
+  const s = days[dayIndex] && days[dayIndex].stops[stopIndex];
+  if (!s) return days;
+  const spend = num(form.spend);
+  days[dayIndex].stops[stopIndex] = {
+    ...s, time: normTime(form.time), name: str(form.name, 60) || s.name, stayMin: clampNum(form.stayMin, 0, 720), what: para(form.what, 300), tip: para(form.tip, 300),
+    spend: spend != null && spend >= 0 ? spend : null,
+    travel: MODES[form.mode] ? normalizeTravel({ ...(s.travel || {}), mode: form.mode, minutes: form.minutes, fare: form.fare, detail: form.detail }) : null,
+  };
+  return days;
 }
 /** Which stops are new or moved after an AI revision ({dayIndex: [stopIndex]}), so they stay lit until seen. */
 function diffPlan(oldPlan, newPlan) {
@@ -2385,6 +2433,53 @@ function diffPlan(oldPlan, newPlan) {
     if (idx.length) changed[i] = idx;
   });
   return changed;
+}
+
+/* --- flights --- */
+const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+/** A flight leg as typed: number, airports, take-off and landing in local time ("2026-11-19T08:30"); null when empty. */
+function normFlight(leg) {
+  if (!leg || typeof leg !== 'object') return null;
+  const at = v => { const s = String(v || '').slice(0, 16); return DATETIME_RE.test(s) ? s : ''; };
+  const f = { flightNo: str(leg.flightNo, 12).replace(/\s+/g, '').toUpperCase(), from: str(leg.from, 40), to: str(leg.to, 40), depart: at(leg.depart), arrive: at(leg.arrive) };
+  return f.flightNo || f.from || f.to || f.depart || f.arrive ? f : null;
+}
+/** trip.flights cleaned: {out, back}, each a leg or null. */
+function normFlights(flights) {
+  const f = flights && typeof flights === 'object' ? flights : {};
+  return { out: normFlight(f.out), back: normFlight(f.back) };
+}
+/** The day (0-based) a flight shows on: the landing day on the way out, the take-off day on the way back; without dates, the first and the last day. */
+function flightDay(trip, which) {
+  const leg = normFlights(trip.flights)[which];
+  const days = Math.max(1, trip.days || ((trip.plan && trip.plan.days) || []).length || 1);
+  const when = leg ? (which === 'out' ? leg.arrive || leg.depart : leg.depart || leg.arrive) : '';
+  const start = parseDate(trip.startDate), d = parseDate(when.slice(0, 10));
+  const i = start && d ? Math.round((d - start) / 864e5) : which === 'out' ? 0 : days - 1;
+  return Math.min(days - 1, Math.max(0, i));
+}
+/** When to be at the airport for a take-off ("2026-11-23T18:00" → "15:00"): international flights, 3 hours ahead. */
+function airportBy(depart, hours = 3) {
+  const m = /T(\d{2}):(\d{2})$/.exec(depart || '');
+  if (!m) return '';
+  const t = +m[1] * 60 + +m[2] - hours * 60, mins = (t + 1440) % 1440;
+  return `${t < 0 ? '前一天 ' : ''}${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+}
+/** "CI722 · 11月19日 08:30 吉隆坡 KUL → 13:20 桃园 TPE" (the landing date only when it is another day). */
+function flightLine(leg) {
+  if (!leg) return '';
+  const date = at => fmtCnDate(at.slice(0, 10)), hm = at => at.slice(11, 16);
+  const dep = leg.depart ? `${date(leg.depart)} ${hm(leg.depart)}` : '';
+  const arr = leg.arrive ? `${leg.depart && leg.depart.slice(0, 10) === leg.arrive.slice(0, 10) ? '' : date(leg.arrive) + ' '}${hm(leg.arrive)}` : '';
+  const route = [[dep, leg.from].filter(Boolean).join(' '), [arr, leg.to].filter(Boolean).join(' ')].filter(Boolean).join(' → ');
+  return [leg.flightNo, route].filter(Boolean).join(' · ');
+}
+/** The flights as prompt lines, with how they bound the first and the last day (none without flights). */
+function flightPromptLines(flights) {
+  const f = normFlights(flights), out = [];
+  if (f.out) out.push(`去程航班：${flightLine(f.out)}（当地时间）。第一天从落地后开始安排：入境、取行李、去市区或酒店大约 1.5–2 小时，落地前不要排任何地点。`);
+  if (f.back) out.push(`回程航班：${flightLine(f.back)}（当地时间）。最后一天要在起飞前 3 小时${f.back.depart ? `（${airportBy(f.back.depart)}）` : ''}到机场：最后一站之后留出去机场的时间，并在最后一站的 tip 里写怎么去机场。`);
+  return out;
 }
 
 /* --- map links --- */
@@ -2542,6 +2637,7 @@ function buildPlanPrompt({ trip, stays, places, groupsByCity, lang, allowSuggest
   return [
     `你是熟悉${cities.join('、')}的旅行规划师。根据用户和旅伴收藏的地点，排一份 ${trip.days} 天的${multi ? '跨城市' : ''}行程。`,
     `日期：${start}。城市和天数（按顺序）：${stayLine(stays)}。交通偏好：${TRANSPORTS[trip.prefs.transport] || '公共交通'}。`,
+    ...flightPromptLines(trip.flights),
     trip.prefs.notes ? `用户的其他要求：${trip.prefs.notes}` : null,
     '',
     '收藏的地点（每行一个 JSON；priority=很想去 的优先保证）：',
@@ -2571,6 +2667,7 @@ function buildRevisePrompt({ trip, places, feedback, lang, allowSuggest }) {
   return [
     `你是熟悉${cities.join('、')}的旅行规划师。下面是已经排好的 ${trip.days} 天行程，用户想调整。`,
     `城市和天数：${stayLine(stays)}。`,
+    ...flightPromptLines(trip.flights),
     `用户的要求：${feedback}`,
     '',
     '当前行程（简化 JSON）：',
@@ -2629,7 +2726,9 @@ function assistantContext({ places, trips, today, focus }) {
   if (!trips.length) lines.push('（还没有行程）');
   for (const t of trips.slice(0, 8)) {
     const days = ((t.plan && t.plan.days) || []).map(d => `Day${d.day}${d.city ? '·' + d.city : ''}：${d.stops.map(s => s.name).join('→')}`).join('；');
-    lines.push(`${t.id}「${t.title}」${tripCities(t).join('+')} ${t.days} 天${t.startDate ? '，' + t.startDate + ' 出发' : ''}。${days}`);
+    const fl = normFlights(t.flights);
+    const flights = [fl.out && `去程 ${flightLine(fl.out)}`, fl.back && `回程 ${flightLine(fl.back)}`].filter(Boolean).join('；');
+    lines.push(`${t.id}「${t.title}」${tripCities(t).join('+')} ${t.days} 天${t.startDate ? '，' + t.startDate + ' 出发' : ''}。${flights ? `航班：${flights}。` : ''}${days}`);
   }
   if (focus) lines.push('--- 用户正在看 ---', focus);
   return lines.join('\n').slice(0, 24000);
@@ -2772,6 +2871,9 @@ function tripToMarkdown(trip, placesById) {
   const out = [`# ${tripTitle(trip)}`, ''];
   const bases = (p.bases || []).map(b => `${b.city}住 ${b.name}`).join('，');
   out.push([tripCities(trip).join(' → '), `${trip.days} 天`, trip.startDate ? `${trip.startDate} 出发` : '', bases].filter(Boolean).join(' · '), '');
+  const fl = normFlights(trip.flights);
+  const legs = [['去程', fl.out], ['回程', fl.back]].filter(([, l]) => l);
+  if (legs.length) out.push('## 航班', ...legs.map(([k, l]) => `- ${k}：${flightLine(l)}`), '');
   if (p.summary) out.push(`> ${p.summary}`, '');
   if (p.tips && p.tips.length) out.push('## 实用提示', ...p.tips.map(t => `- ${t}`), '');
   for (const d of p.days) {
@@ -2792,6 +2894,8 @@ function tripToMarkdown(trip, placesById) {
 function tripToText(trip) {
   const p = { days: [], ...(trip.plan || {}) };
   const lines = [`【${tripTitle(trip)}】`];
+  const fl = normFlights(trip.flights);
+  for (const [k, l] of [['去程', fl.out], ['回程', fl.back]]) if (l) lines.push(`✈ ${k} ${flightLine(l)}`);
   for (const d of p.days) {
     lines.push('', `Day ${d.day}${d.city ? ' ' + d.city : ''}${d.theme ? ' · ' + d.theme : ''}${d.date ? `（${d.date}）` : ''}`);
     for (const s of d.stops) {
@@ -4223,6 +4327,8 @@ function OverviewTab({ ctx, trip, openDay }) {
   const people = [...new Set([trip.createdBy, ...scope.map(p => p.createdBy)].filter(Boolean))];
   const multi = tripCities(trip).length > 1;
   const photos = tripPhotos(trip, ctx.placesById, ctx.places, 8);
+  const fl = normFlights(trip.flights);
+  const editFlights = () => ctx.openSheet({ type: 'tripEdit', tripId: trip.id });
   return html`<div class="stack" style=${{ marginTop: '16px' }}>
     ${photos.length ? html`<div class="ov-photos">${photos.map(ph => html`<${Photo} key=${ph.id} id=${ph.id} cat=${ph.cat} alt="" />`)}</div>` : null}
     ${plan.summary ? html`<p class="lead">${plan.summary}</p>` : null}
@@ -4242,6 +4348,13 @@ function OverviewTab({ ctx, trip, openDay }) {
         <span class="grow"><b>${[multi ? d.city : '', d.area].filter(Boolean).join(' · ') || d.theme || `第 ${i + 1} 天`}</b><small>${d.theme && (d.area || multi) ? d.theme + ' · ' : ''}${(d.stops || []).length} 站</small></span>
         <${Icon} name="chevronRight" size=${18} /></button>`)}</div>
     </section>` : null}
+    ${fl.out || fl.back ? html`<section class="card pad">
+      <div class="row" style=${{ justifyContent: 'space-between' }}><h3 class="card-title" style=${{ marginBottom: 0 }}>航班</h3>
+        <button class="btn ghost sm" onClick=${editFlights}><${Icon} name="edit" size=${15} />修改</button></div>
+      <div class="stack" style=${{ gap: '8px', marginTop: '10px' }}>${FLIGHT_LEGS.filter(([k]) => fl[k]).map(([k, label]) => html`<div class="row" key=${k} style=${{ alignItems: 'flex-start' }}>
+        <span class="tag transport">${label}</span><span class="grow">${flightLine(fl[k])}</span></div>`)}</div>
+    </section>`
+    : html`<button class="card pad empty-row" onClick=${editFlights}><${Icon} name="flight" />还没填航班。填上起飞和降落时间，AI 排第一天和最后一天时会按航班来。</button>`}
     ${plan.bases.length ? html`<section class="card pad">
       <h3 class="card-title">住宿</h3>
       <div class="stack" style=${{ gap: '8px' }}>${plan.bases.map(b => html`<div class="row"><span class="tag stay">${b.city || '住'}</span><span class="grow">${b.name}</span>
@@ -4287,16 +4400,18 @@ function PlanTab({ ctx, trip, dayIdx, setDayIdx, setTab }) {
           <div class="grow"><h2>Day ${i + 1}${day.city || day.area ? ' — ' : ''}${[day.city, day.area].filter(Boolean).join(' · ')}</h2>
             <p>${[day.theme, `${(day.stops || []).length} 站`, moveMin ? `路上约 ${fmtMin(moveMin)}` : ''].filter(Boolean).map((t, k) => html`${k ? ' · ' : ''}<span class="nb">${t}</span>`)}</p></div>
           ${!wide ? html`<button class="btn sm" onClick=${() => setTab('map')}><${Icon} name="map" size=${15} />地图</button>` : null}
+          <button class="icon-btn bordered" aria-label=${`编辑 Day ${i + 1} 的主题和备注`} onClick=${() => ctx.openSheet({ type: 'dayEdit', tripId: trip.id, dayIndex: i })}><${Icon} name="edit" size=${18} /></button>
         </div>
         ${day.note ? html`<p class="day-note">${day.note}</p>` : null}
         ${changed.size ? html`<div class="changed-note"><${Icon} name="sparkle" size=${18} /><span class="grow">AI 改了这一天的 ${changed.size} 处，已用黄色标出。</span>
           <button class="btn sm" onClick=${ack}>知道了</button></div>` : null}
         <${Timeline} ctx=${ctx} trip=${trip} day=${day} dayIndex=${i} base=${base} cur=${cur} changed=${changed} />
+        <div style=${{ marginTop: '6px', paddingLeft: '82px' }}><button class="btn sm" onClick=${() => ctx.openSheet({ type: 'addStop', tripId: trip.id, dayIndex: i })}><${Icon} name="plus" size=${15} stroke=${2.2} />加一站</button></div>
         <div class="day-actions">
           <button class="cta ai" onClick=${() => ctx.openSheet({ type: 'revise', tripId: trip.id, dayIndex: i })}><${Icon} name="sparkle" size=${20} />AI 优化这一天</button>
           ${link ? html`<a class="square-btn" href=${link} target="_blank" rel="noopener noreferrer" aria-label="在 Google 地图打开这一天的全程" title="在 Google 地图打开这一天的全程"><${Icon} name="external" /></a>` : null}
         </div>
-        <p class="hint" style=${{ marginTop: '10px' }}>交通线路和时间是 AI 估计的，出发前点每段的「路线」用地图 App 看实时班次。</p>
+        <p class="hint" style=${{ marginTop: '10px' }}>交通线路和时间是 AI 估计的，出发前点每段的「路线」用地图 App 看实时班次。点每一站右边的 ⋯ 可以自己改。</p>
       </div>
       ${wide ? html`<aside class="side"><${DayMap} ctx=${ctx} trip=${trip} dayIdx=${i} height=${520} /></aside>` : null}
     </div>
@@ -4307,7 +4422,12 @@ function Timeline({ ctx, trip, day, dayIndex, base, cur, changed }) {
   const stops = day.stops || [];
   const rows = [];
   const hasBase = !!(base && base.name);
-  const total = stops.length + (hasBase ? 1 : 0);
+  // The flight in heads the day it lands on; the flight home closes the day it leaves on.
+  const fl = normFlights(trip.flights);
+  const landing = fl.out && flightDay(trip, 'out') === dayIndex ? fl.out : null;
+  const leaving = fl.back && flightDay(trip, 'back') === dayIndex ? fl.back : null;
+  const lead = (landing ? 1 : 0) + (hasBase ? 1 : 0);
+  const total = stops.length + lead + (leaving ? 1 : 0);
   const pos = k => (total === 1 ? ' only' : k === 0 ? ' first' : k === total - 1 ? ' last' : '');
   const where = s => ({ ...s, city: s.city || day.city, country: s.country || trip.country });
   // A transfer's journey ends at its arrival station when the plan gives one, else at the next stop.
@@ -4318,18 +4438,20 @@ function Timeline({ ctx, trip, day, dayIndex, base, cur, changed }) {
     return next ? where(next) : null;
   };
   const startPt = hasBase ? { ...base, city: base.city || day.city, country: trip.country } : null;
+  if (landing) rows.push(html`<${FlightRow} key="fl-out" ctx=${ctx} trip=${trip} leg=${landing} out cls=${pos(0)} />`);
   if (hasBase) {
     const t0 = stops[0] && stops[0].travel;
-    rows.push(html`<li key="base" class=${'tl-row' + pos(0)}>
+    rows.push(html`<li key="base" class=${'tl-row' + pos(landing ? 1 : 0)}>
       <time></time><span class="rail"><span class="dot base"></span></span>
       <div class="photo stay-ph"><${Icon} name="stay" size=${24} /></div>
-      <div class="info"><b>酒店出发</b><small>从${spaced(base.name)}出发${t0 && t0.minutes ? ` · 约 ${fmtMin(t0.minutes)}` : ''}</small></div><span></span>
+      <div class="info">${landing ? html`<b>先到住处放行李</b><small>${base.name}</small>`
+        : html`<b>酒店出发</b><small>从${spaced(base.name)}出发${t0 && t0.minutes ? ` · 约 ${fmtMin(t0.minutes)}` : ''}</small>`}</div><span></span>
     </li>`);
   }
   stops.forEach((s, j) => {
     const before = stops[j - 1];
     const prev = j === 0 ? startPt : before.kind === 'transfer' ? arrival(j - 1) : where(before);
-    const row = html`<${StopRow} key=${'s' + j} ctx=${ctx} trip=${trip} s=${s} j=${j} dayIndex=${dayIndex} cls=${pos(j + (hasBase ? 1 : 0))} lit=${changed.has(j)} cur=${cur} />`;
+    const row = html`<${StopRow} key=${'s' + j} ctx=${ctx} trip=${trip} s=${s} j=${j} dayIndex=${dayIndex} cls=${pos(j + lead)} lit=${changed.has(j)} cur=${cur} />`;
     if (s.kind === 'transfer') {
       rows.push(row);
       if (s.travel) rows.push(html`<${Leg} key=${'l' + j} ctx=${ctx} from=${prev} to=${arrival(j)} travel=${s.travel} cur=${cur} />`);
@@ -4338,8 +4460,22 @@ function Timeline({ ctx, trip, day, dayIndex, base, cur, changed }) {
       rows.push(row);
     }
   });
-  if (!stops.length) return html`<p class="hint" style=${{ padding: '12px 0' }}>这一天还没有安排。可以点「AI 优化这一天」，或者从「待安排」里加地点。</p>`;
-  return html`<ol class="tl">${rows}</ol>`;
+  if (leaving) rows.push(html`<${FlightRow} key="fl-back" ctx=${ctx} trip=${trip} leg=${leaving} cls=${pos(total - 1)} />`);
+  const empty = stops.length ? null : html`<p class="hint" style=${{ padding: '12px 0' }}>这一天还没有安排。点下面的「加一站」，或者让 AI 优化这一天。</p>`;
+  return stops.length || landing || leaving ? html`<ol class="tl">${rows}</ol>${empty}` : empty;
+}
+/** A flight on the day: landing above the first stop, take-off (and when to be at the airport) below the last. */
+function FlightRow({ ctx, trip, leg, out, cls }) {
+  const hm = at => (at ? at.slice(11, 16) : '');
+  const sub = out
+    ? [leg.flightNo, leg.depart ? `${hm(leg.depart)} ${leg.from ? `从${spaced(leg.from)}` : ''}起飞` : ''].filter(Boolean).join(' · ')
+    : [leg.flightNo, leg.to ? `飞往${spaced(leg.to)}`.trim() : '', leg.depart ? `建议 ${airportBy(leg.depart)} 前到机场` : ''].filter(Boolean).join(' · ');
+  return html`<li class=${'tl-row transfer' + cls}>
+    <time>${hm(out ? leg.arrive : leg.depart)}</time><span class="rail"><span class="dot base"></span></span>
+    <div class="photo"><${Icon} name="flight" size=${24} /></div>
+    <div class="info"><b><span class="nm">${out ? `${leg.to || '机场'} 落地` : `${leg.from || '机场'} 起飞`}</span><span class="tag transport">航班</span></b>${sub ? html`<small>${sub}</small>` : null}</div>
+    <button class="icon-btn fl-edit" aria-label=${out ? '改去程航班' : '改回程航班'} onClick=${() => ctx.openSheet({ type: 'tripEdit', tripId: trip.id })}><${Icon} name="edit" /></button>
+  </li>`;
 }
 function Leg({ ctx, from, to, travel, cur }) {
   const link = from && to ? legLink(from, to, travel.mode, ctx.prefs.mapPref) : null;
@@ -4644,6 +4780,27 @@ function PlanProposal({ ctx, plan, proposal, dayIndex }) {
   </div>`;
 }
 
+const FLIGHT_LEGS = [['out', '去程'], ['back', '回程']];
+/** The way out and the way back as typed: flight number, airports, take-off and landing in each airport's local time. */
+function FlightFields({ value, onChange }) {
+  const set = (k, patch) => onChange({ ...value, [k]: { ...(value[k] || {}), ...patch } });
+  return html`<div class="stack" style=${{ gap: '8px' }}>${FLIGHT_LEGS.map(([k, label]) => {
+    const f = value[k] || {};
+    return html`<div class="stay-row" key=${k}>
+      <div class="row"><span class="tag transport"><${Icon} name="flight" size=${13} />${label}</span>
+        <input id=${`fl-${k}-no`} class="input grow" aria-label=${`${label}航班号`} placeholder="航班号（可选）" value=${f.flightNo || ''} onInput=${e => set(k, { flightNo: e.target.value })} /></div>
+      <div class="grid2">
+        <input id=${`fl-${k}-from`} class="input" aria-label=${`${label}出发机场`} placeholder="出发机场，例如 吉隆坡 KUL" value=${f.from || ''} onInput=${e => set(k, { from: e.target.value })} />
+        <input id=${`fl-${k}-to`} class="input" aria-label=${`${label}到达机场`} placeholder="到达机场，例如 桃园 TPE" value=${f.to || ''} onInput=${e => set(k, { to: e.target.value })} />
+      </div>
+      <div class="grid2">
+        <label class="field"><span class="hint">起飞（当地时间）</span><input id=${`fl-${k}-depart`} class="input" type="datetime-local" value=${f.depart || ''} onInput=${e => set(k, { depart: e.target.value })} /></label>
+        <label class="field"><span class="hint">降落（当地时间）</span><input id=${`fl-${k}-arrive`} class="input" type="datetime-local" value=${f.arrive || ''} onInput=${e => set(k, { arrive: e.target.value })} /></label>
+      </div>
+    </div>`;
+  })}</div>`;
+}
+
 function TripFormSheet({ ctx, initial, onClose }) {
   const { places } = ctx;
   const replacing = initial.replaceId ? ctx.trips.find(t => t.id === initial.replaceId) : null;
@@ -4674,6 +4831,14 @@ function TripFormSheet({ ctx, initial, onClose }) {
   const [notes, setNotes] = useState(str(initial.notes, 300) || (replacing && replacing.prefs && replacing.prefs.notes) || '');
   const [budget, setBudget] = useState(replacing && replacing.budget ? String(replacing.budget) : '');
   const [suggest, setSuggest] = useState(!replacing || !replacing.prefs || replacing.prefs.suggest !== false);
+  const [flights, setFlights] = useState(() => (replacing && replacing.flights) || {});
+  const [showFlights, setShowFlights] = useState(() => { const f = normFlights(replacing && replacing.flights); return !!(f.out || f.back); });
+  // Day 1 is the day you land: an empty start date takes the landing date.
+  const onFlights = f => {
+    setFlights(f);
+    const out = normFlight(f.out), day = out ? (out.arrive || out.depart).slice(0, 10) : '';
+    if (day && !startDate) setStartDate(day);
+  };
   const [picked, setPicked] = useState(() => {
     if (replacing) return new Set(initIds.filter(id => !(replacing.skipped || []).includes(id)));
     return new Set([...initIds, ...places.filter(p => p.status !== 'visited' && stays.some(s => sameCity(s.city, p.city))).map(p => p.id)]);
@@ -4704,7 +4869,7 @@ function TripFormSheet({ ctx, initial, onClose }) {
 
   async function generate() {
     const st = stays.map(s => ({ city: s.city, days: s.days, base: hotels[s.city] && hotels[s.city].trim() ? { name: hotels[s.city].trim() } : null }));
-    const trip = { days: total, startDate, stays: st, prefs: { pace, transport, notes: notes.trim() } };
+    const trip = { days: total, startDate, stays: st, prefs: { pace, transport, notes: notes.trim() }, flights: normFlights(flights) };
     const country = (chosen.find(p => p.country && cities.some(c => sameCity(c, p.city))) || chosen.find(p => p.country) || {}).country || '';
     await job.run(async (onText, signal) => {
       const groupsByCity = {};
@@ -4717,7 +4882,7 @@ function TripFormSheet({ ctx, initial, onClose }) {
       const now = Date.now();
       const id = replacing ? replacing.id : uid('t');
       const doc = {
-        id, title: plan.title || `${cities.join(' · ')} ${total} 日`, city: st[0].city, cities, country, days: total, startDate, stays: st, base: plan.base,
+        id, title: plan.title || `${cities.join(' · ')} ${total} 日`, city: st[0].city, cities, country, days: total, startDate, stays: st, flights: trip.flights, base: plan.base,
         prefs: { ...trip.prefs, suggest }, budget: num(budget) > 0 ? num(budget) : null, placeIds: chosen.map(p => p.id), plan, changed: [], skipped: [],
         createdBy: replacing ? replacing.createdBy || null : ctx.me, example: false, createdAt: replacing ? replacing.createdAt || now : now, updatedAt: now,
       };
@@ -4753,6 +4918,10 @@ function TripFormSheet({ ctx, initial, onClose }) {
           <div class="stepper"><button aria-label="少一天" onClick=${() => setTotal(total - 1)}><${Icon} name="minus" size=${16} /></button><b class="num">${total} 天</b><button aria-label="多一天" onClick=${() => setTotal(total + 1)}><${Icon} name="plus" size=${16} /></button></div></div>
         <div class="field"><label for="tp-date">出发日期（可选）</label><input id="tp-date" class="input" type="date" value=${startDate} onInput=${e => setStartDate(e.target.value)} /></div>
       </div>
+      <div class="field"><span class="label">航班（可选）</span>
+        ${showFlights ? html`<${FlightFields} value=${flights} onChange=${onFlights} />
+          <p class="hint">AI 会从落地后开始排第一天，最后一天留出去机场的时间。出发日期没填时，落地那天就是 Day 1。</p>`
+          : html`<div><button class="btn sm" onClick=${() => setShowFlights(true)}><${Icon} name="flight" size=${15} />填航班时间</button></div>`}</div>
       <div class="grid2">
         <div class="field"><span class="label">节奏</span><div class="chips wrap">${Object.entries(PACES).map(([k, v]) => html`<button class="chip" aria-pressed=${pace === k} onClick=${() => setPace(k)}>${v}</button>`)}</div></div>
         <div class="field"><span class="label">交通</span><div class="chips wrap">${Object.entries(TRANSPORTS).map(([k, v]) => html`<button class="chip" aria-pressed=${transport === k} onClick=${() => setTransport(k)}>${v}</button>`)}</div></div>
@@ -4810,10 +4979,12 @@ function AddToTripSheet({ ctx, placeIds, sameDay, onClose }) {
   <//>`;
 }
 
+const MODE_CHOICES = [['', '不写'], ['walk', '步行'], ['metro', '地铁'], ['train', '火车 / 电车'], ['tram', '有轨电车'], ['bus', '巴士'], ['taxi', '打车'], ['drive', '自驾'], ['ferry', '渡轮'], ['bike', '骑行'], ['flight', '飞机']];
 function StopSheet({ ctx, trip, dayIndex, stopIndex, onClose }) {
   const plan = planOf(trip);
   const day = plan.days[dayIndex];
   const s = day && (day.stops || [])[stopIndex];
+  const [form, setForm] = useState(null);
   if (!s) return html`<${Sheet} title="这一站" onClose=${onClose}><p class="hint">这一站已经不在行程里了。</p><//>`;
   const p = s.placeId ? ctx.placesById[s.placeId] : null;
   const cur = plan.currency || tripCurrency(trip, ctx.places);
@@ -4850,6 +5021,41 @@ function StopSheet({ ctx, trip, dayIndex, stopIndex, onClose }) {
     ['花费', s.spend ? `约 ${fmtMoney(s.spend, cur)}${spendHome != null && cur !== ctx.home ? ` · ≈ ${fmtMoney(spendHome, ctx.home, true)}` : ''}` : s.spend === 0 ? '免费' : ''],
     ['怎么过来', travelLine(s.travel, cur)],
   ].filter(f => f[1]);
+  const startEdit = () => setForm({
+    time: s.time || '', name: s.name || '', stayMin: s.stayMin != null ? String(s.stayMin) : '', what: s.what || '', tip: s.tip || '',
+    spend: s.spend != null ? String(s.spend) : '', mode: (s.travel && s.travel.mode) || '', minutes: s.travel && s.travel.minutes != null ? String(s.travel.minutes) : '',
+    fare: s.travel && s.travel.fare != null ? String(s.travel.fare) : '', detail: (s.travel && s.travel.detail) || '',
+  });
+  const set = patch => setForm(f => ({ ...f, ...patch }));
+  async function saveEdit() {
+    const days = editStop(plan, dayIndex, stopIndex, form);
+    // A stop changed by hand is the user's now: it no longer counts as an AI change.
+    if (await ctx.write('update', 'trips', trip.id, { plan: { days }, changed: (trip.changed || []).filter(k => k !== `${dayIndex}:${stopIndex}`), updatedAt: Date.now() })) {
+      ctx.toast('这一站改好了'); onClose();
+    }
+  }
+  const money = cur || '当地货币';
+  if (form) {
+    return html`<${Sheet} title=${`编辑 Day ${dayIndex + 1} · 第 ${stopIndex + 1} 站`} onClose=${onClose}
+        footer=${html`<button class="btn" onClick=${() => setForm(null)}>取消</button><button class="btn green" onClick=${saveEdit}>保存</button>`}>
+      <div class="grid2">
+        <div class="field"><label for="se-time">时间</label><input id="se-time" class="input" type="time" value=${form.time} onInput=${e => set({ time: e.target.value })} /></div>
+        <div class="field"><label for="se-stay">停留多久（分钟）</label><input id="se-stay" class="input" inputmode="numeric" value=${form.stayMin} onInput=${e => set({ stayMin: e.target.value })} /></div>
+      </div>
+      <div class="field"><label for="se-name">名称</label><input id="se-name" class="input" value=${form.name} onInput=${e => set({ name: e.target.value })} /></div>
+      <div class="field"><label for="se-what">做什么</label><textarea id="se-what" class="input" rows="2" value=${form.what} onInput=${e => set({ what: e.target.value })}></textarea></div>
+      <div class="field"><label for="se-tip">小贴士</label><textarea id="se-tip" class="input" rows="2" value=${form.tip} onInput=${e => set({ tip: e.target.value })}></textarea></div>
+      <div class="field"><label for="se-spend">每人花费（${money}）</label><input id="se-spend" class="input" inputmode="decimal" value=${form.spend} onInput=${e => set({ spend: e.target.value })} placeholder="免费写 0，不知道就空着" /></div>
+      <div class="field"><span class="label">怎么过来</span>
+        <div class="grid2">
+          <select id="se-mode" class="input" aria-label="交通方式" value=${form.mode} onChange=${e => set({ mode: e.target.value })}>${MODE_CHOICES.map(([k, v]) => html`<option value=${k}>${v}</option>`)}</select>
+          <input id="se-min" class="input" inputmode="numeric" aria-label="路上几分钟" placeholder="路上几分钟" disabled=${!form.mode} value=${form.minutes} onInput=${e => set({ minutes: e.target.value })} />
+          <input id="se-fare" class="input" inputmode="decimal" aria-label=${`车费（${money}）`} placeholder=${`车费（${money}）`} disabled=${!form.mode} value=${form.fare} onInput=${e => set({ fare: e.target.value })} />
+          <input id="se-detail" class="input" aria-label="怎么走" placeholder="例如：地铁 2 号线 弘大入口→市厅" disabled=${!form.mode} value=${form.detail} onInput=${e => set({ detail: e.target.value })} />
+        </div></div>
+      <p class="hint">自己改的地方不会标黄。改完也可以再让 AI 优化这一天。</p>
+    <//>`;
+  }
   return html`<${Sheet} title=${`Day ${dayIndex + 1} · 第 ${stopIndex + 1} 站`} onClose=${onClose}>
     <div class="row" style=${{ gap: '12px', alignItems: 'flex-start' }}>
       <${Photo} id=${p && p.coverAssetId} cat=${s.category} className="thumb" />
@@ -4861,6 +5067,7 @@ function StopSheet({ ctx, trip, dayIndex, stopIndex, onClose }) {
     ${s.tip ? html`<div class="ai-box"><h3><${Icon} name="bot" size=${17} />小贴士</h3><p>${s.tip}</p></div>` : null}
     ${facts.length ? html`<dl class="facts">${facts.map(([k, v]) => html`<div><dt>${k}</dt><dd>${v}</dd></div>`)}${facts.length % 2 ? html`<div></div>` : null}</dl>` : null}
     <div class="row wrap">
+      <button class="btn sm" onClick=${startEdit}><${Icon} name="edit" size=${15} />编辑这一站</button>
       ${s.kind !== 'transfer' ? html`<${ExtLink} href=${placeLink(here, ctx.prefs.mapPref)}><${Icon} name="map" size=${15} />地图<//>` : null}
       ${prev ? html`<${ExtLink} href=${legLink(prev, here, (s.travel && s.travel.mode) || 'walk', ctx.prefs.mapPref)}><${Icon} name="compass" size=${15} />路线<//>` : null}
       ${p ? html`<button class="btn sm" onClick=${() => { onClose(); ctx.nav.push({ name: 'place', id: p.id }); }}><${Icon} name="info" size=${15} />地点详情</button>` : null}
@@ -4873,6 +5080,70 @@ function StopSheet({ ctx, trip, dayIndex, stopIndex, onClose }) {
         ${plan.days.length > 1 ? plan.days.map((d, j) => (j === dayIndex ? null : html`<button class="btn sm" key=${j} onClick=${() => toDay(j)}>移到 Day ${j + 1}</button>`)) : null}
       </div></div>
     <div><${ConfirmButton} className="sm" label="从这一天移除" armedLabel="确认移除" icon="trash" onConfirm=${remove} /></div>
+  <//>`;
+}
+/** Add a stop to one day by hand: a saved place from this trip, or one the user writes ("回酒店休息"). Nothing is lit. */
+function AddStopSheet({ ctx, trip, dayIndex, onClose }) {
+  const plan = planOf(trip);
+  const day = plan.days[dayIndex];
+  const [mode, setMode] = useState('saved');
+  const [form, setForm] = useState({ name: '', time: '', category: 'other', stayMin: '', what: '' });
+  if (!day) return html`<${Sheet} title="加一站" onClose=${onClose}><p class="hint">这一天已经不在行程里了。</p><//>`;
+  const onDay = new Set((day.stops || []).map(s => s.placeId).filter(Boolean));
+  const inTrip = tripPlaces(trip, ctx.places).filter(p => !onDay.has(p.id));
+  const local = inTrip.filter(p => day.city && sameCity(p.city, day.city));
+  const pool = (local.length ? local : inTrip).slice().sort(byInterest);
+  const set = patch => setForm(f => ({ ...f, ...patch }));
+  async function add(stop) {
+    const r = insertStop(plan, dayIndex, stop);
+    const patch = { plan: { days: r.days, unplaced: r.unplaced }, changed: shiftChanged(trip.changed, dayIndex, r.index), updatedAt: Date.now() };
+    if (stop.placeId) {
+      patch.placeIds = [...new Set([...(trip.placeIds || []), stop.placeId])];
+      patch.skipped = (trip.skipped || []).filter(id => id !== stop.placeId);
+    }
+    if (await ctx.write('update', 'trips', trip.id, patch)) { ctx.toast(`已加到 Day ${dayIndex + 1}`); onClose(); }
+  }
+  const footer = mode === 'own' ? html`<button class="btn" onClick=${onClose}>取消</button>
+    <button class="btn green" disabled=${!form.name.trim()} onClick=${() => add(ownStop(form, day, trip.country))}><${Icon} name="plus" size=${16} stroke=${2.2} />加到 Day ${dayIndex + 1}</button>` : null;
+  return html`<${Sheet} title=${`Day ${dayIndex + 1} 加一站`} onClose=${onClose} footer=${footer}>
+    <div class="chips" role="group" aria-label="加什么">
+      <button class="chip" aria-pressed=${mode === 'saved'} onClick=${() => setMode('saved')}>从收藏选</button>
+      <button class="chip" aria-pressed=${mode === 'own'} onClick=${() => setMode('own')}>自己写一站</button>
+    </div>
+    ${mode === 'saved' ? (pool.length ? html`<div class="stack" style=${{ gap: '8px' }}>${pool.map(p => html`<button key=${p.id} class="pick-trip" aria-label=${`把「${p.name}」加到 Day ${dayIndex + 1}`} onClick=${() => add(stopFromPlace(p, day))}>
+        <${Photo} id=${p.coverAssetId} cat=${p.category} className="thumb" />
+        <span class="grow"><b>${p.name}</b><small>${[CAT_LABEL[p.category], p.area || p.city].filter(Boolean).join(' · ')}</small></span>
+        <span class="tag add">加入</span></button>`)}</div>
+      <p class="hint">加在这一天的最后。时间和交通可以点它的 ⋯ 自己填，也可以让 AI 重新排。</p>`
+      : html`<p class="hint">这趟的收藏都已经排在这一天了。可以换成「自己写一站」。</p>`)
+    : html`
+      <div class="field"><label for="as-name">名称</label><input id="as-name" class="input" value=${form.name} onInput=${e => set({ name: e.target.value })} placeholder="例如：回酒店休息、去机场" /></div>
+      <div class="grid2">
+        <div class="field"><label for="as-time">时间（可选）</label><input id="as-time" class="input" type="time" value=${form.time} onInput=${e => set({ time: e.target.value })} /></div>
+        <div class="field"><label for="as-stay">停留多久（分钟，可选）</label><input id="as-stay" class="input" inputmode="numeric" value=${form.stayMin} onInput=${e => set({ stayMin: e.target.value })} /></div>
+      </div>
+      <div class="field"><span class="label">类别</span><div class="chips wrap">${CATEGORIES.map(([k, v]) => html`<button key=${k} class="chip" aria-pressed=${form.category === k} onClick=${() => set({ category: k })}>${v}</button>`)}</div></div>
+      <div class="field"><label for="as-what">做什么（可选）</label><textarea id="as-what" class="input" rows="2" value=${form.what} onInput=${e => set({ what: e.target.value })}></textarea></div>
+      <p class="hint">填了时间会按时间插进这一天，不填就加在最后。</p>`}
+  <//>`;
+}
+/** A day's theme, area and note, edited by hand. */
+function DayEditSheet({ ctx, trip, dayIndex, onClose }) {
+  const plan = planOf(trip);
+  const day = plan.days[dayIndex];
+  const [form, setForm] = useState(() => ({ theme: (day && day.theme) || '', area: (day && day.area) || '', note: (day && day.note) || '' }));
+  if (!day) return html`<${Sheet} title="这一天" onClose=${onClose}><p class="hint">这一天已经不在行程里了。</p><//>`;
+  const set = patch => setForm(f => ({ ...f, ...patch }));
+  async function save() {
+    const days = plan.days.map((d, i) => (i === dayIndex ? { ...d, theme: str(form.theme, 40), area: str(form.area, 40), note: para(form.note, 300) } : d));
+    if (await ctx.write('update', 'trips', trip.id, { plan: { days }, updatedAt: Date.now() })) { ctx.toast('已保存'); onClose(); }
+  }
+  return html`<${Sheet} title=${`编辑 Day ${dayIndex + 1}`} onClose=${onClose} footer=${html`<button class="btn" onClick=${onClose}>取消</button><button class="btn green" onClick=${save}>保存</button>`}>
+    <div class="grid2">
+      <div class="field"><label for="de-theme">主题</label><input id="de-theme" class="input" value=${form.theme} onInput=${e => set({ theme: e.target.value })} placeholder="例如：宫殿和韩屋" /></div>
+      <div class="field"><label for="de-area">主要区域</label><input id="de-area" class="input" value=${form.area} onInput=${e => set({ area: e.target.value })} placeholder="例如：钟路" /></div>
+    </div>
+    <div class="field"><label for="de-note">当天备注</label><textarea id="de-note" class="input" rows="3" value=${form.note} onInput=${e => set({ note: e.target.value })} placeholder="例如：早上 9 点前到景福宫，避开排队"></textarea></div>
   <//>`;
 }
 
@@ -4896,7 +5167,7 @@ function TripMenuSheet({ ctx, trip, onClose }) {
   const item = (icon, label, run) => html`<button onClick=${run}><${Icon} name=${icon} />${label}</button>`;
   return html`<${Sheet} title=${tripTitle(trip)} onClose=${onClose}>
     <div class="menu-list">
-      ${item('edit', '改名称、日期和预算', () => ctx.openSheet({ type: 'tripEdit', tripId: trip.id }))}
+      ${item('edit', '改名称、日期、预算和航班', () => ctx.openSheet({ type: 'tripEdit', tripId: trip.id }))}
       ${item('sparkle', '用 AI 调整整个行程', () => ctx.openSheet({ type: 'revise', tripId: trip.id, dayIndex: null }))}
       ${item('refresh', '改城市或天数，重新排', () => ctx.openSheet({ type: 'trip', replaceId: trip.id }))}
       ${item('bot', '问 AI 这趟行程', () => { onClose(); ctx.askAssistant(`帮我看看「${tripTitle(trip)}」这趟行程，有什么可以优化的？`, `用户在看行程 ${trip.id}「${tripTitle(trip)}」`); })}
@@ -4912,9 +5183,10 @@ function TripEditSheet({ ctx, trip, onClose }) {
   const [title, setTitle] = useState(tripTitle(trip));
   const [startDate, setStartDate] = useState(trip.startDate || '');
   const [budget, setBudget] = useState(trip.budget ? String(trip.budget) : '');
+  const [flights, setFlights] = useState(() => trip.flights || {});
   async function save() {
     const plan = planOf(trip);
-    const patch = { title: str(title, 60) || tripTitle(trip), startDate, budget: num(budget) > 0 ? num(budget) : null, updatedAt: Date.now() };
+    const patch = { title: str(title, 60) || tripTitle(trip), startDate, budget: num(budget) > 0 ? num(budget) : null, flights: normFlights(flights), updatedAt: Date.now() };
     if (startDate !== (trip.startDate || '') && plan.days.length) patch.plan = { days: plan.days.map((d, i) => ({ ...d, date: startDate ? addDays(startDate, i) : '' })) };
     if (await ctx.write('update', 'trips', trip.id, patch)) { ctx.toast('已保存'); onClose(); }
   }
@@ -4924,7 +5196,8 @@ function TripEditSheet({ ctx, trip, onClose }) {
       <div class="field"><label for="te-date">出发日期</label><input id="te-date" class="input" type="date" value=${startDate} onInput=${e => setStartDate(e.target.value)} /></div>
       <div class="field"><label for="te-budget">预算（${ctx.home}）</label><input id="te-budget" class="input" inputmode="decimal" value=${budget} onInput=${e => setBudget(e.target.value)} /></div>
     </div>
-    <p class="hint">改日期只会更新每天的日期，路线不变。想改城市或天数，用菜单里的「改城市或天数，重新排」。</p>
+    <div class="field"><span class="label">航班</span><${FlightFields} value=${flights} onChange=${setFlights} /></div>
+    <p class="hint">改日期或航班不会自动重排路线：之后点「AI 优化这一天」，或菜单里的「用 AI 调整整个行程」，AI 会按新的时间来排。想改城市或天数，用菜单里的「改城市或天数，重新排」。</p>
   <//>`;
 }
 
@@ -6091,6 +6364,8 @@ function App() {
     else if (sTrip && k === 'tripEdit') sheetEl = html`<${TripEditSheet} ctx=${ctx} trip=${sTrip} onClose=${close} />`;
     else if (sTrip && k === 'revise') sheetEl = html`<${ReviseSheet} ctx=${ctx} trip=${sTrip} dayIndex=${sheet.dayIndex} preset=${sheet.preset} accept=${sheet.accept} onClose=${close} />`;
     else if (sTrip && k === 'stop') sheetEl = html`<${StopSheet} ctx=${ctx} trip=${sTrip} dayIndex=${sheet.dayIndex} stopIndex=${sheet.stopIndex} onClose=${close} />`;
+    else if (sTrip && k === 'addStop') sheetEl = html`<${AddStopSheet} ctx=${ctx} trip=${sTrip} dayIndex=${sheet.dayIndex} onClose=${close} />`;
+    else if (sTrip && k === 'dayEdit') sheetEl = html`<${DayEditSheet} ctx=${ctx} trip=${sTrip} dayIndex=${sheet.dayIndex} onClose=${close} />`;
     else if (sTrip && k === 'expense') sheetEl = html`<${ExpenseSheet} ctx=${ctx} trip=${sTrip} expense=${sheet.expenseId ? ctx.expenses.find(e => e.id === sheet.expenseId) : null} onClose=${close} />`;
   }
   const pendingInbox = ctx.inbox.filter(i => i.status === 'pending').length;

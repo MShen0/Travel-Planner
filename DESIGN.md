@@ -456,6 +456,8 @@ The walkable day is a vertical transit line of photo stops.
 - **Rail:** a 2px line mixing green into the hairline. Each stop has an 18px dot with a 2.5px green ring and its station number. The hotel start dot is solid green. A visited stop is solid green with a check, and an AI-suggested stop has a dashed ring.
 - **Leg:** between two stops, the rail turns dashed. A 12.5px line gives the mode icon, the bold mode and minutes, then detail and fare, and ends in a leaf-green 路线 pill on `green-tint` inside a 44px tap target that hands off to a map app.
 - **City change:** a transfer row uses a slate-teal transport tile with the mode icon and a 换城市 pill.
+- **Flights:** the landing heads its day and the take-off closes the last day, as transport-tile rows with the flight icon, a solid green dot, a 航班 pill and a pencil that opens 行程信息. The take-off row says when to reach the airport (3 hours ahead). On the landing day the hotel row reads 先到住处放行李.
+- **Editing by hand:** a stop's ⋯ sheet starts with 编辑这一站 (time, name, stay, what, tip, spend and the leg there). A quiet white 加一站 button under the rail adds a saved place or a stop the user writes, and a bordered pencil beside the day title edits its theme, area and note. Hand edits never light up.
 - **AI changed:** touched rows fill with lamp glow, 14px corners, bleeding 8px past the row. The day shows an amber note bar ("AI 改了这一天的 N 处") with a 知道了 button, and they stay lit until it is tapped.
 
 ### Photo Pins and City Basemap (signature)

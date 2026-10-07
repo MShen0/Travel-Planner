@@ -71,6 +71,9 @@ Then keep the app's supporting data fresh:
   `if_version` (`base`, `date`, `source`, `rates`) — never touch `manual`. `set` it if it does not exist yet.
 - **Basemaps**: for each city without a `maps` document covering its stops, run `tools/city_map.mjs` and upload as in
   `/collect` step 7.
+- **交通 guide** (when asked): the app's 交通 tab writes `transit` itself. You can write or check one city's entry in the
+  same shape (see `CLAUDE.md`), with lines and fares checked by WebSearch, and render a basemap covering the airport
+  and the hotel so its route map is a real map.
 
 ## 7. Report
 

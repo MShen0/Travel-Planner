@@ -984,6 +984,21 @@ span.avatar { display: inline-block; }
 .gp-place small { font-size: 12.5px; color: var(--muted); }
 .gp-ic { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 9px; flex: none; }
 .tag.add-done { height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--green-tint); color: var(--green-text); cursor: pointer; }
+
+/* ---------- 交通 tab: airport legs as numbered steps beside a route map, then lines, passes, tips ---------- */
+.transit-route { display: grid; gap: 12px; }
+.tr-head { display: grid; gap: 2px; }
+.tr-head h3 { font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.tr-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (min-width: 760px) { .tr-body { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); } }
+.tr-body .gsteps li { padding-bottom: 14px; }
+.route-total small { color: var(--muted); font-weight: 500; }
+.pass-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+.pass-row:first-child { border-top: 0; padding-top: 0; }
+.pass-row b { display: block; font-size: 15px; }
+.pass-row small { display: block; font-size: 12.5px; color: var(--muted); }
+.pass-row > p { grid-column: 1 / -1; font-size: 14px; color: var(--ink-2); }
+.pass-row > p.price { font-weight: 700; color: var(--ink); }
 </style>
 
 <div id="app"><div class="boot"><span class="brand-mark" style="width:52px;height:52px"><svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5.5h8.5a3.5 3.5 0 0 1 0 7h-5a3.5 3.5 0 0 0 0 7H18"/><circle cx="6" cy="5.5" r="2.1" fill="#9BE38C" stroke="none"/><circle cx="18" cy="19.5" r="2.1" fill="#fff" stroke="none"/></svg></span><b>旅用</b><small>正在打开你们的旅行灵感…</small></div></div>
@@ -2458,12 +2473,16 @@ function flightDay(trip, which) {
   const i = start && d ? Math.round((d - start) / 864e5) : which === 'out' ? 0 : days - 1;
   return Math.min(days - 1, Math.max(0, i));
 }
+/** The clock time `minutes` before a local time ("2026-11-23T18:00", 255 → "13:45"; "前一天 22:30" when it crosses midnight). */
+function clockMinus(at, minutes) {
+  const m = /T(\d{2}):(\d{2})$/.exec(at || '');
+  if (!m) return '';
+  const t = +m[1] * 60 + +m[2] - Math.round(minutes), mins = ((t % 1440) + 1440) % 1440;
+  return `${t < 0 ? '前一天 ' : ''}${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+}
 /** When to be at the airport for a take-off ("2026-11-23T18:00" → "15:00"): international flights, 3 hours ahead. */
 function airportBy(depart, hours = 3) {
-  const m = /T(\d{2}):(\d{2})$/.exec(depart || '');
-  if (!m) return '';
-  const t = +m[1] * 60 + +m[2] - hours * 60, mins = (t + 1440) % 1440;
-  return `${t < 0 ? '前一天 ' : ''}${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+  return clockMinus(depart, hours * 60);
 }
 /** "CI722 · 11月19日 08:30 吉隆坡 KUL → 13:20 桃园 TPE" (the landing date only when it is another day). */
 function flightLine(leg) {
@@ -2479,6 +2498,95 @@ function flightPromptLines(flights) {
   const f = normFlights(flights), out = [];
   if (f.out) out.push(`去程航班：${flightLine(f.out)}（当地时间）。第一天从落地后开始安排：入境、取行李、去市区或酒店大约 1.5–2 小时，落地前不要排任何地点。`);
   if (f.back) out.push(`回程航班：${flightLine(f.back)}（当地时间）。最后一天要在起飞前 3 小时${f.back.depart ? `（${airportBy(f.back.depart)}）` : ''}到机场：最后一站之后留出去机场的时间，并在最后一站的 tip 里写怎么去机场。`);
+  return out;
+}
+
+/* --- the 交通 tab: airport legs, lines, passes, tips per city --- */
+/** Where the user sleeps in one city of a trip ({name, lat?, lng?} or null): the plan's base there, else the stay's hotel. */
+function cityHotel(trip, city) {
+  const bases = trip.plan && Array.isArray(trip.plan.bases) ? trip.plan.bases : [];
+  const b = bases.find(x => x && x.name && sameCity(x.city, city)) || (tripStays(trip).find(s => sameCity(s.city, city)) || {}).base;
+  return b && b.name ? b : null;
+}
+/** The saved 交通 guide of one city of a trip, or null. */
+function transitFor(trip, city) {
+  return (Array.isArray(trip && trip.transit) ? trip.transit : []).find(g => g && sameCity(g.city, city)) || null;
+}
+/** The prompt for one city's 交通 guide: the airport legs from the flights to the hotel, then lines, passes and tips for these stops. */
+function buildTransitPrompt({ trip, city, lang }) {
+  const L = langName(lang);
+  const cities = tripCities(trip);
+  const first = !cities.length || sameCity(cities[0], city), last = !cities.length || sameCity(cities[cities.length - 1], city);
+  const fl = normFlights(trip.flights);
+  const hotel = cityHotel(trip, city);
+  const stops = [...new Set(((trip.plan && trip.plan.days) || []).filter(d => !d.city || sameCity(d.city, city)).flatMap(d => (d.stops || []).filter(s => s.kind !== 'transfer').map(s => s.name)).filter(Boolean))];
+  return [
+    `你是熟悉${city}公共交通的交通顾问。用户这趟去${city}${trip.country ? `（${trip.country}）` : ''}，请写一份实用的交通攻略：从机场到住处怎么走、在城里怎么坐车、哪些交通卡划算。`,
+    `住处：${hotel ? hotel.name : '还没定，按市中心算'}。${trip.startDate ? `日期：${trip.startDate} 起 ${trip.days} 天。` : ''}`,
+    first ? (fl.out ? `落地：${flightLine(fl.out)}（当地时间）。` : '没填去程航班：按这座城市最常用的国际机场写。') : '这座城市不是落地的城市：airport 写 []。',
+    last ? (fl.back ? `回程起飞：${flightLine(fl.back)}（当地时间）。` : '没填回程航班：按这座城市最常用的国际机场写。') : '这座城市不是起飞的城市：airportBack 写 null。',
+    stops.length ? `这几天要去：${stops.slice(0, 30).join('、')}` : null,
+    '',
+    '要求：',
+    '1. airport：从落地机场到住处的 1–2 种常用走法（最快的和最省钱的；只有一种合理就写一种）。每种写 title（例如"成田特快 N\'EX"）、summary（一句话：适合谁）、minutes（全程分钟）、fare（每人全程票价，当地货币数字）和 steps。',
+    '2. steps：每一步一个动作：在哪里坐、坐什么（线路、方向）、在哪站下、从哪个出口出、怎么走到住处。每步写 title（短句，例如"搭乘 Narita Express"）、detail、mode（只能是 walk/metro/train/tram/bus/taxi/drive/ferry/bike/flight）、minutes、fare（这一步的票价，走路写 0）、place（这一步结束的地方，例如车站名）和 lat/lng（place 的估计坐标，4 位小数，不知道写 null）。',
+    '3. airportBack：最后一天从住处去起飞机场的推荐走法（一种），格式和 airport 里的一种走法一样。',
+    '4. metro：intro（两三句话：这座城市的地铁、铁路怎么用）、lines（这趟会用到的线路，最多 6 条，每条写 name 和 use）、howTo（买票、刷卡、换乘的要点，3–5 条）。',
+    '5. passes：常用的交通卡和通票（最多 5 个）：name、price（当地货币数字，没有固定价写 null）、covers（能坐什么）、advice（按这趟要去的地方算划不划算，一句话）、verdict（buy 推荐、maybe 看情况、skip 不需要）。',
+    '6. tips：3–6 条实用建议（高峰、末班车、大件行李、打车、好用的 App）。',
+    '7. 票价和时间给最可能的数字；拿不准的线路在 detail 末尾加"（出发前确认）"，不要编造不存在的线路。',
+    '',
+    '只回复一个 JSON 对象：',
+    '{"currency":"JPY","airport":[{"title":"","summary":"","minutes":80,"fare":3250,"steps":[{"title":"","detail":"","mode":"train","minutes":60,"fare":3250,"place":"","lat":null,"lng":null}]}],"airportBack":null,"metro":{"intro":"","lines":[{"name":"","use":""}],"howTo":[""]},"passes":[{"name":"","price":null,"covers":"","advice":"","verdict":"buy"}],"tips":[""]}',
+    `currency 写当地货币代码。所有文字用${L}。`,
+  ].filter(s => s != null).join('\n');
+}
+function normTransitRoute(r) {
+  if (!r || typeof r !== 'object') return null;
+  const steps = (Array.isArray(r.steps) ? r.steps : []).slice(0, 12).map(s => {
+    s = s && typeof s === 'object' ? s : {};
+    const lat = num(s.lat), lng = num(s.lng), ok = hasCoord({ lat, lng }), fare = num(s.fare);
+    return { title: str(s.title, 60) || str(s.place, 60), detail: para(s.detail, 300), mode: MODES[s.mode] ? s.mode : '', minutes: clampNum(s.minutes, 0, 600),
+      fare: fare != null && fare >= 0 ? fare : null, place: str(s.place, 60), lat: ok ? +lat.toFixed(6) : null, lng: ok ? +lng.toFixed(6) : null };
+  }).filter(s => s.title);
+  if (!steps.length) return null;
+  // Totals Claude left out add up from the steps.
+  const minutes = clampNum(r.minutes, 0, 900) || steps.reduce((n, s) => n + (s.minutes || 0), 0) || null;
+  const fare = num(r.fare);
+  return { title: str(r.title, 40) || '推荐走法', summary: str(r.summary, 80), minutes,
+    fare: fare != null && fare >= 0 ? fare : steps.some(s => s.fare != null) ? steps.reduce((n, s) => n + (s.fare || 0), 0) : null, steps };
+}
+/** Claude's 交通 guide for one city, checked: at most two airport options, known modes, prices as numbers, a verdict per pass. */
+function normalizeTransit(raw, { city, currency = '', now = Date.now() } = {}) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const m = r.metro && typeof r.metro === 'object' ? r.metro : {};
+  return {
+    city: str(city, 30), currency: /^[A-Z]{3}$/.test(String(r.currency || '')) ? r.currency : currency,
+    airport: (Array.isArray(r.airport) ? r.airport : []).map(normTransitRoute).filter(Boolean).slice(0, 2),
+    airportBack: normTransitRoute(r.airportBack),
+    metro: {
+      intro: para(m.intro, 400),
+      lines: (Array.isArray(m.lines) ? m.lines : []).filter(l => l && typeof l === 'object').map(l => ({ name: str(l.name, 30), use: str(l.use, 80) })).filter(l => l.name).slice(0, 8),
+      howTo: strList(m.howTo, 6, 140),
+    },
+    passes: (Array.isArray(r.passes) ? r.passes : []).filter(p => p && typeof p === 'object').map(p => {
+      const price = num(p.price);
+      return { name: str(p.name, 40), price: price != null && price >= 0 ? price : null, covers: str(p.covers, 80), advice: str(p.advice, 140),
+        verdict: ['buy', 'maybe', 'skip'].includes(p.verdict) ? p.verdict : 'maybe' };
+    }).filter(p => p.name).slice(0, 6),
+    tips: strList(r.tips, 8, 160),
+    generatedAt: now,
+  };
+}
+/** Pins for a route map: the steps with coordinates, numbered like the steps, skipping one within 400 m of the previous pin. */
+function transitPoints(route) {
+  const out = [];
+  ((route && route.steps) || []).forEach((s, i) => {
+    if (!hasCoord(s)) return;
+    const prev = out[out.length - 1];
+    if (prev && haversineKm(prev, s) < 0.4) return;
+    out.push({ id: `ts${i}`, name: s.place || s.title, lat: s.lat, lng: s.lng, category: 'transport', photo: null, status: 'saved', num: i + 1 });
+  });
   return out;
 }
 
@@ -3839,7 +3947,7 @@ function DuplicatePair({ ctx, d, onDone }) {
  * Pan/zoom map: a rendered basemap image (or a plain paper field when the city has none yet) with photo pins,
  * neighbourhood labels and an optional numbered route. Pins keep their size while the map scales.
  */
-function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, onSelect, full, height = 360, padTop = 20, padBottom = 20, padLeft = 16, padRight = 64, numbered }) {
+function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, onSelect, full, height = 360, padTop = 20, padBottom = 20, padLeft = 16, padRight = 64, numbered, synthNote }) {
   const wrap = useRef(null);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [t, setT] = useState(null);
@@ -3976,7 +4084,7 @@ function MapCanvas({ points, fit, basemap, labels = [], route, base, selected, o
       <button class="icon-btn" aria-label="缩小" onClick=${() => zoomAt(1 / 1.6, vp.w / 2, vp.h / 2, true)}><${Icon} name="minus" /></button>
       <button class="icon-btn" aria-label="显示全部地点" onClick=${() => fitTo(fitPoints(), true, true)}><${Icon} name="locate" /></button>
     </div>
-    <span class="map-attrib" style=${full ? { bottom: padBottom + 6 + 'px' } : null}>${basemap ? basemap.attribution : '示意图：还没有这座城市的底图'}</span>
+    <span class="map-attrib" style=${full ? { bottom: padBottom + 6 + 'px' } : null}>${basemap ? basemap.attribution : synthNote || '示意图：还没有这座城市的底图'}</span>
   </div>`;
 }
 /** Keep a neighbourhood label only where it clears every pin and every other label (labels sit just below their point). */
@@ -4282,7 +4390,7 @@ function TripsView({ ctx }) {
 }
 
 /* ---------- one trip ---------- */
-const TRIP_TABS = [['overview', '概览'], ['plan', '行程'], ['map', '地图'], ['costs', '花费'], ['pending', '待安排']];
+const TRIP_TABS = [['overview', '概览'], ['plan', '行程'], ['map', '地图'], ['transit', '交通'], ['costs', '花费'], ['pending', '待安排']];
 function TripView({ ctx, id, tab: tab0, day: day0 }) {
   const trip = ctx.trips.find(t => t.id === id);
   const [tab, setTabState] = useState(TRIP_TABS.some(([k]) => k === tab0) ? tab0 : 'plan');
@@ -4313,6 +4421,7 @@ function TripView({ ctx, id, tab: tab0, day: day0 }) {
     <div role="tabpanel">
       ${tab === 'overview' ? html`<${OverviewTab} ctx=${ctx} trip=${trip} openDay=${i => { setDayIdx(i); setTab('plan'); }} />`
         : tab === 'map' ? html`<${TripMapTab} ctx=${ctx} trip=${trip} dayIdx=${dayIdx} setDayIdx=${setDayIdx} />`
+        : tab === 'transit' ? html`<${TransitTab} ctx=${ctx} trip=${trip} />`
         : tab === 'costs' ? html`<${CostsTab} ctx=${ctx} trip=${trip} />`
         : tab === 'pending' ? html`<${PendingTab} ctx=${ctx} trip=${trip} />`
         : html`<${PlanTab} ctx=${ctx} trip=${trip} dayIdx=${dayIdx} setDayIdx=${setDayIdx} setTab=${setTab} />`}
@@ -4578,6 +4687,116 @@ function TripMapTab({ ctx, trip, dayIdx, setDayIdx }) {
   </div>`;
 }
 
+/* ---------- 交通 ---------- */
+const TRANSIT_SECTIONS = [['airport', '机场交通'], ['metro', '地铁 / JR'], ['passes', '常用票券'], ['tips', '小贴士']];
+const PASS_VERDICT = { buy: ['推荐', 'add'], maybe: ['看情况', 'plain'], skip: ['不需要', 'plain'] };
+/** One city's 交通 guide, written by AI from the trip's flights, hotel and stops, and saved on the trip so companions see it. */
+function TransitTab({ ctx, trip }) {
+  const cities = tripCities(trip);
+  const [ci, setCi] = useState(0);
+  const [sec, setSec] = useState('airport');
+  const job = useAiJob(ctx);
+  const city = cities[Math.min(ci, cities.length - 1)] || '';
+  const g = transitFor(trip, city);
+  const cur = (g && g.currency) || planOf(trip).currency || tripCurrency(trip, ctx.places) || ctx.home;
+  const first = !cities.length || sameCity(cities[0], city), last = !cities.length || sameCity(cities[cities.length - 1], city);
+  const fl = normFlights(trip.flights);
+  const hotel = cityHotel(trip, city);
+  async function generate() {
+    await job.run(async (onText, signal) => {
+      const raw = await ctx.ai.json(buildTransitPrompt({ trip, city, lang: ctx.prefs.aiLang }), { onText, signal, cache: false });
+      const next = normalizeTransit(raw, { city, currency: planOf(trip).currency || tripCurrency(trip, ctx.places) });
+      if (!next.airport.length && !next.airportBack && !next.metro.intro && !next.passes.length) throw { code: 'invalid_json' };
+      const others = (Array.isArray(trip.transit) ? trip.transit : []).filter(x => x && !sameCity(x.city, city));
+      if (await ctx.write('update', 'trips', trip.id, { transit: [...others, next], updatedAt: Date.now() })) ctx.toast(`${city}的交通攻略写好了`);
+    });
+  }
+  const pick = cities.length > 1 ? html`<div class="chips" role="group" aria-label="城市">${cities.map((c, i) => html`<button key=${c} class="chip outline" aria-pressed=${c === city} onClick=${() => { setCi(i); setSec('airport'); }}>${c}</button>`)}</div>` : null;
+  const notices = html`${!ctx.ai.ok ? html`<${Notice} warn>${ctx.ai.reason}<//>` : null}${job.error ? html`<${Notice} warn role="alert">${job.error}<//>` : null}`;
+  if (!city) return html`<p class="hint" style=${{ marginTop: '16px' }}>这趟行程还没有城市，先在「行程」里排好。</p>`;
+  if (job.phase === 'working') {
+    return html`<div class="stack" style=${{ marginTop: '16px' }}>${pick}
+      <${AiProgress} label="正在写交通攻略" text=${job.stream} started=${job.started} onStop=${job.stop} counter=${t => `已写 ${(t.match(/"title"\s*:/g) || []).length} 步`} /></div>`;
+  }
+  if (!g) {
+    return html`<div class="stack" style=${{ marginTop: '16px' }}>${pick}
+      <section class="card empty">
+        <span class="mark"><${Icon} name="metro" size=${24} /></span>
+        <h2>${city}交通攻略</h2>
+        <p class="muted">AI 会按这趟的航班和住处写好：从机场到住处怎么走、地铁 / JR 怎么坐、哪些交通卡划算，还有小贴士。大约要半分钟到一分钟。</p>
+        <button class="btn ai" disabled=${!ctx.ai.ok} onClick=${generate}><${Icon} name="sparkle" size=${18} />生成交通攻略</button>
+      </section>${notices}</div>`;
+  }
+  const inbound = first ? g.airport : [];
+  const back = last ? g.airportBack : null;
+  const leave = back && fl.back && fl.back.depart ? clockMinus(fl.back.depart, 180 + (back.minutes || 0)) : '';
+  const made = new Date(g.generatedAt || Date.now());
+  const home = (hotel && hotel.name) || '住处';
+  return html`<div class="stack" style=${{ marginTop: '16px' }}>
+    ${pick}
+    <div class="chips" role="group" aria-label="交通攻略">${TRANSIT_SECTIONS.map(([k, label]) => html`<button key=${k} class="chip" aria-pressed=${sec === k} onClick=${() => setSec(k)}>${label}</button>`)}</div>
+    ${sec === 'airport' ? html`
+      ${inbound.length ? html`<${TransitRoute} ctx=${ctx} trip=${trip} city=${city} cur=${cur} routes=${inbound} label="去程"
+        from=${(fl.out && fl.out.to) || inbound[0].steps[0].place || '机场'} to=${home} />` : null}
+      ${back ? html`<${TransitRoute} ctx=${ctx} trip=${trip} city=${city} cur=${cur} routes=${[back]} label="回程"
+        from=${home} to=${(fl.back && fl.back.from) || back.steps[back.steps.length - 1].place || '机场'}
+        note=${leave ? `最晚 ${leave} 从住处出发：${fl.back.depart.slice(11, 16)} 起飞，提前 3 小时到机场。` : ''} />` : null}
+      ${!inbound.length && !back ? html`<p class="hint">${first || last ? '这份攻略里没有机场的走法，可以点下面的「重新生成」。' : '这座城市不经过机场。城市之间怎么走，看「行程」里换城市那天的第一站。'}</p>` : null}`
+    : sec === 'metro' ? html`<section class="card pad stack">
+        ${g.metro.intro ? html`<p class="lead">${g.metro.intro}</p>` : null}
+        ${g.metro.lines.length ? html`<div class="stack" style=${{ gap: '8px' }}>${g.metro.lines.map((l, i) => html`<div class="row" key=${i} style=${{ alignItems: 'flex-start' }}><span class="tag transport">${l.name}</span><span class="grow">${l.use}</span></div>`)}</div>` : null}
+        ${g.metro.howTo.length ? html`<div><h3 class="card-title">怎么坐</h3><ul class="tips">${g.metro.howTo.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul></div>` : null}
+        ${!g.metro.intro && !g.metro.lines.length && !g.metro.howTo.length ? html`<p class="hint">这份攻略里没有地铁的说明。</p>` : null}
+      </section>`
+    : sec === 'passes' ? html`<section class="card pad">${g.passes.length ? g.passes.map((p, i) => {
+        const [word, tone] = PASS_VERDICT[p.verdict] || PASS_VERDICT.maybe;
+        const rm = p.price != null && cur !== ctx.home ? toHome(p.price, cur, ctx.fx, ctx.home) : null;
+        return html`<div class="pass-row" key=${i}>
+          <div><b>${p.name}</b>${p.covers ? html`<small>${p.covers}</small>` : null}</div>
+          <span class=${'tag ' + tone}>${word}</span>
+          ${p.price != null ? html`<p class="price num">${fmtMoney(p.price, cur)}${rm != null ? html` <small style=${{ display: 'inline' }}>≈ ${fmtMoney(rm, ctx.home, true)}</small>` : null}</p>` : null}
+          ${p.advice ? html`<p>${p.advice}</p>` : null}
+        </div>`;
+      }) : html`<p class="hint">这份攻略里没有交通卡的建议。</p>`}</section>`
+    : html`<section class="ai-box"><h3><${Icon} name="bot" size=${17} />交通小贴士</h3>
+        ${g.tips.length ? html`<ul class="tips">${g.tips.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>` : html`<p>这份攻略里没有小贴士。</p>`}</section>`}
+    <p class="hint">票价和时间是 AI 在 ${made.getMonth() + 1}月${made.getDate()}日估计的，出发前用地图 App 看实时班次。<button class="link" disabled=${!ctx.ai.ok} onClick=${generate}>重新生成</button></p>
+    ${notices}
+  </div>`;
+}
+const ROUTE_APP = [[/apple\.com/, '在 Apple 地图打开路线'], [/amap\.com/, '在高德地图打开路线'], [/baidu\.com/, '在百度地图打开路线']];
+/** One way between the airport and the hotel: options to pick, numbered steps with time and fare, totals, a map and a map-app link. */
+function TransitRoute({ ctx, trip, city, cur, routes, from, to, label, note }) {
+  const [k, setK] = useState(0);
+  const r = routes[Math.min(k, routes.length - 1)];
+  const pts = transitPoints(r);
+  // A city basemap rarely reaches the airport: draw on one only when every pin fits, else a schematic.
+  const bm = pickBasemap(ctx.maps, pts, city);
+  const basemap = bm && pts.every(p => inBounds(bm.bounds, p)) ? bm : null;
+  const rm = r.fare != null && cur !== ctx.home ? toHome(r.fare, cur, ctx.fx, ctx.home) : null;
+  const ends = r.steps.filter(hasCoord);
+  const a = { name: from, city, country: trip.country, ...(ends.length ? { lat: ends[0].lat, lng: ends[0].lng } : {}) };
+  const b = { name: to, city, country: trip.country, ...(ends.length ? { lat: ends[ends.length - 1].lat, lng: ends[ends.length - 1].lng } : {}) };
+  const href = legLink(a, b, 'train', ctx.prefs.mapPref);
+  const app = ROUTE_APP.find(([re]) => re.test(href));
+  return html`<section class="card pad transit-route">
+    <div class="tr-head"><span class="overline">${label}</span><h3>${from} → ${to}</h3>${note ? html`<p class="hint">${note}</p>` : null}</div>
+    ${routes.length > 1 ? html`<div class="chips wrap" role="group" aria-label="走法">${routes.map((x, i) => html`<button key=${i} class="chip outline" aria-pressed=${i === k} onClick=${() => setK(i)}>${x.title}</button>`)}</div>`
+      : html`<b>${r.title}</b>`}
+    ${r.summary ? html`<p class="hint">${r.summary}</p>` : null}
+    <div class="tr-body">
+      <ol class="gsteps">${r.steps.map((s, i) => html`<li key=${i}><span class="n">${i + 1}</span><div>
+        <h3>${s.title}</h3>${s.detail ? html`<p class="detail">${s.detail}</p>` : null}
+        <div class="facts2">${s.mode ? html`<span class="row" style=${{ gap: '4px' }}><${Icon} name=${MODE_ICON[s.mode] || 'walk'} size=${15} />${MODES[s.mode]}${s.minutes ? ' ' + fmtMin(s.minutes) : ''}</span>` : s.minutes ? html`<span>${fmtMin(s.minutes)}</span>` : null}
+          ${s.fare ? html`<span>${fmtMoney(s.fare, cur)}</span>` : null}</div>
+      </div></li>`)}</ol>
+      ${pts.length > 1 ? html`<${MapCanvas} points=${pts} route=${pts} basemap=${basemap} numbered height=${280} synthNote="示意图：没有覆盖这段路的底图" />` : null}
+    </div>
+    <div class="route-total"><span>总时长 <b class="num">${r.minutes ? '约 ' + fmtMin(r.minutes) : '—'}</b></span>
+      <span>费用 <b class="num">${r.fare != null ? fmtMoney(r.fare, cur) : '—'}</b>${rm != null ? html` <small>≈ ${fmtMoney(rm, ctx.home, true)}</small>` : null}</span></div>
+    <a class="btn green block" href=${href} target="_blank" rel="noopener noreferrer"><${Icon} name="map" size=${17} />${app ? app[1] : '在 Google Maps 打开路线'}</a>
+  </section>`;
+}
 function fxLine(ctx, cur) {
   const fx = ctx.fx;
   if (!cur || cur === ctx.home) return '';

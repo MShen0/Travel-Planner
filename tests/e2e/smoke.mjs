@@ -263,6 +263,24 @@ let dumped;
     await page.getByRole('tab', { name: /概览/ }).click();
     if (await page.locator('.day-list button').count() !== 2) throw new Error('overview should list 2 days');
   });
+  await step('transit: AI writes the 交通 tab: airport legs with totals, map and link, leave-by time, passes', async () => {
+    await page.getByRole('tab', { name: '交通', exact: true }).click();
+    await page.getByRole('button', { name: '生成交通攻略' }).click();
+    await text(page, '羽田 HND → 新宿站附近').waitFor({ timeout: 10000 });
+    await text(page, '约 1 小时').waitFor();
+    await page.locator('.transit-route .mapwrap .pin').first().waitFor();
+    const href = await page.locator('.transit-route a.btn').first().getAttribute('href');
+    if (!href.startsWith('https://www.google.com/maps/dir/')) throw new Error('bad route link ' + href);
+    await text(page, '最晚 13:45 从住处出发').waitFor();
+    const asked = await page.evaluate(() => window.__sampleCalls.at(-1).input);
+    if (!asked.includes('落地：MH88') || !asked.includes('住处：新宿站附近')) throw new Error('flight or hotel missing from the transit prompt');
+    await page.getByRole('button', { name: '机场巴士' }).first().click();
+    await text(page, '入境大厅 1 楼 4 号站台').waitFor();
+    await page.getByRole('button', { name: '常用票券' }).click();
+    await text(page, 'Suica 西瓜卡').waitFor();
+    const saved = await page.evaluate(() => window.__dump().trips[0].transit);
+    if (!saved || saved[0].city !== '东京' || saved[0].airport.length !== 2) throw new Error('transit not saved: ' + JSON.stringify(saved));
+  });
   await step('trip menu: export markdown through downloads', async () => {
     await page.getByRole('button', { name: '行程菜单' }).click();
     await page.getByRole('button', { name: '导出 Markdown' }).click();
@@ -427,7 +445,7 @@ for (const [label, opts] of [
         await chips.first().click();
       }
     });
-    for (const [name, key] of [['地图', 'trip-map'], ['花费', 'trip-costs'], ['待安排', 'trip-pending'], ['概览', 'trip-overview']]) {
+    for (const [name, key] of [['地图', 'trip-map'], ['交通', 'trip-transit'], ['花费', 'trip-costs'], ['待安排', 'trip-pending'], ['概览', 'trip-overview']]) {
       await step(`${label}: trip ${name}`, async () => {
         await page.getByRole('tab', { name: new RegExp(name) }).click();
         await page.waitForTimeout(name === '地图' ? 600 : 200);

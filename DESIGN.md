@@ -460,6 +460,9 @@ The walkable day is a vertical transit line of photo stops.
 - **Editing by hand:** a stop's ⋯ sheet starts with 编辑这一站 (time, name, stay, what, tip, spend and the leg there). A quiet white 加一站 button under the rail adds a saved place or a stop the user writes, and a bordered pencil beside the day title edits its theme, area and note. Hand edits never light up.
 - **AI changed:** touched rows fill with lamp glow, 14px corners, bleeding 8px past the row. The day shows an amber note bar ("AI 改了这一天的 N 处") with a 知道了 button, and they stay lit until it is tapped.
 
+### 交通 Tab
+A city's getting-around guide in four chip sections: 机场交通 · 地铁 / JR · 常用票券 · 小贴士. Each airport direction is one white card: a 去程 / 回程 overline, "机场 → 住处" as a 19px title, outline chips to switch between up to two options, the guide's numbered green step list (mode icon, minutes and fare per step), and a route map beside the steps from 760px (below them on phones; a schematic paper map unless a basemap covers every pin). A hairline row then gives 总时长 and 费用 with ≈ RM, and a full-width green 在 Google Maps 打开路线 button ends the card. The way back adds "最晚 HH:MM 从住处出发". Lines are slate transport pills with one line of use; passes are hairline rows with a 推荐 (moss) / 看情况 / 不需要 pill and the price in local money ≈ RM; tips sit in the violet AI box.
+
 ### Photo Pins and City Basemap (signature)
 - **Pin size by priority:** 想去 56px, 收藏 42px, 去过 34px. A visited pin is desaturated to 55% and carries a green check, and higher priority draws on top. Clusters are 52px with a green count badge. A selected pin scales to 1.14 and its rim turns green. Day maps add a green station-number badge.
 - **Route:** a 7px white underlay with a 3.5px forest-green line through the day's stops in order.

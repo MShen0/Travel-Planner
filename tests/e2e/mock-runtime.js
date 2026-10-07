@@ -74,7 +74,37 @@
     if (revising) out.days[0].stops.splice(1, 0, { time: '10:30', placeId: null, name: '浅草人形烧', category: 'food', stayMin: 15, what: '雷门对面的人形烧', spend: 500, suggested: true, travel: { mode: 'walk', minutes: 3, detail: '步行', fare: 0 } });
     return out;
   }
+  function transitAnswer() {
+    const walkIn = { title: '步行到住处', detail: '从南口出站', mode: 'walk', minutes: 6, fare: 0, place: '新宿站附近', lat: 35.6885, lng: 139.6982 };
+    return {
+      currency: 'JPY',
+      airport: [
+        { title: '京急线 + JR 山手线', summary: '最省钱，行李不多时最好', minutes: 60, fare: 520, steps: [
+          { title: '到京急线羽田机场站', detail: '入境后跟着「京急线」的指示走', mode: 'walk', minutes: 8, fare: 0, place: '羽田机场第3航站楼站', lat: 35.5447, lng: 139.7685 },
+          { title: '搭京急线到品川', detail: '坐往品川方向的快特', mode: 'train', minutes: 15, fare: 330, place: '品川站', lat: 35.6285, lng: 139.7388 },
+          { title: '换 JR 山手线到新宿', detail: '往涩谷、新宿方向', mode: 'train', minutes: 25, fare: 190, place: '新宿站', lat: 35.6896, lng: 139.7006 },
+          walkIn,
+        ] },
+        { title: '机场巴士', summary: '行李多时最省事', minutes: 75, fare: 1400, steps: [
+          { title: '到巴士站', detail: '入境大厅 1 楼 4 号站台', mode: 'walk', minutes: 5, fare: 0, place: '羽田机场第3航站楼', lat: 35.5452, lng: 139.7681 },
+          { title: '搭机场巴士到新宿', detail: '往新宿高速巴士总站', mode: 'bus', minutes: 60, fare: 1400, place: '新宿高速巴士总站', lat: 35.6888, lng: 139.7013 },
+          { ...walkIn, minutes: 8 },
+        ] },
+      ],
+      airportBack: { title: '机场巴士', minutes: 75, fare: 1400, steps: [
+        { title: '走到新宿高速巴士总站', mode: 'walk', minutes: 8, fare: 0, place: '新宿高速巴士总站', lat: 35.6888, lng: 139.7013 },
+        { title: '搭机场巴士到羽田', detail: '在售票机先买票', mode: 'bus', minutes: 60, fare: 1400, place: '羽田机场第3航站楼', lat: 35.5452, lng: 139.7681 },
+      ] },
+      metro: { intro: '东京市区靠 JR 山手线和地铁，刷 Suica 就能坐。', lines: [{ name: 'JR 山手线', use: '新宿、涩谷、上野绕一圈' }, { name: '银座线', use: '去浅草' }], howTo: ['刷 Suica 进站', '换乘看线路颜色'] },
+      passes: [
+        { name: 'Suica 西瓜卡', price: 500, covers: '地铁、JR、巴士、便利店', advice: '必备，所有交通都能刷', verdict: 'buy' },
+        { name: 'Tokyo Subway Ticket 48 小时', price: 1200, covers: '东京地铁和都营地铁', advice: '这趟坐地铁不多，不太划算', verdict: 'skip' },
+      ],
+      tips: ['早高峰 8 点前后很挤', '末班车大约 0 点'],
+    };
+  }
   function answerFor(prompt) {
+    if (prompt.includes('交通顾问')) return transitAnswer();
     if (prompt.includes('旅行收藏助手')) {
       return {
         post: { title: '东京3日游｜懒人版攻略', summary: '三天经典路线', city: '东京', country: '日本' },

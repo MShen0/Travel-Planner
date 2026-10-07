@@ -20,7 +20,8 @@ const NAMES = ['CATEGORIES', 'MODES', 'extractUrls', 'detectPlatform', 'pickUrl'
   'getCountryPlaceCount', 'getRegionPlaceCount', 'getCityPlaceCount', 'matchesQuery', 'findDuplicatePlaces', 'mergePlaceProposal', 'remapTripPlace',
   'findNearbyPlaces', 'analyzeLibrary', 'buildLibraryContext', 'buildOrganizationPrompt', 'chunkPlacesForAi', 'normalizeOrganization',
   'mergeOrganization', 'applyOrganizationProposal', 'librarySignature', 'planProposalStats', 'nearestDays', 'appendStops', 'ACTION_TYPES',
-  'stopFromPlace', 'ownStop', 'insertStop', 'shiftChanged', 'editStop', 'normFlight', 'normFlights', 'flightDay', 'airportBy', 'flightLine', 'flightPromptLines'];
+  'stopFromPlace', 'ownStop', 'insertStop', 'shiftChanged', 'editStop', 'normFlight', 'normFlights', 'flightDay', 'airportBy', 'flightLine', 'flightPromptLines',
+  'clockMinus', 'cityHotel', 'transitFor', 'buildTransitPrompt', 'normalizeTransit', 'transitPoints'];
 const lib = vm.runInNewContext(`${page.slice(start, end)}\n;({${NAMES.join(',')}})`, { URL });
 // Values built inside the vm realm carry its own Array/Object prototypes; compare them as plain data.
 const plain = v => JSON.parse(JSON.stringify(v));
@@ -609,5 +610,46 @@ test('flights: cleaned legs, the day each shows on, when to reach the airport, p
   assert.ok(lib.buildRevisePrompt({ trip: tokyo, places: [], feedback: '轻松一点', lang: 'zh-Hans', allowSuggest: true }).includes('去程航班：MH88'));
   assert.ok(lib.tripToMarkdown(tokyo, {}).includes('## 航班\n- 去程：MH88'));
   assert.ok(lib.tripToText(tokyo).includes('✈ 去程 MH88'));
+});
+
+test('交通 tab: a prompt from the flights and the hotel, a checked guide, pins for the route map', () => {
+  const trip = { title: '东京两日', days: 2, startDate: '2026-12-24', country: '日本', stays: [{ city: '东京', days: 2, base: null }],
+    flights: { out: { flightNo: 'MH88', to: '羽田 HND', arrive: '2026-12-24T07:40' }, back: { from: '羽田 HND', depart: '2026-12-25T18:00' } },
+    plan: { bases: [{ city: '东京', name: '新宿站附近', lat: 35.69, lng: 139.7 }], days: [{ city: '东京', stops: [{ name: '浅草寺' }, { kind: 'transfer', name: '大阪 → 东京' }] }] } };
+  const p = lib.buildTransitPrompt({ trip, city: '东京', lang: 'zh-Hans' });
+  for (const want of ['交通顾问', '住处：新宿站附近', '落地：MH88 · 12月24日 07:40 羽田 HND', '回程起飞：', '这几天要去：浅草寺']) assert.ok(p.includes(want), want);
+  assert.ok(!p.includes('大阪 → 东京'), 'a city change is not a place to visit');
+  const two = { ...trip, stays: [{ city: '首尔', days: 2 }, { city: '釜山', days: 2 }], plan: null, flights: {} };
+  const busan = lib.buildTransitPrompt({ trip: two, city: '釜山', lang: 'zh-Hans' });
+  assert.ok(busan.includes('airport 写 []') && busan.includes('没填回程航班') && busan.includes('住处：还没定'), busan);
+  assert.ok(lib.buildTransitPrompt({ trip: two, city: '首尔', lang: 'zh-Hans' }).includes('airportBack 写 null'));
+
+  const g = lib.normalizeTransit({ currency: 'JPY',
+    airport: [
+      { title: '成田特快', steps: [{ title: '搭乘 Narita Express', mode: 'train', minutes: '60', fare: '3,250', place: '新宿站', lat: 35.6896, lng: 139.7006 }, { title: '步行到酒店', mode: 'walk', minutes: 6, fare: 0 }] },
+      { title: '空的走法', steps: [] }, { steps: [{ place: '品川站' }] }, { title: '第四种', steps: [{ title: '多余的' }] }],
+    airportBack: { title: '机场巴士', minutes: 75, fare: 1400, steps: [{ title: '搭巴士', mode: 'helicopter', minutes: 60 }] },
+    metro: { intro: '刷 Suica 就能坐', lines: [{ name: 'JR 山手线', use: '绕一圈' }, { use: '没名字' }], howTo: '进站刷卡、换乘看颜色' },
+    passes: [{ name: 'Suica', price: '500', verdict: 'buy' }, { name: 'JR Pass', price: -1, verdict: 'definitely' }, { price: 1 }],
+    tips: ['末班车 0 点'] }, { city: '东京', currency: 'KRW', now: 5 });
+  assert.equal(g.currency, 'JPY');
+  assert.equal(g.airport.length, 2, 'routes without steps are dropped and at most two are kept');
+  assert.deepEqual([g.airport[0].minutes, g.airport[0].fare], [66, 3250], 'missing totals add up from the steps');
+  assert.deepEqual([g.airport[1].title, g.airport[1].steps[0].title], ['推荐走法', '品川站']);
+  assert.deepEqual([g.airportBack.steps[0].mode, g.airportBack.minutes, g.airportBack.fare], ['', 75, 1400]);
+  assert.deepEqual(plain(g.metro.lines), [{ name: 'JR 山手线', use: '绕一圈' }]);
+  assert.deepEqual(plain(g.metro.howTo), ['进站刷卡', '换乘看颜色']);
+  assert.deepEqual(plain(g.passes.map(x => [x.name, x.price, x.verdict])), [['Suica', 500, 'buy'], ['JR Pass', null, 'maybe']]);
+  assert.equal(g.generatedAt, 5);
+  assert.equal(lib.normalizeTransit({}, { city: '东京', currency: 'JPY' }).airportBack, null);
+  assert.equal(lib.transitFor({ transit: [{ city: '东京', tips: [] }] }, '东京').city, '东京');
+  assert.equal(lib.transitFor({}, '东京'), null);
+
+  const pins = plain(lib.transitPoints({ steps: [{ title: 'a', lat: 35.5447, lng: 139.7685 }, { title: 'b' }, { title: 'c', lat: 35.6896, lng: 139.7006 }, { title: 'd', place: '酒店', lat: 35.6885, lng: 139.6982 }] }));
+  assert.deepEqual(pins.map(x => [x.name, x.num]), [['a', 1], ['c', 3]], 'no pin without coordinates or within 400 m of the last one');
+  assert.deepEqual([lib.clockMinus('2026-12-25T18:00', 255), lib.clockMinus('2026-12-25T01:00', 180)], ['13:45', '前一天 22:00']);
+  const stays = { stays: [{ city: '首尔', days: 2, base: { name: '明洞' } }, { city: '釜山', days: 1 }] };
+  assert.deepEqual(plain(lib.cityHotel(stays, '首尔')), { name: '明洞' });
+  assert.equal(lib.cityHotel(stays, '釜山'), null);
 });
 

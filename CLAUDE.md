@@ -113,6 +113,15 @@ on everything the agent creates (the app writes the viewer's user id, which it s
   user wrote it in the app (加一站). Users can also edit any stop by hand (time, name, stay, what, tip, spend, leg);
   keep their edits when revising unless they ask otherwise.
 - `days[].date` = startDate + index (empty string when no start date).
+- `transit`: the 交通 tab, one entry per city, written by the app's AI from the flights, the hotel and the stops:
+  `[{"city":"东京","currency":"JPY","airport":[{"title":"成田特快 N'EX","summary":"…","minutes":80,"fare":3250,
+  "steps":[{"title":"…","detail":"…","mode":"train","minutes":60,"fare":3250,"place":"新宿站","lat":35.6896,"lng":139.7006}]}],
+  "airportBack":{…one route like those in airport…},"metro":{"intro":"…","lines":[{"name":"…","use":"…"}],"howTo":["…"]},
+  "passes":[{"name":"Suica","price":500,"covers":"…","advice":"…","verdict":"buy|maybe|skip"}],"tips":["…"],"generatedAt":0}]`.
+  `airport` (1–2 options, landing airport → hotel) shows only for the first city, `airportBack` (hotel → take-off
+  airport, or null) only for the last; fares are per person in `currency`. A route's map uses a `maps` basemap only when
+  every step with coordinates falls inside it, else it is a schematic. For a real map, render one covering the airport
+  and the hotel with `tools/city_map.mjs` and save it as its own `maps` document (e.g. `m_tokyo_airport`).
 - `changed` = `["day:stop", …]` rows an AI revision touched (the app lights them until 知道了); write `[]`.
   `skipped` = place ids the user set aside for this trip.
 

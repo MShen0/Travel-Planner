@@ -52,13 +52,23 @@ runs on the users' own Claude plan with free map and geocoding services: no API 
 ## Brand Commitments
 
 - Name 旅用 (renamed from 拔草计划 in 2026-10 at the user's request). Plain words, no 种草 / 拔草 slang (user request
-  2026-10-07): a place moves 收藏 → 想去 → 去过, and the home question is 下一站去哪儿？.
+  2026-10-07). The words are 收藏, 整理, 想去, 已去过, 加入行程, AI 建议, AI 整理, AI 规划, and the home question is
+  下一站去哪儿？.
+- The loop is SAVE → ORGANIZE → PLAN → GO (user brief 2026-10-07): 「看到好地方，交给 AI。」「从一条链接，到一趟真正能走的旅行。」
+  The user only collects and decides; filing places under country → region → city and planning the route are the AI's
+  work. A travel tool, not a photo collection: the library is an atlas index (countries, regions, cities, places), never
+  a photo grid or masonry wall.
+- AI never edits data on its own: every AI change (整理, 合并, 顺路分组, 优化这一天) is shown as a proposal first and
+  written only after the user confirms. Duplicates are never deleted automatically.
 - Binding visual reference from the user (2026-10): a warm off-white phone app with deep forest-green accents, white
   rounded cards, photo-led place cards, pastel category tags, a home screen with a photo hero, a 收藏 list, a map mode
   with photo pins, trip days with photo timelines, an AI 旅行助手 chat, place detail pages and a progress ring.
-  Bottom navigation: 首页 · 收藏 · 行程 · AI 助手.
-- Buttons are Liquid Glass (user request 2026-10-07): clear glass for everyday controls, forest-green tinted glass for
-  the forward action, and a floating glass tab bar.
+  Bottom navigation: 首页 · 收藏 · 行程 · AI.
+- Colour has meaning (user brief 2026-10-07): forest green is travel and confirming, purple #6D5CE7 is AI. Purple
+  stays on AI buttons, AI boxes and AI tags; the app as a whole stays green on warm paper.
+- Controls are solid (white with a hairline, green, or AI purple). Glass is kept only where a control floats over
+  photos, maps or scrolling content: the tab bar, map controls, the discs on photos (the Liquid Glass request of
+  2026-10-07, narrowed by the later brief's "no heavy glass or gradients").
 
 ## Evidence on Hand
 

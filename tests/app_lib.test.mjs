@@ -16,7 +16,10 @@ const NAMES = ['CATEGORIES', 'MODES', 'extractUrls', 'detectPlatform', 'pickUrl'
   'parseBackup', 'frameTimes', 'normTime', 'addDays', 'weekday', 'fmtMin', 'fmtDayChip', 'fmtCnDate', 'stayHint', 'greeting',
   'currencyOf', 'fmtMoney', 'toHome', 'normPrice', 'tripCities', 'allocateDays', 'tripStays', 'baseForDay', 'tripPlaces', 'progressOf',
   'planCosts', 'expenseTotals', 'diffPlan', 'assistantContext', 'buildAssistantTurns', 'parseAssistantReply', 'travelLine',
-  'tripMembers', 'settleUp'];
+  'tripMembers', 'settleUp', 'placeGeo', 'countryCodeOf', 'getCountryLabel', 'getRegionLabel', 'getCityLabel', 'groupPlacesByCountry',
+  'getCountryPlaceCount', 'getRegionPlaceCount', 'getCityPlaceCount', 'matchesQuery', 'findDuplicatePlaces', 'mergePlaceProposal', 'remapTripPlace',
+  'findNearbyPlaces', 'analyzeLibrary', 'buildLibraryContext', 'buildOrganizationPrompt', 'chunkPlacesForAi', 'normalizeOrganization',
+  'mergeOrganization', 'applyOrganizationProposal', 'librarySignature', 'planProposalStats', 'nearestDays', 'appendStops', 'ACTION_TYPES'];
 const lib = vm.runInNewContext(`${page.slice(start, end)}\n;({${NAMES.join(',')}})`, { URL });
 // Values built inside the vm realm carry its own Array/Object prototypes; compare them as plain data.
 const plain = v => JSON.parse(JSON.stringify(v));
@@ -375,3 +378,181 @@ test('small formatters', () => {
   assert.equal(lib.greeting(20), '晚上好');
   assert.deepEqual(plain(lib.frameTimes(60, 4)), [7.5, 22.5, 37.5, 52.5]);
 });
+
+test('geography: old places find their region, grouped and searched country → region → city', () => {
+  const old = [
+    { id: 'p_1', name: '浅草寺', city: '东京', country: '日本', category: 'sight' },
+    { id: 'p_2', name: '一兰', city: 'Tokyo', country: 'Japan', category: 'food' },
+    { id: 'p_3', name: '道顿堀', city: '大阪府', country: '日本', category: 'sight' },
+    { id: 'p_4', name: '广藏市场', city: '首尔', country: '韩国', category: 'food' },
+    { id: 'p_5', name: 'Rooftop', city: '', country: '', category: 'nightlife' },
+    { id: 'p_6', name: 'Blue Lagoon', city: 'Grindavik', country: '冰岛', countryCode: 'IS', category: 'sight' },
+  ];
+  const g = lib.placeGeo(old[1]);
+  assert.deepEqual([g.country, g.countryCode, g.region, g.regionType, g.city], ['日本', 'jp', '关东', 'region', '东京']);
+  assert.ok(g.inferred.region, 'the region comes from the presets, not the database');
+  assert.equal(lib.placeGeo({ city: '台北市' }).country, '台湾', 'a known city names its country');
+  assert.equal(lib.placeGeo({ country: '马来西亚', city: '槟城' }).regionType, 'state');
+  assert.equal(lib.placeGeo({ country: '日本', city: '东京', region: 'Kanto' }).region, '关东');
+  assert.equal(lib.placeGeo(old[5]).countryCode, 'is', "Claude's code covers countries outside the presets");
+  const countries = lib.groupPlacesByCountry(old);
+  assert.equal(countries[0].key, 'jp');
+  assert.equal(countries.at(-1).key, '', 'unknown country last');
+  assert.deepEqual(plain(countries[0].regions.map(r => [r.name, r.count])), [['关东', 2], ['关西', 1]]);
+  assert.deepEqual(plain(countries[0].cities.map(c => [c.name, c.en, c.count])), [['东京', 'Tokyo', 2], ['大阪', 'Osaka', 1]]);
+  assert.equal(lib.getCountryPlaceCount(old, '日本'), 3);
+  assert.equal(lib.getCountryPlaceCount(old, 'jp'), 3);
+  assert.equal(lib.getRegionPlaceCount(old, 'jp', 'Kansai'), 1);
+  assert.equal(lib.getCityPlaceCount(old, '东京都'), 2);
+  assert.equal(lib.getCountryLabel('KR'), '韩国');
+  assert.equal(lib.getRegionLabel('prefecture'), '都道府县');
+  assert.equal(lib.getRegionLabel('nonsense'), '地区');
+  assert.equal(lib.getCityLabel('Seoul'), '首尔');
+  assert.ok(lib.matchesQuery(old[0], 'tokyo'), 'an English city name finds 东京');
+  assert.ok(lib.matchesQuery(old[3], 'korea 美食'));
+  assert.ok(!lib.matchesQuery(old[3], 'tokyo'));
+  const text = lib.buildLibraryContext(old).join('\n');
+  assert.ok(text.includes('【日本 · jp】3 个地点'));
+  assert.ok(text.includes('关东（地区） › 东京（2）：浅草寺[景点·p_1]'));
+  assert.ok(text.includes('【国家待确认】1 个地点'));
+});
+
+test('duplicates need a matching spot; merging keeps everything and trips follow', () => {
+  const a = { id: 'p_a', name: 'Shibuya Sky', nameLocal: 'SHIBUYA SKY', city: '东京', country: '日本', lat: 35.6585, lng: 139.7023, category: 'sight', coordConfidence: 'exact', createdAt: 1, coverAssetId: 'x1', photoIds: ['x1'], mustTry: ['日落'] };
+  const b = { id: 'p_b', name: '涩谷天空', nameLocal: 'Shibuya Sky', city: 'Tokyo', country: '日本', lat: 35.6586, lng: 139.7022, category: 'sight', coordConfidence: 'area', createdAt: 2, status: 'want', tips: '日落前一小时上去', coverAssetId: 'x2', photoIds: ['x2', 'x3'] };
+  const ramen = { id: 'p_c', name: '一兰拉面', city: '东京', country: '日本', lat: 35.6611, lng: 139.701 };
+  const ramenFar = { id: 'p_d', name: '一兰拉面', city: '东京', country: '日本', lat: 35.7101, lng: 139.8107 };
+  const chainA = { id: 'p_e', name: '星巴克', city: '东京', country: '日本', chain: true };
+  const chainB = { id: 'p_f', name: '星巴克', city: '东京', country: '日本', chain: true };
+  const temple = { id: 'p_g', name: '浅草寺', city: '东京', country: '日本', lat: 35.7148, lng: 139.7967 };
+  const area = { id: 'p_h', name: '浅草', city: '东京', country: '日本', lat: 35.7119, lng: 139.7983 };
+  const dups = plain(lib.findDuplicatePlaces([a, b, ramen, ramenFar, chainA, chainB, temple, area]));
+  assert.deepEqual(dups.map(d => [d.a, d.b]), [['p_a', 'p_b']], 'same name far apart, chain branches and look-alike names are not duplicates');
+  assert.ok(dups[0].similarity >= 0.9);
+  assert.equal(lib.findDuplicatePlaces([{ ...a, distinctFrom: ['p_b'] }, b]).length, 0, '都保留 is remembered');
+  const patch = plain(lib.mergePlaceProposal(a, b));
+  assert.equal(patch.status, 'want');
+  assert.deepEqual(patch.photoIds, ['x1', 'x2', 'x3']);
+  assert.equal(patch.tips, '日落前一小时上去');
+  assert.equal(patch.lat, undefined, 'exact coordinates stay');
+  assert.deepEqual(plain(lib.mergePlaceProposal(a, { ...a, id: 'p_z' })), {});
+  const trip = { placeIds: ['p_b', 'p_c'], skipped: ['p_b'], plan: { days: [{ stops: [{ placeId: 'p_b', name: '涩谷天空' }, { placeId: 'p_c' }] }], unplaced: [{ placeId: 'p_a', reason: '' }] } };
+  const tp = plain(lib.remapTripPlace(trip, 'p_b', 'p_a'));
+  assert.deepEqual(tp.placeIds, ['p_a', 'p_c']);
+  assert.deepEqual(tp.skipped, []);
+  assert.equal(tp.plan.days[0].stops[0].placeId, 'p_a');
+  assert.deepEqual(tp.plan.unplaced, [], 'a place on a day is not also waiting');
+  assert.equal(lib.remapTripPlace({ placeIds: ['p_x'] }, 'p_b', 'p_a'), null);
+});
+
+test('places that share a day, and the quick library check', () => {
+  const near = [
+    { id: 'n1', name: 'A', city: '东京', country: '日本', lat: 35.67, lng: 139.702, area: '原宿' },
+    { id: 'n2', name: 'B', city: '东京', country: '日本', lat: 35.671, lng: 139.704, area: '原宿' },
+    { id: 'n3', name: 'C', city: '东京', country: '日本', lat: 35.669, lng: 139.706, area: '表参道' },
+    { id: 'n4', name: 'D', city: '东京', country: '日本', lat: 35.7148, lng: 139.7967, area: '浅草' },
+    { id: 'n5', name: 'E', city: '东京', country: '日本', lat: 35.6705, lng: 139.703, area: '原宿', chain: true },
+  ];
+  const groups = plain(lib.findNearbyPlaces(near));
+  assert.equal(groups.length, 1);
+  assert.deepEqual([...groups[0].placeIds].sort(), ['n1', 'n2', 'n3']);
+  assert.equal(groups[0].area, '原宿');
+  assert.ok(groups[0].minutes > 0 && groups[0].minutes < 30);
+  const around = plain(lib.findNearbyPlaces(near, { near: near[0] }));
+  assert.equal(around[0].placeIds[0], 'n1');
+  assert.equal(around[0].placeIds.length, 3);
+  const report = lib.analyzeLibrary([...near, { id: 'n6', name: 'F', city: '', country: '' }], []);
+  assert.equal(report.noCountry, 1);
+  assert.equal(report.noCity, 1);
+  assert.ok(report.insights.some(i => i.kind === 'nearby'));
+  assert.ok(report.insights.some(i => i.kind === 'missing'));
+  const together = { days: 1, stays: [{ city: '东京', days: 1 }], plan: { days: [{ stops: ['n1', 'n2', 'n3'].map(id => ({ placeId: id })) }] } };
+  assert.ok(!lib.analyzeLibrary(near, [together]).insights.some(i => i.kind === 'nearby'), 'already on one day: no hint');
+});
+
+test('AI 整理: prompt, checked answer, only the approved writes', () => {
+  const ps = [
+    { id: 'p_1', name: '浅草寺', city: '东京', country: '日本', category: 'sight', area: '浅草' },
+    { id: 'p_2', name: 'Ichiran', city: 'Tokyo', country: '', category: 'other' },
+    { id: 'p_3', name: 'Rooftop', city: '', country: '', category: 'nightlife' },
+  ];
+  const byId = Object.fromEntries(ps.map(p => [p.id, p]));
+  const prompt = lib.buildOrganizationPrompt({ places: ps, knownCities: ['东京'], lang: 'zh-Hans', localDuplicates: [{ a: 'p_1', b: 'p_2' }] });
+  for (const s of ['你是「旅用」的 AI 旅行整理助手', '"id":"p_2"', '已有的城市必须写成完全一样：东京', '低于 0.75', '不要只因为名字相似就判断重复', 'p_1 / p_2', '"regionGuess":"关东"', '"needsConfirmation"', 'municipality']) {
+    assert.ok(prompt.includes(s), s);
+  }
+  const prop = plain(lib.normalizeOrganization({
+    summary: '整理好了',
+    changes: [
+      { placeId: 'p_1', country: '日本', countryCode: 'JP', region: '关东', regionType: 'region', city: '东京', confidence: 0.95 },
+      { placeId: 'p_2', country: '日本', city: 'Tokyo', category: 'food', area: '涩谷', confidence: 92 },
+      { placeId: 'p_3', country: '日本', city: '大阪', confidence: 0.5 },
+      { placeId: 'p_404', country: '日本' },
+    ],
+    duplicates: [{ placeIds: ['p_1', 'p_2'], similarity: 0.4 }, { placeIds: ['p_1', 'p_1'] }],
+    nearbyGroups: [{ placeIds: ['p_1'] }],
+    needsConfirmation: [{ placeId: 'p_3', field: 'city', options: ['Osaka', '京都'], confidence: 0.4 }, { placeId: 'p_3', field: 'name', options: ['x'] }],
+  }, byId, ['东京', '大阪']));
+  assert.equal(prop.changes.length, 3);
+  assert.deepEqual(prop.changes.find(c => c.placeId === 'p_1').fields, { countryCode: 'jp', region: '关东', regionType: 'region' }, 'only what changes');
+  const c2 = prop.changes.find(c => c.placeId === 'p_2');
+  assert.equal(c2.fields.city, '东京', 'the library spelling wins over "Tokyo"');
+  assert.equal(c2.fields.category, 'food');
+  assert.equal(c2.confidence, 0.92);
+  assert.ok(prop.changes.find(c => c.placeId === 'p_3').needsConfirm, 'below 0.75 waits for the user');
+  assert.equal(prop.duplicates.length, 1);
+  assert.equal(prop.nearbyGroups.length, 0);
+  assert.deepEqual(prop.needsConfirmation.map(n => n.options), [['大阪', '京都']]);
+  const ops = plain(lib.applyOrganizationProposal(prop, { skip: { p_2: true }, pick: { 'p_3:city': '京都', 'p_3:country': { value: '日本', countryCode: 'jp' } } }, byId, 1000));
+  assert.deepEqual(ops.map(o => o.id).sort(), ['p_1', 'p_3']);
+  const o1 = ops.find(o => o.id === 'p_1');
+  assert.equal(o1.patch.region, '关东');
+  assert.deepEqual(o1.patch.aiMeta, { normalized: true, countryConfidence: 0.95, regionConfidence: 0.95, cityConfidence: 0.95, lastAnalyzedAt: 1000 });
+  const o3 = ops.find(o => o.id === 'p_3');
+  assert.deepEqual([o3.patch.city, o3.patch.country, o3.patch.countryCode], ['京都', '日本', 'jp']);
+  assert.equal(o3.patch.region, undefined, 'the unsure change was not accepted');
+  assert.equal(lib.applyOrganizationProposal(prop, { accept: { p_3: true } }, byId, 1).find(o => o.id === 'p_3').patch.city, '大阪');
+  const merged = lib.mergeOrganization(prop, { ...lib.normalizeOrganization({ summary: '第二批', changes: [{ placeId: 'p_1', region: '关西', confidence: 0.9 }] }, byId, []), duplicates: [{ a: 'p_2', b: 'p_1', similarity: 0.5 }] });
+  assert.equal(merged.changes.find(c => c.placeId === 'p_1').fields.region, '关西', 'a later batch wins');
+  assert.equal(merged.duplicates.length, 1);
+  assert.equal(merged.summary, '整理好了；第二批');
+  const many = Array.from({ length: 130 }, (_, i) => ({ id: 'q' + i, name: 'x' + i, city: i < 70 ? '东京' : '首尔', country: i < 70 ? '日本' : '韩国' }));
+  assert.deepEqual(plain(lib.chunkPlacesForAi(many, 60).map(c => c.length)), [60, 10, 60], "a city's places stay in one batch when they fit");
+  assert.equal(lib.librarySignature(many), lib.librarySignature(many.slice()));
+  assert.notEqual(lib.librarySignature(many), lib.librarySignature(many.slice(1)));
+  assert.ok(['organize_library', 'merge_places_proposal', 'nearby_group'].every(t => lib.ACTION_TYPES.includes(t)));
+  const reply = lib.parseAssistantReply('看看这个<action>{"type":"organize_library","changes":[]}</action>');
+  assert.equal(reply.actions[0].type, 'organize_library');
+});
+
+test('extraction keeps the geography; new places fill it from the presets', () => {
+  const ex = lib.normalizeExtraction({ post: { city: '东京', country: '日本' }, places: [{ name: 'A', countryCode: 'JP', region: '关东', regionType: 'region', confidence: 0.6 }, { name: 'B', city: '大阪' }] });
+  assert.equal(ex.places[0].countryCode, 'jp');
+  assert.equal(ex.places[0].geoConfidence, 0.6);
+  const doc = lib.makePlaceDoc(ex.places[1]);
+  assert.deepEqual([doc.country, doc.countryCode, doc.region, doc.regionType], ['日本', 'jp', '关西', 'region']);
+  assert.ok(doc.savedAt);
+  assert.equal(doc.aiMeta, undefined);
+  assert.equal(lib.makePlaceDoc(ex.places[0]).aiMeta.cityConfidence, 0.6);
+  assert.ok(lib.buildExtractPrompt({ text: 'x', lang: 'zh-Hans' }).includes('countryCode'));
+});
+
+test('trip proposals: minutes before and after, nearest day, adding to a day', () => {
+  const before = { days: [{ city: '东京', stops: [{ placeId: 'p_1', travel: { minutes: 30 } }, { placeId: 'p_2', travel: { minutes: 40 } }] }, { city: '东京', stops: [] }], unplaced: [{ placeId: 'p_3' }] };
+  const after = { days: [{ city: '东京', stops: [{ placeId: 'p_2', travel: { minutes: 20 } }, { placeId: 'p_1', travel: { minutes: 15 } }, { placeId: 'p_3', travel: { minutes: 10 } }] }, { city: '东京', stops: [] }], unplaced: [] };
+  const st = plain(lib.planProposalStats(before, after, 0));
+  assert.deepEqual([st.before, st.after, st.saved, st.unplacedAfter], [70, 45, 25, 0]);
+  assert.deepEqual(st.placed, ['p_3']);
+  const hints = plain(lib.nearestDays({ days: [{ city: '东京', stops: [{ lat: 35.71, lng: 139.79 }] }, { city: '东京', stops: [{ lat: 35.66, lng: 139.7 }] }] },
+    [{ id: 'z', city: '东京', lat: 35.665, lng: 139.705 }, { id: 'y', city: '大阪', lat: 34.69, lng: 135.5 }]));
+  assert.deepEqual(hints.map(h => [h.placeId, h.day]), [['z', 1]]);
+  const r = plain(lib.appendStops(before, 1, [{ id: 'p_1', name: '浅草寺', lat: 35.7, lng: 139.8, durationMin: 60 }, { id: 'p_3', name: 'C' }]));
+  assert.equal(r.added, 2);
+  assert.deepEqual(r.days[1].stops.map(s => s.placeId), ['p_1', 'p_3']);
+  assert.deepEqual(r.days[0].stops.map(s => s.placeId), ['p_2'], 'a place moves; it is never on two days');
+  assert.deepEqual(r.unplaced, []);
+  assert.deepEqual(r.changed, ['1:0', '1:1']);
+  assert.equal(r.days[1].stops[0].stayMin, 60);
+  assert.equal(lib.tripPlaces({ cities: ['东京'], placeIds: [] }, [{ id: 'nc', city: '' }]).length, 0, 'a place without a city is in no trip');
+});
+

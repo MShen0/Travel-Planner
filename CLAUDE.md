@@ -41,7 +41,8 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 
 **places/{id}**
 ```json
-{"id":"p_…","name":"广藏市场","nameLocal":"광장시장","city":"首尔","country":"韩国","area":"钟路",
+{"id":"p_…","name":"广藏市场","nameLocal":"광장시장","country":"韩国","countryCode":"kr","region":"首都圈","regionType":"region",
+ "city":"首尔","area":"钟路",
  "category":"food","mustTry":["绿豆煎饼"],"tags":[],"tips":"小吃摊多收现金","priceLevel":1,
  "price":{"amount":5000,"max":null,"currency":"KRW","per":"一份"},"durationMin":90,
  "bestTime":"傍晚","hours":"","chain":false,"lat":37.5701,"lng":126.9996,"coordConfidence":"exact",
@@ -49,10 +50,21 @@ on everything the agent creates (the app writes the viewer's user id, which it s
    "stats":{"likes":219,"collects":293,"comments":3}},
  "coverAssetId":"<asset id>","coverCredit":{"text":"照片：作者 · CC BY-SA 4.0 · Wikimedia Commons","author":"…","license":"CC BY-SA 4.0",
    "licenseUrl":"https://…","source":"https://commons.wikimedia.org/wiki/File:…"},"photoIds":["<asset id>"],
- "savedVia":"agent","createdBy":null,"example":false,"createdAt":0,"updatedAt":0}
+ "aiMeta":{"normalized":true,"countryConfidence":0.95,"regionConfidence":0.95,"cityConfidence":0.95,"lastAnalyzedAt":0},
+ "savedVia":"agent","createdBy":null,"example":false,"savedAt":0,"visitedAt":null,"createdAt":0,"updatedAt":0}
 ```
+- Where a place is: country → region → city → area. `countryCode` = ISO 3166-1 alpha-2, lower case (`jp`, `kr`, `tw`).
+  `region` = the country's big division, one field whose label follows `regionType`: `region` (地区, e.g. 日本 关东/关西,
+  台湾 北部), `state` (州: 美国, 澳大利亚, 马来西亚), `province` (省: 中国), `prefecture` (都道府县), `district`, `county`,
+  `municipality` (北京、上海…), `other`. City-states (新加坡, 香港, 澳门) leave `region` empty. Older places may lack all
+  three: the app fills them in for display from its presets (`GEO_PRESETS` in the app) and never writes on read; it
+  writes them only when the user confirms 「AI 整理」.
+- `aiMeta` records how sure Claude was about the geography (0–1) and when it last looked; the agent writes its own
+  confidence. `savedAt` = when it was saved; `visitedAt` = when it was marked 已去过 (or null).
+  `distinctFrom` = ids the user kept apart with 「都保留」 (never flag that pair as a duplicate again).
 - `category`: `food | cafe | sight | shopping | stay | experience | nightlife | other`
-- `status`: `saved` (收藏) `| want` (想去) `| visited` (去过) — never overwrite a user's status.
+- `status`: `saved` (收藏) `| want` (想去) `| visited` (已去过) — never overwrite a user's status. Never merge or delete
+  places on your own: duplicates are the user's call (the app offers 保留第一个 / 合并 / 都保留).
 - `coordConfidence`: `exact | area | null`. `priceLevel` 1–4 or null. `price` only when the post states one, else null.
 - `chain: true` = a chain with no branch named in the post: leave `lat`/`lng` null; planners pick a branch on the
   day's route (the geocoder skips these).

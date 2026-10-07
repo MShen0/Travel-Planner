@@ -100,12 +100,12 @@ let dumped;
   const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, seed: { meta: [FX, ...appMeta] } });
   await step('home renders for a new user', async () => {
     await text(page, '下一站去哪儿').waitFor({ timeout: 8000 });
-    await text(page, '三步把灵感变成行程').waitFor();
+    await text(page, '还没有旅行计划').waitFor();
   });
   await page.screenshot({ path: path.join(shots, '01-phone-home-empty.png') });
   await step('collect: paste on home, screenshot + video frames, AI review', async () => {
     await page.fill('#home-paste', '【东京3日游｜懒人版攻略 - 小王 | 小红书 - 你的生活指南】 😆 abc 😆 http://xhslink.com/m/1gJ5tOG6M1b，复制本条信息，打开【小红书】App查看精彩内容！');
-    await page.getByRole('button', { name: '识别这条分享' }).click();
+    await page.getByRole('button', { name: 'AI 识别', exact: true }).click();
     await text(page, '这个页面里的 AI 打不开链接').waitFor();
     await page.setInputFiles('#pick-images', png);
     await page.locator('.media figure').first().waitFor();
@@ -114,6 +114,9 @@ let dumped;
     if (await page.locator('.media figure').count() < 3) throw new Error('video frames missing');
     await page.getByRole('button', { name: 'AI 识别地点' }).click();
     await page.locator('.review-item').nth(3).waitFor({ timeout: 10000 });
+    await text(page, 'AI 已识别 4 个地点 · 1 个国家 · 1 个地区 · 1 个城市').waitFor();
+    // 地点归属确认: the place Claude was unsure about waits for a yes
+    await page.locator('.needs-confirm').getByText('代官山茑屋书店').waitFor();
     const call = await page.evaluate(() => window.__sampleCalls[0]);
     if (!call.opts.images) throw new Error('images not sent to Claude');
     if (!String(call.input).includes('另附')) throw new Error('prompt does not mention the images');
@@ -121,11 +124,19 @@ let dumped;
   await page.screenshot({ path: path.join(shots, '02-phone-review.png') });
   await step('collect: save 3 of 4 places with a cover image', async () => {
     await page.locator('.review-item input[type=checkbox]').nth(3).uncheck();
-    await page.getByRole('button', { name: /收藏 3 个地点/ }).click();
+    await page.getByRole('button', { name: /确认保存 3 个地点/ }).waitFor();
+    await page.locator('.needs-confirm').getByRole('button', { name: '没问题' }).click();
+    await page.locator('.needs-confirm').waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: /全部加入收藏（3）/ }).click();
     await text(page, '已收藏 3 个地点').waitFor();
+    const saved = await page.evaluate(() => window.__dump().places);
+    if (!saved.every(p => p.countryCode === 'jp' && p.region === '关东' && p.savedAt)) throw new Error('geo not stored: ' + JSON.stringify(saved.map(p => [p.countryCode, p.region])));
     await tab(page, '收藏');
+    // one country: the library opens on it; 东京 is one city card
+    await text(page, '3 个地点 · 1 个国家 · 1 个城市').waitFor();
+    await page.locator('.city-card').first().click();
     await page.locator('.pcard').nth(2).waitFor();
-    if (await page.locator('.pcard').count() !== 3) throw new Error('library does not show 3 places');
+    if (await page.locator('.pcard').count() !== 3) throw new Error('city does not show 3 places');
     if (!(await page.evaluate(() => window.__uploads.length))) throw new Error('cover not uploaded');
   });
   await page.screenshot({ path: path.join(shots, '03-phone-library.png'), fullPage: true });
@@ -169,9 +180,14 @@ let dumped;
     await closeSheet(page);
   });
   await step('plan: AI revision lights the changed rows until acknowledged', async () => {
-    await page.getByRole('button', { name: '用 AI 优化这一天' }).click();
+    await page.getByRole('button', { name: 'AI 优化这一天' }).click();
     await page.getByRole('button', { name: '这天轻松一点' }).click();
     await page.getByRole('button', { name: '开始调整' }).click();
+    // a proposal first: before/after minutes, nothing saved until 采用
+    await page.locator('.proposal .cmp').waitFor({ timeout: 10000 });
+    const rev = await page.evaluate(() => window.__dump().trips[0].revisions || 0);
+    if (rev) throw new Error('revision saved before it was adopted');
+    await page.getByRole('button', { name: '采用这个方案' }).click();
     await page.locator('.changed-note').waitFor({ timeout: 10000 });
     if (!(await page.locator('.tl-row.changed').count())) throw new Error('no lit rows');
     await page.screenshot({ path: path.join(shots, '05-phone-trip-changed.png') });
@@ -208,20 +224,21 @@ let dumped;
     await page.getByRole('button', { name: '整理成步骤' }).click();
     await page.locator('.gsteps li').nth(1).waitFor({ timeout: 10000 });
     await page.locator('.exit').first().waitFor();
-    await page.getByRole('button', { name: /把 1 个新地点加入收藏/ }).click();
+    await page.getByRole('button', { name: '把「雷门」加入收藏' }).click();
     await text(page, '已加入收藏 1 个地点').waitFor();
+    await page.getByRole('button', { name: '「雷门」已在收藏，打开' }).waitFor();
   });
   await page.screenshot({ path: path.join(shots, '06-phone-guide.png'), fullPage: true });
   await step('agent inbox: a link-only paste goes to the agent', async () => {
     await tab(page, '首页');
     await page.fill('#home-paste', 'https://www.instagram.com/reel/C0abcdefghi/?igsh=xyz');
-    await page.getByRole('button', { name: '识别这条分享' }).click();
+    await page.getByRole('button', { name: 'AI 识别', exact: true }).click();
     await page.getByRole('button', { name: '交给 Agent' }).click();
     await page.getByRole('button', { name: /1 条链接在等 Agent 处理/ }).click();
     await page.locator('.inbox-item .st.pending').waitFor();
   });
   await step('assistant: quick ask, action card, confirm opens the trip form', async () => {
-    await tab(page, 'AI 助手');
+    await tab(page, 'AI');
     await page.getByRole('button', { name: '规划行程' }).click();
     await page.locator('.action-card').waitFor({ timeout: 10000 });
     await text(page, '东京 2 天行程建议').waitFor();
@@ -247,10 +264,29 @@ let dumped;
     await text(page, '汇率已保存').waitFor();
     await closeSheet(page);
     await tab(page, '收藏');
+    await page.locator('.city-card').first().click();
     const href = await page.locator('.pcard-foot a').first().getAttribute('href');
     if (!href.startsWith('https://maps.apple.com/')) throw new Error('map preference not applied: ' + href);
     const fx = await page.evaluate(() => window.__dump().meta.find(d => d.id === 'fx'));
     if (fx.manual.JPY !== 40) throw new Error('manual rate not stored');
+  });
+  await step('organize: AI proposes, nothing changes until 确认整理, then only what was approved', async () => {
+    await tab(page, '收藏');
+    await page.getByRole('button', { name: 'AI 整理' }).click();
+    await page.getByRole('button', { name: '开始整理' }).click();
+    await page.locator('.org-result').waitFor({ timeout: 10000 });
+    await page.locator('.org-result .needs-confirm').waitFor();
+    const before = await page.evaluate(() => window.__dump().places.find(p => p.id === 'p_imported1'));
+    if (before.region || before.country) throw new Error('organize wrote before confirmation');
+    await page.screenshot({ path: path.join(shots, '08-phone-organize.png') });
+    await page.getByRole('button', { name: /确认整理/ }).click();
+    await text(page, '个地点').waitFor();
+    await page.waitForFunction(() => (window.__dump().places.find(p => p.id === 'p_imported1') || {}).region === '关东');
+    const after = await page.evaluate(() => window.__dump().places.find(p => p.id === 'p_imported1'));
+    if (after.country !== '日本' || after.countryCode !== 'jp' || after.area !== '筑地' || !after.aiMeta || !after.aiMeta.normalized) throw new Error(JSON.stringify(after));
+    const unsure = await page.evaluate(() => window.__dump().places.find(p => p.name === '雷门'));
+    if (unsure.area) throw new Error('the unsure change was applied without the user accepting it');
+    await page.locator('.city-card').first().click();
   });
   await step('AI errors: rate limit message; refused consent disables AI', async () => {
     await page.getByRole('button', { name: '添加', exact: true }).click();
@@ -297,7 +333,7 @@ for (const [label, opts] of [
   });
   await step(`${label}: library`, async () => {
     await tab(page, '收藏');
-    await page.locator('.pcard').first().waitFor();
+    await page.locator('.country-card, .city-card').first().waitFor();
     await noSideScroll(page);
     await snap('library');
   });
@@ -307,6 +343,18 @@ for (const [label, opts] of [
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(shots, `${label}-map.png`) });
     await page.getByRole('button', { name: '返回' }).first().click();
+  });
+  await step(`${label}: country and city`, async () => {
+    if (await page.locator('.country-card').count()) {
+      await page.locator('.country-card').first().click();
+      await page.locator('.city-card').first().waitFor();
+      await noSideScroll(page);
+      await snap('country');
+    }
+    await page.locator('.city-card').first().click();
+    await page.locator('.pcard').first().waitFor();
+    await noSideScroll(page);
+    await snap('city');
   });
   if (tripId) {
     await step(`${label}: trip plan`, async () => {
@@ -353,7 +401,7 @@ for (const [label, opts] of [
     });
   }
   await step(`${label}: assistant`, async () => {
-    await tab(page, 'AI 助手');
+    await tab(page, 'AI');
     await page.getByRole('button', { name: '规划行程' }).click();
     await page.locator('.action-card').waitFor({ timeout: 10000 });
     await page.waitForTimeout(300);
@@ -367,7 +415,7 @@ for (const [label, opts] of [
   const { page, problems, context } = await openPage(browser, { viewport: { width: 390, height: 844 }, runtime: false });
   await step('offline copy: explains it is a preview and disables AI', async () => {
     await text(page, '离线预览').waitFor();
-    await page.getByRole('button', { name: '识别这条分享' }).click();
+    await page.getByRole('button', { name: 'AI 识别', exact: true }).click();
     await text(page, '请在 claude.ai 里打开这个页面').waitFor();
   });
   results.push(['info', 'offline problems', problems.join(' | ') || 'none']);

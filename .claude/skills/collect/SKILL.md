@@ -58,6 +58,11 @@ Use the same rules as the app (`buildExtractPrompt` in `app/bacao.html`):
 2. `name` as the post calls it; `nameLocal` = the official local-language name for map search (Japanese in Japan,
    Korean in Korea, Thai or English in Thailand, Chinese in China / HK / TW); empty string if unsure.
 3. `city` reuses an existing spelling from the database when it is the same city; otherwise the common 简体中文 name.
+   File every place under country → region → city → area: `country` (common 简体中文 name), `countryCode` (ISO alpha-2,
+   lower case), `region` + `regionType` as in `CLAUDE.md` (日本 关东/关西 → `region`, 马来西亚/美国/澳大利亚 → `state`,
+   中国 → `province`, 北京/上海 → `municipality`; empty for 新加坡/香港/澳门), and `area` (商圈/街区). Reuse the regions
+   already in the database for that country. When the post leaves the country or city unclear, say so in your report
+   instead of guessing; write `aiMeta` with your confidence (0–1) for country, region and city.
 4. `mustTry` and `tips` (queues, prices, hours, transport, reservations, pitfalls) only from the post or its images.
 5. `category` from the contract enum; `durationMin` = sensible visit length; `priceLevel` 1–4 or null.
 6. `source.evidence`: a ≤ 20-character quote from the post that mentions the place.
@@ -102,8 +107,8 @@ Upload the chosen files with the `Artifact` tool: `action: "publish"`, `url` = `
 
 One `ArtifactData` `batch` per ≤ 50 documents, each `{op: "set", collection: "places", doc_id, data}` with the full
 place document from `CLAUDE.md`: `status: "saved"`, `savedVia: "agent"`, `createdBy: null`, `example: false`,
-`coverAssetId` + `coverCredit` from step 6 (or null), `price` only when the post states one, `createdAt` and
-`updatedAt` = now in ms, `source` = `{platform, url, title, author: "", evidence, stats}` (`stats` from `fetch_post`).
+`coverAssetId` + `coverCredit` from step 6 (or null), `price` only when the post states one, `savedAt`, `createdAt` and
+`updatedAt` = now in ms, `countryCode` / `region` / `regionType` / `aiMeta` from step 4, `source` = `{platform, url, title, author: "", evidence, stats}` (`stats` from `fetch_post`).
 
 City basemap: when a city now has 3+ places with coordinates and no document in `maps` covers them (or the new places
 fall outside its `bounds`), render one:

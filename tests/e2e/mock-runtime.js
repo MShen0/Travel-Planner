@@ -79,14 +79,24 @@
       return {
         post: { title: '东京3日游｜懒人版攻略', summary: '三天经典路线', city: '东京', country: '日本' },
         places: [
-          { name: '浅草寺', nameLocal: '浅草寺', city: '东京', country: '日本', area: '浅草', category: 'sight', mustTry: ['求签'], tips: '早上 8 点前人少', durationMin: 60, lat: 35.7148, lng: 139.7967, coordConfidence: 'exact', evidence: '浅草寺早上8点前人少' },
+          { name: '浅草寺', nameLocal: '浅草寺', city: '东京', country: '日本', countryCode: 'jp', region: '关东', regionType: 'region', confidence: 0.95, area: '浅草', category: 'sight', mustTry: ['求签'], tips: '早上 8 点前人少', durationMin: 60, lat: 35.7148, lng: 139.7967, coordConfidence: 'exact', evidence: '浅草寺早上8点前人少' },
           { name: '一兰拉面', nameLocal: '一蘭 渋谷店', city: '东京', country: '日本', area: '涩谷', category: 'food', mustTry: ['拉面'], tips: '别去本店排队', priceLevel: 2, price: { amount: 980, currency: 'JPY', per: '一碗' }, lat: 35.6611, lng: 139.701, coordConfidence: 'exact', evidence: '一兰拉面（别去本店排队）' },
-          { name: '代官山茑屋书店', nameLocal: '代官山 蔦屋書店', city: '东京', country: '日本', area: '代官山', category: 'shopping', tips: '文艺青年圣地', lat: 35.6484, lng: 139.6998, coordConfidence: 'area', evidence: '代官山茑屋书店必去' },
+          { name: '代官山茑屋书店', nameLocal: '代官山 蔦屋書店', city: '东京', country: '日本', confidence: 0.6, area: '代官山', category: 'shopping', tips: '文艺青年圣地', lat: 35.6484, lng: 139.6998, coordConfidence: 'area', evidence: '代官山茑屋书店必去' },
           { name: 'Shibuya Sky', nameLocal: 'SHIBUYA SKY', city: '东京', country: '日本', area: '涩谷', category: 'sight', tips: '日落前 1 小时上去', lat: 35.6585, lng: 139.7023, coordConfidence: 'exact', evidence: 'Shibuya Sky日落前1小时上去' },
         ],
       };
     }
     if (prompt.includes('排一份') || prompt.includes('用户想调整')) return planAnswer(prompt);
+    if (prompt.includes('旅行整理助手')) {
+      const ps = placesInPrompt(prompt);
+      return {
+        summary: `检查了 ${ps.length} 个地点，补上国家、地区和区域`, groups: [],
+        changes: ps.map(p => ({ placeId: p.id, country: '日本', countryCode: 'jp', region: '关东', regionType: 'region', city: p.city || '东京', area: p.area || (p.name === '雷门' ? '浅草' : '筑地'),
+          confidence: p.name === '雷门' ? 0.6 : 0.93, reason: p.name === '雷门' ? '攻略没写清楚' : '东京属于关东' })),
+        duplicates: [], nearbyGroups: [],
+        needsConfirmation: ps.length > 2 ? [{ placeId: ps[2].id, field: 'area', question: '这家店在哪个街区？', options: ['代官山', '涩谷'], confidence: 0.55 }] : [],
+      };
+    }
     if (prompt.includes('旅行向导')) {
       return {
         title: '从浅草站到晴空塔', city: '东京', country: '日本', overview: '浅草寺之后步行过隅田川到晴空塔。', duration: '半天',

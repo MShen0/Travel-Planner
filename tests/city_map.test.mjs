@@ -40,3 +40,14 @@ test('rendered maps carry their origin in a JPEG comment', async () => {
   assert.ok(out.subarray(0, 4).equals(Buffer.from([0xff, 0xd8, 0xff, 0xfe])), 'stamp sits right after SOI');
   assert.ok(out.includes(app0));
 });
+
+test('runs as a script, also from a folder whose name has a space', async () => {
+  const { mkdtempSync, copyFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { spawnSync } = await import('node:child_process');
+  const script = `${mkdtempSync(`${tmpdir()}/city map-`)}/city_map.mjs`;
+  copyFileSync(new URL('../tools/city_map.mjs', import.meta.url), script);
+  const run = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+  assert.equal(run.status, 2, 'without --places/--out it prints usage and exits 2');
+  assert.match(run.stderr, /usage/);
+});

@@ -11,8 +11,9 @@
 // Needs network and Playwright (`npm i -g playwright && npx playwright install chromium` on your own machine).
 import { createRequire } from 'node:module';
 import { execSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) => {
   if (a.startsWith('--')) acc.push([a.slice(2), all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : 'true']);
@@ -126,7 +127,9 @@ async function render(bounds, size, palette, file) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Only when run as a script (the tests import this file). Node loads the main file by its real path, as a file URL.
+const isMain = () => { try { return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href; } catch { return false; } };
+if (isMain()) {
   if (!args.places || !args.out) {
     console.error('usage: node tools/city_map.mjs --places places.json [--city 首尔] --out DIR [--pad 0.9] [--max 1600]');
     process.exit(2);

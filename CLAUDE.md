@@ -28,7 +28,8 @@ Two halves share one database:
 | `python3 tools/provenance.py image.jpg [--set "origin"]` | Read or stamp an image's origin (JPEG comment / PNG text). The tools above stamp what they write. |
 
 Install: `pip install -r tools/requirements.txt` (yt-dlp). Optional speech-to-text: `pip install faster-whisper`.
-ffmpeg must be on PATH for video. `city_map.mjs` needs Playwright with Chromium (`npm i -g playwright`).
+ffmpeg must be on PATH for video, and Deno for YouTube (yt-dlp solves YouTube's player challenges with it).
+`city_map.mjs` needs Playwright with Chromium (`npm i -g playwright`, then `npx playwright install chromium`).
 
 ## Database contract (artifact `db`)
 

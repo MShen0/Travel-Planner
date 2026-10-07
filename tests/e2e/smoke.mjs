@@ -34,7 +34,10 @@ function cached(url) {
 }
 function media() {
   const png = path.join(cache, 'shot.png'), webm = path.join(cache, 'clip.webm');
-  if (!existsSync(png)) execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=0xf4efe6:s=720x960', '-vf', "drawtext=text='ICHIRAN Shibuya':fontsize=64:x=60:y=420", '-frames:v', '1', png]);
+  // Windows builds of ffmpeg can crash finding a default font through fontconfig: give drawtext a font file there.
+  const font = process.platform === 'win32'
+    ? `fontfile='${path.join(process.env.SystemRoot || 'C:\\Windows', 'Fonts', 'arial.ttf').replace(/\\/g, '/').replace(':', '\\:')}':` : '';
+  if (!existsSync(png)) execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=0xf4efe6:s=720x960', '-vf', `drawtext=${font}text='ICHIRAN Shibuya':fontsize=64:x=60:y=420`, '-frames:v', '1', png]);
   if (!existsSync(webm)) execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=360x640:rate=15:duration=6', '-c:v', 'libvpx-vp9', '-b:v', '300k', webm]);
   return { png, webm };
 }

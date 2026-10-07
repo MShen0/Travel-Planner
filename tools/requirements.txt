@@ -1,4 +1,5 @@
 # Needed for video links (TikTok, YouTube, Bilibili, Douyin, Xiaohongshu video notes).
-yt-dlp>=2025.1.1
+# [default] adds yt-dlp-ejs, the challenge solver YouTube needs; it runs on Deno, which must be on PATH.
+yt-dlp[default]>=2025.11.12
 # Optional: speech-to-text for videos without subtitles. First use downloads the model (~500 MB for "small").
 # faster-whisper>=1.0

@@ -1,53 +1,50 @@
 # 交给 Agent：选电脑或云端
 
-按「交给 Agent」时，用户选由谁来抓：
+按「交给 Agent」时，底部出现两个选项，各带一盏灯：
 
-| 选项 | 灯 | 什么时候抓 |
+| 选项 | 灯 | 按下后 |
 |---|---|---|
-| 电脑 | 青色 = 电脑上的 Agent 在线；灰色 = 离线（不能选） | 电脑上的 Claude Code 收到后马上抓 |
-| 云端 | 一直青色 | 按下后启动一个云端 session 去抓（约几分钟） |
+| 💻 电脑 | 青色 = 电脑上的 Agent 在线；灰色 = 离线（不能选） | app 给电脑上的会话发消息，它马上抓 |
+| ☁️ 云端 | 一直青色 | app 启动云端 Routine，开一个新的云端会话去抓 |
 
-只有按下的那一刻才会抓，没有定时任务在后台跑。
+只有按下的那一刻才会抓，后台没有定时任务。已上线：artifact Version 20。
 
-## 数据
+## 怎么做到的
 
-`inbox/{id}` 多一个字段 `runner: "computer" | "cloud"`。没有这个字段的旧条目当作 `cloud`。
-两边只处理自己的条目，互不抢。
+app 声明了 `mcp` capability，通过看的人自己的 **Claude Code Remote** 连接器调用三个工具：
 
-## 云端（已建好）
+- `list_sessions`：找标题包含 `meta/app.computerSessionName`（默认「旅用 电脑」，忽略空格）的会话，
+  `connection_status == "connected"` 就亮青色灯。打开选项或待办页时查一次，之后每分钟查一次。
+- `send_message`：选电脑时叫醒那个会话，消息里带条目 id。
+- `fire_trigger`：选云端时启动 `meta/app.cloudTriggerId`（Routine「旅用 云端抓取」，没有排程）。
 
-- Routine「旅用 云端抓取」，id `trig_01PpM4ge5GSGxXa44vFzUvAS`，没有排程，只在被触发时运行，每次开一个新 session。
-- 它处理 `status == "pending"` 且 `runner` 为 `cloud` 或缺省的条目，写好地点或攻略后关闭条目。
-- app 触发方式：声明 `mcp` capability，连接器 `Claude Code Remote`，工具 `fire_trigger`：
+第一次按时 claude.ai 会问是否允许这个页面用 Claude Code Remote。
 
-  ```js
-  capabilities: {db:{}, user:{scopes:["profile"]}, sample:{}, assets:{}, downloads:true,
-    mcp:{servers:[{server:"Claude Code Remote", tools:["fire_trigger"]}]}}
-  ```
+## 朋友按的时候
 
-  写入 inbox 条目（`runner:"cloud"`）之后调用
-  `callTool("Claude Code Remote", "fire_trigger", {trigger_id: "trig_01PpM4ge5GSGxXa44vFzUvAS"})`。
-  第一次会弹出授权。`use("mcp")` 返回 `null` 或调用被拒时：条目照样存着，显示「已存进待办，下次打开云端或电脑时处理」。
-- 只有 Routine 的主人（MS）能触发它。同行的人按「云端」时调用会失败，按上面的降级处理。
-- trigger id 写进 `meta/app.cloudTriggerId`，不要硬编码在 HTML 里。
+Routine 和电脑会话属于主人的账号，朋友的账号启动不了。所以：
 
-## 电脑
+- 朋友选云端：链接照样存进待办（`runner: "cloud"`），提示「旅用的主人下次打开 app 时，云端会自动处理」。
+  主人的 app 一打开，看到没启动过的云端条目（没有 `firedAt`）就自动启动一次。
+- 朋友那边的电脑灯是灰的（看不到主人的会话）。
+- 待办页每条都有「交给电脑 / 交给云端（再叫一次云端）」，失败的可以重试。
 
-电脑上开一个专门的 Claude Code session（建议标题「旅用 电脑 Agent」）并打开 Remote Control。
+## 电脑这边要做的
 
-在线判断，二选一，先试第一种：
+1. 在电脑上开一个 Claude Code 会话，进入仓库目录，打开 Remote Control（`/remote-control`），
+   把会话改名为包含「旅用 电脑」的名字（`/rename 旅用 电脑 Agent`）。
+2. 跟它说一次：「收到旅用 app 的消息时，按 CLAUDE.md 和 /collect、/guide 处理 inbox 里 runner == computer 的待办。」
+3. 会话连着的时候，app 里的电脑灯就是青色。
 
-1. **Remote Control 状态**：app 用同一个连接器的 `list_sessions` 找标题为「旅用 电脑 Agent」的 session，
-   看它是否连着（先实际调用一次确认返回里有没有在线状态，没有就用第二种）。按「电脑」时用 `send_message`
-   给它发「处理 inbox 里 runner == computer 的条目」。
-2. **心跳**：电脑上的 session 用 `/loop` 每 2 分钟写一次 `meta/agent`：
-   `{"id":"agent","computerSeenAt": <ms>}`，顺便处理 `runner == "computer"` 的待办。
-   app 里 `now - computerSeenAt < 5 分钟` 就是青色。每次心跳都会用一点额度。
+## 代码
 
-电脑离线时「电脑」按钮是灰的，不能选；已经选了电脑但还没处理的条目，可以在待办里改成云端（改 `runner` 再触发）。
+live artifact 是多文件版本（不在 GitHub 上）。这次改动的文件：
 
-## UI
+- 新增 `js/lib/agents.js`（纯函数：解析会话列表、找电脑会话、待启动的云端条目）和 `js/ui/agents.js`
+  （`useAgentHub`、`AgentPicker`、`AgentLamps`）。
+- `index.html` 加载这两个文件；`js/ui/platform.js` 的 runtime 多了 `mcp`；`js/app.js` 把 `agents` 放进 `ctx`。
+- `js/ui/collect.js`、`js/ui/guides.js`：「交给 Agent」先显示选项；待办页显示由谁处理、排队中 / 处理中，并能改交或重试。
+- `js/ui/home.js` 提示文字；`js/ui/kit.js` 新图标 `laptop`、`cloud`；`css/tokens.css` 的 `--lamp-on`（青）/`--lamp-off`（灰）；
+  `css/screens.css` 末尾的 `.agent-pick`、`.agent-opt`、`.lamp`、`.agent-lamps`、`.inbox-actions`。
 
-- 「交给 Agent」弹层里两个选项卡片：💻 电脑 / ☁️ 云端，各带一个小圆灯（青色 `--sky` 系，灰色 `--line`）。
-- 灯旁一行小字：电脑「在线」/「离线」，云端「随时可用」。
-- 待办列表每条显示由谁处理和状态（排队中 / 处理中 / 完成 / 失败）。
+电脑上继续改 app 之前，先用 Artifact 工具 `read`（`paths` 全部文件）拉回 Version 20，不然会把这次的改动覆盖掉。

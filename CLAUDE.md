@@ -145,7 +145,7 @@ on everything the agent creates (the app writes the viewer's user id, which it s
 **meta/fx** — exchange rates, base MYR: `{"id":"fx","base":"MYR","date":"2026-10-06","source":"…","rates":{"KRW":323.5,…},"manual":{}}`
 (`rates[C]` = units of C per 1 MYR; `manual` holds rates the user typed in the app — never overwrite it).
 
-**meta/app** — `{"id":"app","heroAssetId":"<asset id>","heroCredit":{"text":"…"},"updatedAt":0}`: the home-screen photo.
+**meta/app** — `{"id":"app","heroAssetId":"<asset id>","heroCredit":{"text":"…"},"cloudTriggerId":"trig_…","computerSessionName":"旅用 电脑","updatedAt":0}`: the home-screen photo.
 Once the user has places or trips of their own (examples don't count), it shows until they have a trip with a photo; before
 that it is the last fallback. Use the photo the user asks for; otherwise pick one that is not tied to one country.
 
@@ -163,8 +163,12 @@ that it is the last fallback. Use the photo the user asks for; otherwise pick on
 **inbox/{id}** — links the user handed to the agent from the app ("交给 Agent").
 ```json
 {"id":"i_…","text":"<pasted share text>","url":"…","platform":"xiaohongshu","cityHint":"","mode":"collect|guide",
+ "runner":"computer|cloud","firedAt":0,"wantedBy":["MS"],
  "status":"pending|done|failed","message":"","createdAt":0,"processedAt":0,"resultPlaceIds":[],"resultGuideId":null}
 ```
+- `runner` = who fetches it, picked in the app (no field = `cloud`). The cloud routine (`meta/app.cloudTriggerId`)
+  handles only `cloud` items; the computer session (title containing `meta/app.computerSessionName`, default 「旅用 电脑」)
+  handles only `computer` items. `firedAt` = when the app started that runner. See `docs/agent-runners.md`.
 
 ### Writing with ArtifactData
 - `url` = `appUrl` from `travel.config.json`.

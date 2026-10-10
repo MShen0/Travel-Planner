@@ -7,13 +7,13 @@
 | 💻 电脑 | 青色 = 电脑上的 Agent 在线；灰色 = 离线（不能选） | app 给电脑上的会话发消息，它马上抓 |
 | ☁️ 云端 | 一直青色 | app 启动云端 Routine，开一个新的云端会话去抓 |
 
-只有按下的那一刻才会抓，后台没有定时任务。已上线：artifact Version 20。
+只有按下的那一刻才会抓，后台没有定时任务。已上线：artifact Version 21。
 
 ## 怎么做到的
 
 app 声明了 `mcp` capability，通过看的人自己的 **Claude Code Remote** 连接器调用三个工具：
 
-- `list_sessions`：找标题包含 `meta/app.computerSessionName`（默认「旅用 电脑」，忽略空格）的会话，
+- `list_sessions`（查两次：普通列表找 Claude Code 会话，`tags: ["cowork-local"]` 找桌面版 Cowork 任务）：找标题包含 `meta/app.computerSessionName`（默认「旅用 电脑」，忽略空格）的会话，
   `connection_status == "connected"` 就亮青色灯。打开选项或待办页时查一次，之后每分钟查一次。
 - `send_message`：选电脑时叫醒那个会话，消息里带条目 id。
 - `fire_trigger`：选云端时启动 `meta/app.cloudTriggerId`（Routine「旅用 云端抓取」，没有排程）。
@@ -36,6 +36,9 @@ Routine 和电脑会话属于主人的账号，朋友的账号启动不了。所
 2. 跟它说一次：「收到旅用 app 的消息时，按 CLAUDE.md 和 /collect、/guide 处理 inbox 里 runner == computer 的待办。」
 3. 会话连着的时候，app 里的电脑灯就是青色。
 
+也可以用桌面版 Cowork 代替（还没验证）：开一个 Cowork 任务，名字带「旅用 电脑」，让它能打开 Travel-Planner 文件夹。
+要确认两件事：Cowork 能运行仓库里的 Python 工具，能写 app 的数据库（ArtifactData）。
+
 ## 代码
 
 live artifact 是多文件版本（不在 GitHub 上）。这次改动的文件：
@@ -47,4 +50,4 @@ live artifact 是多文件版本（不在 GitHub 上）。这次改动的文件�
 - `js/ui/home.js` 提示文字；`js/ui/kit.js` 新图标 `laptop`、`cloud`；`css/tokens.css` 的 `--lamp-on`（青）/`--lamp-off`（灰）；
   `css/screens.css` 末尾的 `.agent-pick`、`.agent-opt`、`.lamp`、`.agent-lamps`、`.inbox-actions`。
 
-电脑上继续改 app 之前，先用 Artifact 工具 `read`（`paths` 全部文件）拉回 Version 20，不然会把这次的改动覆盖掉。
+电脑上继续改 app 之前，先用 Artifact 工具 `read`（`paths` 全部文件）拉回最新版本（现在是 Version 21），不然会把这次的改动覆盖掉。
